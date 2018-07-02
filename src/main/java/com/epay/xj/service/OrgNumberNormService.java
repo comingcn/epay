@@ -6,12 +6,24 @@
  */
 package com.epay.xj.service;
 
+import java.util.Date;
+
+import com.epay.xj.dao.OrgNumberNormDao;
+import com.epay.xj.dao.impl.OrgNumberNormDaoImpl;
+import com.epay.xj.utils.DateUtils;
+
 /**
  * @Description: 机构数指标
  * @author LZG
  * @date 2018年07月02日 
  */
 public class OrgNumberNormService {
+	
+	private static OrgNumberNormDao orgNumberNormDao;
+	
+	static {
+		orgNumberNormDao = new OrgNumberNormDaoImpl();
+	}
 
 	public static void main(String[] args) {
 		//测试身份证号为
@@ -28,6 +40,16 @@ public class OrgNumberNormService {
 	 * @date 2018年07月02日
 	 */
 	public static int yl_card_audit_all_merdint_all_j12m_cnt(String md5CertNoStr) {
+		
+		String currentDayStr = DateUtils.yyyyMMddToString(new Date());
+		String[] oneYearDateArr = DateUtils.getOneYearDate(currentDayStr, 365);
+		String beforeOneYearDayStr = oneYearDateArr[oneYearDateArr.length - 1];
+		
+		//统计结果
+		String result = orgNumberNormDao.yl_card_audit_all_merdint_all_j12m_cnt(currentDayStr, beforeOneYearDayStr);
+		
+		//更新到数据库
+		
 		
 		
 		return -1;

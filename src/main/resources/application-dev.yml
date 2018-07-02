@@ -1,0 +1,9 @@
+server:
+  context-path: /epay
+  port: 8081
+initProperties:
+  fPathInput: D://yhfw//zshy//
+  inputHeaderMtd: TXN_DATE,TXN_SEQ_ID,CERT_NO,CARD_NO,MER_ID,MER_TYPE,AMOUNT,SF_TYPE,RETURN_CODE
+  TradeDetail: EXP_TRA_TRADE_DETAIL_PARA_
+  
+

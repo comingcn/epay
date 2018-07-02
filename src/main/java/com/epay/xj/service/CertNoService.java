@@ -3,6 +3,8 @@ package com.epay.xj.service;
 import java.io.IOException;
 import java.util.Date;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Service;
@@ -10,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.csvreader.CsvReader;
 import com.epay.xj.domain.CertNoDO;
+import com.epay.xj.domain.Variables;
 import com.epay.xj.repository.CertNoRepository;
 import com.epay.xj.utils.DateUtils;
 import com.epay.xj.utils.MD5Util;
@@ -20,9 +23,17 @@ import com.epay.xj.utils.MD5Util;
 @Service
 public class CertNoService {
 
+	Logger logger = LoggerFactory.getLogger(getClass());
+	
     @Autowired
     private CertNoRepository userRepository;
 
+    @Autowired
+    private VariablesService variablesService;
+    
+    @Autowired
+    private DutyService dutyService;
+    
     @Transactional
     public void insertTwo(){
 
@@ -76,21 +87,28 @@ public class CertNoService {
     @Transactional
     public void updateOrInsert(CsvReader reader) throws Exception{
     	//参与字表计算的数据
-    	String certNo = MD5Util.encrypt(reader.get(reader.getHeaders()[2]));
+    	String certNo = reader.get(reader.getHeaders()[2]);
     	CertNoDO c = new CertNoDO();
-    	c.setId(certNo);
+    	c.setId(MD5Util.encrypt(certNo));
+    	//参与指标计算标识，以供参与计算
+    	c.setUpdateTime(DateUtils.yyyyMMddToString(new Date()));
     	//如果库中存在
     	if(exists(c)){
-    		//参与指标计算标识，以供参与计算
-    		c.setUpdateTime(DateUtils.yyyyMMddToString(new Date()));
-    		//写入数据写入该身份证号下的追加文件或者数据库的表中
     		//更新记录
-    		userRepository.saveAndFlush(c);
+    		userRepository.update(c.getUpdateTime(), c.getId());
+    		//写入数据写入该身份证号下的追加文件或者数据库的表中
+    		dutyService.appendTradeDetail(c.getId(), reader.getValues());
     	}else{
     		//新增的身份证号下的日志记录，保存到身份证号表中
-    		//参与指标计算标识，以供参与计算
-    		//写入数据写入该身份证号下的文件或者数据库的表中
+    		c.setCertNo(certNo);
+    		userRepository.saveAndFlush(c);
+    		//将数据写入该身份证号下的文件或者数据库的表中
+    		dutyService.appendTradeDetail(c.getId(), reader.getValues());
     		//在指标表中新增记录
+    		Variables v = new Variables();
+    		v.setCertNo(certNo);
+    		v.setMd5CertNo(c.getId());	
+    		variablesService.insert(v);
     	}
     }
 

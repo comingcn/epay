@@ -10,6 +10,8 @@ public class InitProperties {
 
 	private String fPathInput;
 
+	private String fPathOutput;
+	
     private String inputHeaderMtd;
     
     private String TradeDetail;
@@ -36,6 +38,14 @@ public class InitProperties {
 
 	public void setTradeDetail(String tradeDetail) {
 		TradeDetail = tradeDetail;
+	}
+
+	public String getfPathOutput() {
+		return fPathOutput;
+	}
+
+	public void setfPathOutput(String fPathOutput) {
+		this.fPathOutput = fPathOutput;
 	}
     
 }

@@ -29,7 +29,7 @@ public class DutyService {
 
 	public void readerMerTradeDetailTable() throws Exception{
 		StringBuffer sb = new StringBuffer();
-		sb.append(initProperties.getfPathInput()).append(initProperties.getTradeDetail()).append("20180102").append(".DEL");
+		sb.append(initProperties.getfPathInput()).append(initProperties.getTradeDetail()).append("20180101").append(".DEL");
 		File file = new File(sb.toString());
 		CsvReader reader = new CsvReader(new FileReader(file.getAbsolutePath()));
 		String[] headerInfo = initProperties.getInputHeaderMtd().split(",");

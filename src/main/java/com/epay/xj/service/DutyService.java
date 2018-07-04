@@ -9,13 +9,16 @@ import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.codehaus.groovy.runtime.ArrayUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -195,12 +198,22 @@ public class DutyService {
 	/**----------------------------------------------------------------------------------------------**/
 	
 	/**
+	 * 逾期所有指标计算统一入口
 	 * 逾期类型1:1.在同一家公司划扣因余额不足失败，到最终划扣成功且划扣成功金额=失败金额为止，设定为逾期天数；
 	 * 逾期类型2:2.在同一家公司划扣因余额不足失败，直至划扣成功金额>=失败金额为止
      * 逾期类型3:3.在同一家公司划扣因余额不足失败，直至划扣成功为止
 	 */
-
-	public void overDue(){
-		
+	public void overDue(String certNo){
+		//逾期口径1
+		String overDueType = initProperties.getOverDueType();
+		Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
+		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("ywbz"));
+		if(overDueType.equals("1")){
+			
+		}else if(overDueType.equals("2")){
+			
+		}else{
+			
+		}
 	}
 }

@@ -22,7 +22,7 @@ public class InitProperties {
 
 	private String bindCardLog;
 	
-	private String[] overDueType;
+	private String overDueType;
 	
 	private String[] overDueMouth;
 	
@@ -82,11 +82,11 @@ public class InitProperties {
 		this.bindCardLog = bindCardLog;
 	}
 
-	public String[] getOverDueType() {
+	public String getOverDueType() {
 		return overDueType;
 	}
 
-	public void setOverDueType(String[] overDueType) {
+	public void setOverDueType(String overDueType) {
 		this.overDueType = overDueType;
 	}
 

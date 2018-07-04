@@ -79,7 +79,8 @@ public class BindCardLogService {
 	
 	public void readBindCardLogFile(String fileName){
 		StringBuffer sb = new StringBuffer();
-		sb.append(initProperties.getInputHeaderBcl()).append(initProperties.getBindCardLog()).append(fileName).append(".DEL");
+		Map<String,String[]> maps = initProperties.getMerTypeDic();
+		sb.append(initProperties.getfPathInput()).append(initProperties.getBindCardLog()).append(fileName).append(".DEL");
 		final Map<String,Runnable> map = null;
 		BigFileReader.Builder builder = new BigFileReader.Builder(sb.toString(), new IHandle() {
 			public void handle(String line) {

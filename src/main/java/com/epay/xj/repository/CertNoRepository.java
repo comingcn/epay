@@ -17,4 +17,8 @@ public interface CertNoRepository extends JpaRepository<CertNoDO,Integer> {
     @Modifying
     @Query("update CertNoDO u set u.updateTime = ?1 where u.id = ?2")
     int update(String updateTime, String id);
+    
+    @Query("select id from CertNoDO u  where u.updateTime = ?1")
+    List<String> getIds(String updateTime);
+    
 }

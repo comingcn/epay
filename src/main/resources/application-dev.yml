@@ -5,6 +5,14 @@ initProperties:
   fPathInput: D://yhfw//zshy//
   fPathOutput: D://yhfw//zshy//
   inputHeaderMtd: TXN_DATE,TXN_SEQ_ID,CERT_NO,CARD_NO,MER_ID,MER_TYPE,AMOUNT,SF_TYPE,RETURN_CODE
-  TradeDetail: EXP_TRA_TRADE_DETAIL_PARA_
-  
+  tradeDetail: EXP_TRA_TRADE_DETAIL_PARA_
+  inputHeaderBcl: TXN_DATE,TXN_SEQ_ID,CERT_NO,CARD_NO,MER_ID,MER_TYPE,AMOUNT,SF_TYPE,RETURN_CODE
+  bindCardLog: EXP_TRA_TRADE_DETAIL_PARA_
+ #配置日志
+logging:
+  #配置日志文件路径
+  level:
+    org.hibernate: error
+  file: log\epay.log
+  file.max-size: 100MB
 

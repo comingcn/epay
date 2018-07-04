@@ -14,11 +14,13 @@ public class TradeDetailDO {
 	private String txtSeqId;
 	private String certNo;
 	private String cardNo;
-	private int merType;
+	private String merType;
 	private String merId;
 	private String txtDate;
+	private String sfType;
 	private BigDecimal amout;
 	private String returnCode;
+	
 	public String getTxtSeqId() {
 		return txtSeqId;
 	}
@@ -37,10 +39,10 @@ public class TradeDetailDO {
 	public void setCardNo(String cardNo) {
 		this.cardNo = cardNo;
 	}
-	public int getMerType() {
+	public String getMerType() {
 		return merType;
 	}
-	public void setMerType(int merType) {
+	public void setMerType(String merType) {
 		this.merType = merType;
 	}
 	public String getMerId() {
@@ -68,12 +70,17 @@ public class TradeDetailDO {
 		this.returnCode = returnCode;
 	}
 	
+	public String getSfType() {
+		return sfType;
+	}
+	public void setSfType(String sfType) {
+		this.sfType = sfType;
+	}
 	@Override
 	public String toString() {
 		return "TradeDetailDO [txtSeqId=" + txtSeqId + ", certNo=" + certNo + ", cardNo=" + cardNo + ", merType="
-				+ merType + ", merId=" + merId + ", txtDate=" + txtDate + ", amout=" + amout + ", returnCode="
-				+ returnCode + "]";
+				+ merType + ", merId=" + merId + ", txtDate=" + txtDate + ", sfType=" + sfType + ", amout=" + amout
+				+ ", returnCode=" + returnCode + "]";
 	}
-
 	
 }

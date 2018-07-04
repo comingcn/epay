@@ -5,8 +5,10 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.LineNumberReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -290,4 +292,20 @@ public class FileUtils {
     	System.out.println("创建文件失败，path:"+file.getAbsolutePath());
     	return flg;
     }
+    
+    public static int readFileLines(File file) {
+		int lines = 0;
+		try {
+			long fileLength = file.length();
+			LineNumberReader lineNumberReader = new LineNumberReader(new FileReader(file));
+			lineNumberReader.skip(fileLength);
+			lines = lineNumberReader.getLineNumber();
+			lineNumberReader.close();
+			return lines;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return lines;
+	}
 }

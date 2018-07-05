@@ -37,7 +37,7 @@ import com.epay.xj.utils.DateUtils;
 import com.epay.xj.utils.FileUtils;
 
 @Service
-public class DutyService {
+public class OverDueService {
 
 	Logger logger = LoggerFactory.getLogger(getClass());
 	@Autowired

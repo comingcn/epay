@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 import com.epay.xj.domain.Variables;
 import com.epay.xj.properties.InitProperties;
 import com.epay.xj.service.CertNoService;
-import com.epay.xj.service.DutyService;
+import com.epay.xj.service.OverDueService;
 import com.epay.xj.service.TradeDetailService;
 
 
@@ -32,7 +32,7 @@ public class AsyncThread {
 	@Autowired
 	private TradeDetailService tradeDetailService;
 	@Autowired
-	private DutyService dutyService;
+	private OverDueService dutyService;
 	
 	public void setCertNoService(CertNoService certNoService) {
 		this.certNoService = certNoService;
@@ -50,7 +50,7 @@ public class AsyncThread {
 
 
 
-	public void setDutyService(DutyService dutyService) {
+	public void setDutyService(OverDueService dutyService) {
 		this.dutyService = dutyService;
 	}
 
@@ -99,7 +99,7 @@ public class AsyncThread {
     * @param certNoList
     * @return
     */
-    public Callable<Variables> getJob(final int i,final String certNo,final DutyService dutyService) {
+    public Callable<Variables> getJob(final int i,final String certNo,final OverDueService dutyService) {
         return new Callable<Variables>() {
             @Override
             public Variables call() throws Exception {

@@ -35,7 +35,7 @@ public class CertNoService {
     private VariablesService variablesService;
     
     @Autowired
-    private DutyService dutyService;
+    private OverDueService dutyService;
     
     @Transactional
     public void insertTwo(){

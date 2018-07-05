@@ -50,7 +50,7 @@ initProperties:
     life: 12
   #返回分类码  
   returnCodeDic:
-    success: 0000
+    success: "0000"
     #余额不足失败
     yebz: 5014,3008
     #超时失败

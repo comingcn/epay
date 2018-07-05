@@ -265,38 +265,195 @@ public class OverDueService {
 	public void overDueOneDay(List<TradeDetailDO> list,Map<String,Integer> indexMap,int month, Map<String, String[]> returnCodeDic){
 		
 		if(month==3){
+			/*******************************   逾期一天以上次数     ***************************************/
 			indexMap.put("YQ013", loanOrgOverDueOneDay(list,"dk",returnCodeDic));
 			indexMap.put("YQ014", loanOrgOverDueOneDay(list,"xj",returnCodeDic));
 			indexMap.put("YQ015", loanOrgOverDueOneDay(list,"yh",returnCodeDic));
 			indexMap.put("YQ016", loanOrgOverDueOneDay(list,"xd",returnCodeDic));
-
+			/*******************************   逾期机构数     ***************************************/
 			indexMap.put("YQ017", overDueOrgCount(list, "dk", returnCodeDic));
 			indexMap.put("YQ018", overDueOrgCount(list, "xj", returnCodeDic));
 			indexMap.put("YQ019", overDueOrgCount(list, "yh", returnCodeDic));
 			indexMap.put("YQ020", overDueOrgCount(list, "xd", returnCodeDic));
+			/*******************************   逾期天数总和     ***************************************/
+			indexMap.put("YQ027", overDueDaysSum(list,  returnCodeDic));
 			
 		}else if(month==6){
+			/*******************************   逾期一天以上次数     ***************************************/
 			indexMap.put("YQ001", loanOrgOverDueOneDay(list,"dk",returnCodeDic));
 			indexMap.put("YQ002", loanOrgOverDueOneDay(list,"xj",returnCodeDic));
 			indexMap.put("YQ003", loanOrgOverDueOneDay(list,"yh",returnCodeDic));
 			indexMap.put("YQ004", loanOrgOverDueOneDay(list,"xd",returnCodeDic));
-			
+			/*******************************   逾期机构数     ***************************************/
 			indexMap.put("YQ009", overDueOrgCount(list, "dk", returnCodeDic));
 			indexMap.put("YQ010", overDueOrgCount(list, "xj", returnCodeDic));
 			indexMap.put("YQ011", overDueOrgCount(list, "yh", returnCodeDic));
-			indexMap.put("YQ012", overDueOrgCount(list, "xd", returnCodeDic));
+			
+			/*******************************   逾期天数总和     ***************************************/
+			
+			indexMap.put("YQ026", overDueDaysSum(list,  returnCodeDic));
 		}else if(month==12){
+			/*******************************   逾期一天以上次数     ***************************************/
 			indexMap.put("YQ038", loanOrgOverDueOneDay(list,"dk",returnCodeDic));
 			indexMap.put("YQ039", loanOrgOverDueOneDay(list,"xj",returnCodeDic));
 			indexMap.put("YQ040", loanOrgOverDueOneDay(list,"yh",returnCodeDic));
 			indexMap.put("YQ041", loanOrgOverDueOneDay(list,"xd",returnCodeDic));
-
+			/*******************************   逾期机构数     ***************************************/
 			indexMap.put("YQ034", overDueOrgCount(list, "dk", returnCodeDic));
 			indexMap.put("YQ035", overDueOrgCount(list, "xj", returnCodeDic));
 			indexMap.put("YQ036", overDueOrgCount(list, "yh", returnCodeDic));
 			indexMap.put("YQ037", overDueOrgCount(list, "xd", returnCodeDic));
+			/******************************* 12个月 最大逾期次数     ***************************************/
+			indexMap.put("YQ042", everyOrgOverDueMaxTimes(list, "dk", returnCodeDic));
+			indexMap.put("YQ043", everyOrgOverDueMaxTimes(list, "xj", returnCodeDic));
+			indexMap.put("YQ044", everyOrgOverDueMaxTimes(list, "yh", returnCodeDic));
+			indexMap.put("YQ045", everyOrgOverDueMaxTimes(list, "xd", returnCodeDic));
 		}
 	}
+	
+	
+	
+	/**
+	 * 逾期天数总和 : 近x个月逾期x天以上天数总和
+	 * 逾期类型3  3.在同一家公司划扣因余额不足失败，直至划扣成功为止
+	 * @param list
+	 * @param indexMap
+	 * @param orgType
+	 * @param returnCodeDic
+	 */
+	public int overDueDaysSum(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic){
+//		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
+//		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
+		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
+//		List<String> success = Arrays.asList(returnCodeDic.get("success"));//划扣成功
+		//逾期天数值
+		int overDueOneDays = 0;
+		//逾期日期值
+		String overDueBeginDate = null ;
+		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
+		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
+		List<TradeDetailDO> records = null;
+		for (TradeDetailDO o : list) {
+			String merId = o.getMerId();//银行卡
+			//非指定机构不参与逾期统计
+//			if(!orgTypeList.contains(o.getMerType()))continue;
+			if(!map.containsKey(merId)){
+				records = new ArrayList<TradeDetailDO>();	
+				records.add(o);
+			}else{
+				records = map.get(merId);
+				records.add(o);
+			}
+			map.put(merId, records);
+		}
+		//排序和计算逾期
+		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
+			List<TradeDetailDO> cardNolist = entry.getValue();
+			if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
+			//对集合按照日期进行排序
+			Collections.sort(cardNolist);
+			//逾期天数值
+			for (TradeDetailDO o : cardNolist) {
+				//余额不足,划扣失败
+				if(ywbzLst.contains(o.getReturnCode())){
+					if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
+					//逾期失败日期
+					overDueBeginDate = o.getTxtDate();
+					continue;
+				}else if("0000".contains(o.getReturnCode())){
+					if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
+					//逾期天数
+					Date date1 = DateUtils.yyyyMMddToDate(overDueBeginDate);
+					Date date2 = DateUtils.yyyyMMddToDate(o.getTxtDate());
+					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(date1, date2);
+					//逾期一天以上
+					if(overDueBeginDayTemp>initProperties.getOverDueDayDic().get("1d")){
+						overDueOneDays = overDueBeginDayTemp +overDueOneDays;
+						overDueBeginDate = null;
+					}
+				}
+			}
+			//还原标记第一次划扣失败时间
+			if(!StringUtils.isEmpty(overDueBeginDate)){
+				overDueBeginDate = null;
+			}
+		}
+		return overDueOneDays;
+	}
+	/**
+	 * 近12个月在xx机构逾期的最大每家机构逾期次数
+	 * 逾期类型3  3.在同一家公司划扣因余额不足失败，直至划扣成功为止
+	 * @param list
+	 * @param indexMap
+	 * @param orgType
+	 * @param returnCodeDic
+	 */
+	public int everyOrgOverDueMaxTimes(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
+		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
+		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
+		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
+		List<String> success = Arrays.asList(returnCodeDic.get("success"));//划扣成功
+		//逾期天数值
+		int overDueOneDayTimes = 0;
+		//最大逾期次数值
+		int max = 0;
+		//逾期日期值
+		String overDueBeginDate = null ;
+		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
+		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
+		List<TradeDetailDO> records = null;
+		for (TradeDetailDO o : list) {
+			String merId = o.getMerId();//银行卡
+			//非指定机构不参与逾期统计
+			if(!orgTypeList.contains(o.getMerType()))continue;
+			if(!map.containsKey(merId)){
+				records = new ArrayList<TradeDetailDO>();	
+				records.add(o);
+			}else{
+				records = map.get(merId);
+				records.add(o);
+			}
+			map.put(merId, records);
+		}
+		//排序和计算逾期
+		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
+			List<TradeDetailDO> cardNolist = entry.getValue();
+			if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
+			//对集合按照日期进行排序
+			Collections.sort(cardNolist);
+			//逾期天数值
+			for (TradeDetailDO o : cardNolist) {
+				//余额不足,划扣失败
+				if(ywbzLst.contains(o.getReturnCode())){
+					if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
+					//逾期失败日期
+					overDueBeginDate = o.getTxtDate();
+					continue;
+				}else if("0000".contains(o.getReturnCode())){
+					if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
+					//逾期天数
+					Date date1 = DateUtils.yyyyMMddToDate(overDueBeginDate);
+					Date date2 = DateUtils.yyyyMMddToDate(o.getTxtDate());
+					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(date1, date2);
+					//逾期一天以上
+					if(overDueBeginDayTemp>initProperties.getOverDueDayDic().get("1d")){
+						overDueOneDayTimes = overDueOneDayTimes +1;
+						overDueBeginDate = null;
+					}
+				}
+			}
+			//比较当前逾期的次数和最大逾期次数值比较
+			if(max<=overDueOneDayTimes){
+				max = overDueOneDayTimes;
+			}
+			//还原标记第一次划扣失败时间
+			if(!StringUtils.isEmpty(overDueBeginDate)){
+				overDueBeginDate = null;
+			}
+		}
+		return max;
+	}
+	
 	/**
 	 * 在贷款类机构逾期1天以上次数
 	 * 逾期类型3  3.在同一家公司划扣因余额不足失败，直至划扣成功为止

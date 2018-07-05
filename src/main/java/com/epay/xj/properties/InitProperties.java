@@ -24,9 +24,9 @@ public class InitProperties {
 	
 	private String overDueType;
 	
-	private String[] overDueMouth;
+	private Map<String,Integer>  overDueMonth = new HashMap<String,Integer>();
 	
-	private String[] overDueDay;
+	private Map<String,Integer> overDueDayDic = new HashMap<String,Integer>();
 	
 	private Map<String, String[]> merTypeDic = new HashMap<String, String[]>();	
 	
@@ -90,20 +90,21 @@ public class InitProperties {
 		this.overDueType = overDueType;
 	}
 
-	public String[] getOverDueMouth() {
-		return overDueMouth;
+	
+	public Map<String, Integer> getOverDueMonth() {
+		return overDueMonth;
 	}
 
-	public void setOverDueMouth(String[] overDueMouth) {
-		this.overDueMouth = overDueMouth;
+	public void setOverDueMonth(Map<String, Integer> overDueMonth) {
+		this.overDueMonth = overDueMonth;
 	}
 
-	public String[] getOverDueDay() {
-		return overDueDay;
+	public Map<String, Integer> getOverDueDayDic() {
+		return overDueDayDic;
 	}
 
-	public void setOverDueDay(String[] overDueDay) {
-		this.overDueDay = overDueDay;
+	public void setOverDueDayDic(Map<String, Integer> overDueDayDic) {
+		this.overDueDayDic = overDueDayDic;
 	}
 
 	public Map<String, String[]> getMerTypeDic() {

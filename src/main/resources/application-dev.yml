@@ -12,12 +12,18 @@ initProperties:
   #逾期类型一:1.在同一家公司划扣因余额不足失败，到最终划扣成功且划扣成功金额=失败金额为止，设定为逾期天数；
   #逾期类型二:2.在同一家公司划扣因余额不足失败，直至划扣成功金额>=失败金额为止
   #逾期类型三:3.在同一家公司划扣因余额不足失败，直至划扣成功为止
-  overDueType: 1
-  #逾期月配置
-  overDueMouth: 12,6,3,2,1
+  overDueType: 3
+  #逾期月配置(最小单位：天)
+  overDueMonth: 
+    12m: 12
+    6m: 6
+    3m: 3
   #逾期天配置
   #最近和最早一次在程序里处理
-  overDueDay: 7,15
+  overDueDay: 
+    1d: 1
+    7d: 7
+    15d: 15
   #merType商户类型归属分类
   #95 出行 94 运营商 93 航空 92 物业 91 供应链 90 银行放贷 80 直销银行    70 小贷 62 理财 61 投资管理 60 财富 53 汽车金融 52 资产交易
   #51 信托 50 融资租赁 40 持牌消金 30 证券 20 基金 13 保理 12 劳务收益 11 一般商户 10 保险
@@ -25,7 +31,7 @@ initProperties:
     #小贷和保理
     xd: 70,13
     #直销银行和银行放贷
-    bank: 80,81
+    yh: 80,81
     #理财：
     lc: 61,60,30,20,10
     #出行和资产交易
@@ -57,9 +63,14 @@ initProperties:
     failc: 1,3999
  #配置日志
 logging:
+  pattern:
+    console: "%d %-5level %logger : %msg%n"
+    file: "%d %-5level [%thread] %logger : %msg%n"
   #配置日志文件路径
-  level:
-    org.hibernate: error
   file: log\epay.log
   file.max-size: 100MB
+  #配置日志文件输出级别
+  level:
+    root: INFO
+    org.hibernate: error
 

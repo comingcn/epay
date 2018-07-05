@@ -8,7 +8,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="trade_detail")//设置数据库中表名字
-public class TradeDetailDO {
+public class TradeDetailDO implements Comparable<TradeDetailDO>{
 
 	@Id
 	private String txtSeqId;
@@ -76,6 +76,10 @@ public class TradeDetailDO {
 	public void setSfType(String sfType) {
 		this.sfType = sfType;
 	}
+	
+	public int compareTo(TradeDetailDO o) {
+        return Integer.valueOf(this.getTxtDate())-Integer.valueOf(o.getTxtDate());
+    }
 	@Override
 	public String toString() {
 		return "TradeDetailDO [txtSeqId=" + txtSeqId + ", certNo=" + certNo + ", cardNo=" + cardNo + ", merType="

@@ -61,5 +61,7 @@ public class Main {
         exec.shutdown();
         System.out.println("线程任务执行结束");
         System.err.println("执行任务消耗了 ：" + (System.currentTimeMillis() - start) + "毫秒");
+        
+        System.out.println(Integer.valueOf("20170605")-Integer.valueOf("20170604"));
     }
 }

@@ -69,6 +69,18 @@ public class DateUtils {
         String[] arrayDate = new String[dateList.size()];
         return dateList.toArray(arrayDate);
     }
+    
+    /**
+     * 通过时间秒毫秒数判断两个时间的间隔
+     * @param date1
+     * @param date2
+     * @return
+     */
+    public static int differentDaysByMillisecond(Date date1,Date date2)
+    {
+        int days = (int) ((date2.getTime() - date1.getTime()) / (1000*3600*24));
+        return days;
+    }
 
     /**
      * @Description: 获取某个日期N个月前的日期

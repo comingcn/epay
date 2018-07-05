@@ -20,7 +20,7 @@ initProperties:
     3m: 3
   #逾期天配置
   #最近和最早一次在程序里处理
-  overDueDay: 
+  overDueDayDic: 
     1d: 1
     7d: 7
     15d: 15
@@ -50,7 +50,7 @@ initProperties:
     life: 12
   #返回分类码  
   returnCodeDic:
-    success: 0
+    success: 0000
     #余额不足失败
     yebz: 5014,3008
     #超时失败

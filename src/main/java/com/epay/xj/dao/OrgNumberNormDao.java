@@ -1,7 +1,8 @@
 /**
  * @Title: OrgNumberNormDao.java
  * @Package: com.epay.xj.dao
- * @author LZG, liuzhongguochn@gmail.com Copyright (c) 2018 北京中数合一科技有限公司
+ * @author LZG, liuzhongguochn@gmail.com 
+ * Copyright (c) 2018 
  */
 package com.epay.xj.dao;
 
@@ -42,7 +43,7 @@ public interface OrgNumberNormDao {
      * @param certNoStr
      * @param currentDayStr
      * @param beforeOneYearDayStr
-     * @return 
+     * @return
      * @author LZG
      * @date 2018年07月03日
      */
@@ -53,7 +54,7 @@ public interface OrgNumberNormDao {
      * @param certNoStr
      * @param currentDayStr
      * @param beforeDayStr
-     * @return 
+     * @return
      * @author LZG
      * @date 2018年07月03日
      */
@@ -64,7 +65,7 @@ public interface OrgNumberNormDao {
      * @param certNoStr
      * @param currentDayStr
      * @param beforeDayStr
-     * @return 
+     * @return
      * @author LZG
      * @date 2018年07月04日
      */

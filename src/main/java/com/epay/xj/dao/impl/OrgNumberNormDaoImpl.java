@@ -2,7 +2,7 @@
  * @Title: OrgNumberNormDaoImpl.java 
  * @Package: com.epay.xj.dao.impl 
  * @author LZG, liuzhongguochn@gmail.com  
- * Copyright (c) 2018 北京中数合一科技有限公司
+ * Copyright (c) 2018
  */
 package com.epay.xj.dao.impl;
 
@@ -106,7 +106,7 @@ public class OrgNumberNormDaoImpl implements OrgNumberNormDao {
     @Override
     public String yl_card_audit_all_merdint_all_j6m_cnt(String certNoStr, String currentDayStr, String beforeDayStr) {
         String sql = "select count(mer_id) from trade_detail where cert_no = ? and txt_date between ? and ? group by mer_id";
-        
+
         try {
             Number result = runner.query(DBUtils.getConnection(), sql, new ScalarHandler<Number>(), certNoStr, beforeDayStr, currentDayStr);
             if (null != result)
@@ -114,16 +114,16 @@ public class OrgNumberNormDaoImpl implements OrgNumberNormDao {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        
+
         return "0";
     }
 
     /**
-     * @see com.epay.xj.dao.OrgNumberNormDao#yl_card_audit_dk_merdint_all_j6m_cnt(java.lang.String, java.lang.String, java.lang.String) 
+     * @see com.epay.xj.dao.OrgNumberNormDao#yl_card_audit_dk_merdint_all_j6m_cnt(java.lang.String, java.lang.String, java.lang.String)
      * @param certNoStr
      * @param currentDayStr
      * @param beforeDayStr
-     * @return 
+     * @return
      */
     @Override
     public String yl_card_audit_dk_merdint_all_j6m_cnt(String certNoStr, String currentDayStr, String beforeDayStr) {

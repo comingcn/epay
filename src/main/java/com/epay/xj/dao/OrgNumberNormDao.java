@@ -2,7 +2,7 @@
  * @Title: OrgNumberNormDao.java
  * @Package: com.epay.xj.dao
  * @author LZG, liuzhongguochn@gmail.com 
- * Copyright (c) 2018 北京中数合一科技有限公司
+ * Copyright (c) 2018 
  */
 package com.epay.xj.dao;
 

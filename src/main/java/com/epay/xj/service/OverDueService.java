@@ -229,7 +229,7 @@ public class OverDueService {
 		Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
 		Map<String,Integer> overDueMouth = initProperties.getOverDueMonth();
 		//逾期指标结果集
-		Map<String,Integer> indexMap = new HashMap<String,Integer>();
+		Map<String,String> indexMap = new HashMap<String,String>();
 		for (int month : overDueMouth.values()) {
 			String beginTime = DateUtils.getDateOfXMonthsAgo(endTime, month);
 			logger.info("overDueMonth:{},beginTime:{},endTime:{}", month,beginTime,endTime);
@@ -248,7 +248,7 @@ public class OverDueService {
 //				calculateOverDue(list, indexMap, "xd", returnCodeDic);//小贷贷款类机构
 			}
 		}
-		for(Map.Entry<String,Integer> entry : indexMap.entrySet()){
+		for(Map.Entry<String,String> entry : indexMap.entrySet()){
 			System.out.println("p:"+entry.getKey()+",v:"+entry.getValue());
 		}
 
@@ -262,7 +262,7 @@ public class OverDueService {
 	 * @param mount
 	 * @param returnCodeDic
 	 */
-	public void overDueOneDay(List<TradeDetailDO> list,Map<String,Integer> indexMap,int month, Map<String, String[]> returnCodeDic){
+	public void overDueOneDay(List<TradeDetailDO> list,Map<String,String> indexMap,int month, Map<String, String[]> returnCodeDic){
 		
 		if(month==3){
 			/*******************************   逾期一天以上次数     ***************************************/
@@ -277,6 +277,10 @@ public class OverDueService {
 			indexMap.put("YQ020", overDueOrgCount(list, "xd", returnCodeDic));
 			/*******************************   逾期天数总和     ***************************************/
 			indexMap.put("YQ027", overDueDaysSum(list,  returnCodeDic));
+			/*******************************   逾期金额总和     ***************************************/
+			indexMap.put("YQ033", overDueTotalMoneySum(list, returnCodeDic, "1d"));
+			indexMap.put("YQ032", overDueTotalMoneySum(list, returnCodeDic, "7d"));
+			indexMap.put("YQ031", overDueTotalMoneySum(list, returnCodeDic, "30d"));
 			
 		}else if(month==6){
 			/*******************************   逾期一天以上次数     ***************************************/
@@ -292,6 +296,11 @@ public class OverDueService {
 			/*******************************   逾期天数总和     ***************************************/
 			
 			indexMap.put("YQ026", overDueDaysSum(list,  returnCodeDic));
+			
+			/*******************************   逾期金额总和     ***************************************/
+			indexMap.put("YQ030", overDueTotalMoneySum(list, returnCodeDic, "1d"));
+			indexMap.put("YQ029", overDueTotalMoneySum(list, returnCodeDic, "7d"));
+			indexMap.put("YQ028", overDueTotalMoneySum(list, returnCodeDic, "30d"));
 		}else if(month==12){
 			/*******************************   逾期一天以上次数     ***************************************/
 			indexMap.put("YQ038", loanOrgOverDueOneDay(list,"dk",returnCodeDic));
@@ -311,6 +320,74 @@ public class OverDueService {
 		}
 	}
 	
+	/**
+	 * 逾期金额总和 : 近x个月逾期x天以上金额总和
+	 * 逾期类型3  3.在同一家公司划扣因余额不足失败，直至划扣成功为止
+	 * @param list
+	 * @param indexMap
+	 * @param orgType
+	 * @param returnCodeDic
+	 */
+	public String overDueTotalMoneySum(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic,String days){
+//		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
+//		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
+		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
+//		List<String> success = Arrays.asList(returnCodeDic.get("success"));//划扣成功
+		//逾期天数值
+		BigDecimal overDueSumMoney = null;
+		//逾期日期值
+		String overDueBeginDate = null ;
+		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
+		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
+		List<TradeDetailDO> records = null;
+		for (TradeDetailDO o : list) {
+			String merId = o.getMerId();//银行卡
+			//非指定机构不参与逾期统计
+//			if(!orgTypeList.contains(o.getMerType()))continue;
+			if(!map.containsKey(merId)){
+				records = new ArrayList<TradeDetailDO>();	
+				records.add(o);
+			}else{
+				records = map.get(merId);
+				records.add(o);
+			}
+			map.put(merId, records);
+		} 
+		//排序和计算逾期
+		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
+			List<TradeDetailDO> cardNolist = entry.getValue();
+			if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
+			//对集合按照日期进行排序
+			Collections.sort(cardNolist);
+			//逾期天数值
+			for (TradeDetailDO o : cardNolist) {
+				//余额不足,划扣失败
+				if(ywbzLst.contains(o.getReturnCode())){
+					if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
+					//逾期失败日期
+					overDueBeginDate = o.getTxtDate();
+					overDueSumMoney = o.getAmout();
+					continue;
+				}else if("0000".contains(o.getReturnCode())){
+					if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
+					//逾期天数
+					Date date1 = DateUtils.yyyyMMddToDate(overDueBeginDate);
+					Date date2 = DateUtils.yyyyMMddToDate(o.getTxtDate());
+					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(date1, date2);
+					//逾期days天以上
+					if(overDueBeginDayTemp>initProperties.getOverDueDayDic().get(days)){
+						overDueSumMoney = overDueSumMoney.add(o.getAmout());
+						overDueBeginDate = null;
+					}
+				}
+			}
+			//还原标记第一次划扣失败时间
+			if(!StringUtils.isEmpty(overDueBeginDate)){
+				overDueBeginDate = null;
+			}
+		}
+		return overDueSumMoney.toString();
+	}
 	
 	
 	/**
@@ -321,7 +398,7 @@ public class OverDueService {
 	 * @param orgType
 	 * @param returnCodeDic
 	 */
-	public int overDueDaysSum(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic){
+	public String overDueDaysSum(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic){
 //		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
 //		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
 		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
@@ -378,7 +455,7 @@ public class OverDueService {
 				overDueBeginDate = null;
 			}
 		}
-		return overDueOneDays;
+		return String.valueOf(overDueOneDays);
 	}
 	/**
 	 * 近12个月在xx机构逾期的最大每家机构逾期次数
@@ -388,7 +465,7 @@ public class OverDueService {
 	 * @param orgType
 	 * @param returnCodeDic
 	 */
-	public int everyOrgOverDueMaxTimes(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
+	public String everyOrgOverDueMaxTimes(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
 		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
@@ -451,7 +528,7 @@ public class OverDueService {
 				overDueBeginDate = null;
 			}
 		}
-		return max;
+		return String.valueOf(max);
 	}
 	
 	/**
@@ -462,7 +539,7 @@ public class OverDueService {
 	 * @param orgType
 	 * @param returnCodeDic
 	 */
-	public int loanOrgOverDueOneDay(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
+	public String loanOrgOverDueOneDay(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
 		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
@@ -518,7 +595,7 @@ public class OverDueService {
 				overDueBeginDate = null;
 			}
 		}
-		return overDueOneDayTimes;
+		return String.valueOf(overDueOneDayTimes);
 	}
 	
 	
@@ -530,7 +607,7 @@ public class OverDueService {
 	 * @param orgType
 	 * @param returnCodeDic
 	 */
-	public int overDueOrgCount(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
+	public String overDueOrgCount(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
 		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
@@ -565,7 +642,7 @@ public class OverDueService {
 				}
 			}
 		}
-		return overDueOneOrgCount;
+		return String.valueOf(overDueOneOrgCount);
 	}
 	
 	/**

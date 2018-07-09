@@ -10,14 +10,14 @@ import java.util.List;
 public class DateUtils {
 
     private static SimpleDateFormat dateFormat = new SimpleDateFormat();
+    
+    /** "yyyy-MM-dd HH:mm:ss"格式类型 */
+    public static final String FORMAT_YYYY_MM_DD_HH_MM_SS = "yyyy-MM-dd HH:mm:ss";
 
     /**
      * yyyyMMdd时间格式
      */
     private static final String yyyyMMdd = "yyyyMMdd";
-    
-    /** "yyyy-MM-dd HH:mm:ss"格式类型 */
-    public static final String FORMAT_YYYY_MM_DD_HH_MM_SS = "yyyy-MM-dd HH:mm:ss";
 
     /**
      * @Title: yyyyMMdd
@@ -125,7 +125,7 @@ public class DateUtils {
      * @author LZG
      * @date 2018年07月07日
      */
-    public static synchronized Date toFullDateTime(String dateText) {
+    public synchronized static Date toFullDateTime(String dateText) {
         dateFormat.applyPattern(DateUtils.FORMAT_YYYY_MM_DD_HH_MM_SS);
         try {
             return dateFormat.parse(dateText);

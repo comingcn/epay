@@ -61,7 +61,7 @@ public class CertNoDaoImpl implements CertNoDao {
     @Override
     public List<CertNoDomain> finAllCertNo() {
     
-        String sql = "select cert_no, cert_no from p1055_cert_list";
+        String sql = "select cert_no, update_dt from p1055_cert_list";
         List<CertNoDomain> certNoList;
         try {
             certNoList = runner.query(DBUtils.getConnection(), sql, new BeanListHandler<CertNoDomain>(CertNoDomain.class));

@@ -117,6 +117,23 @@ public class DateUtils {
         dateFormat.applyPattern(DateUtils.FORMAT_YYYY_MM_DD_HH_MM_SS);
         return dateFormat.format(new Date());
     }
+    
+    /**
+     * @Description: 转换为全时间
+     * @param dateText
+     * @return 
+     * @author LZG
+     * @date 2018年07月07日
+     */
+    public static synchronized Date toFullDateTime(String dateText) {
+        dateFormat.applyPattern(DateUtils.FORMAT_YYYY_MM_DD_HH_MM_SS);
+        try {
+            return dateFormat.parse(dateText);
+        } catch (java.text.ParseException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     public static void main(String[] args) {
         //test1();

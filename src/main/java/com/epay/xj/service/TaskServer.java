@@ -1,6 +1,7 @@
 package com.epay.xj.service;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -138,12 +139,12 @@ public class TaskServer {
 		//逾期天数值
 		BigDecimal overDueSumMoney = null;
 		//逾期日期值
-		String overDueBeginDate = null ;
+		Timestamp overDueBeginDate = null ;
 		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
 		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
 		List<TradeDetailDO> records = null;
 		for (TradeDetailDO o : list) {
-			String merId = o.getMerId();//银行卡
+			String merId = o.getSOURCE_MERNO();//银行卡
 			//非指定机构不参与逾期统计
 //			if(!orgTypeList.contains(o.getMerType()))continue;
 			if(!map.containsKey(merId)){
@@ -164,10 +165,10 @@ public class TaskServer {
 			//逾期天数值
 			for (TradeDetailDO o : cardNolist) {
 				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getReturnCode())){
+				if(ywbzLst.contains(o.getRETURN_CODE())){
 					if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
 					//逾期失败日期
-					overDueBeginDate = o.getTxtDate();
+					overDueBeginDate = o.getCREATE_TIME();
 					overDueSumMoney = o.getAmout();
 					continue;
 				}else if("0000".contains(o.getReturnCode())){

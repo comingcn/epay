@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace=a>
-
+<mapper namespace="com.epay.xj.mapper.CertListMapper">
 	<resultMap type="CertListDO" id="certNoMapper">
-		<result property="id" column="id" jdbcType="VARCHAR" />
-		<result property="certNo" column="cert_no" jdbcType="VARCHAR" />
-		<result property="updateTime" column="update_time" jdbcType="VARCHAR" />
+		<result property="certNo" column="CERT_NO" jdbcType="VARCHAR" />
+		<result property="updateTime" column="UPDATE_DT" jdbcType="VARCHAR" />
 	</resultMap>
 
 	<select id="getAll" resultMap="certNoMapper">
- 		select * from cert_no
+ 		select * from CP_ODS.P1055_CERT_LIST
  	</select>
 </mapper>

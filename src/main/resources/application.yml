@@ -28,7 +28,7 @@ spring:
 #  mybatis:
 ##    config-location: classpath:mybatis/mybatis.cfg.xml    # mybatis配置文件所在路径
 #    type-aliases-package: com.epay.xj.domain
-#    mapper-locations: classpath:mapper/*.xml
+#    mapper-locations: classpath*:mapper/*.xml
   
   jpa:
     hibernate:

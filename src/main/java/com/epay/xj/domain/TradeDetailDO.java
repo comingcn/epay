@@ -2,6 +2,9 @@ package com.epay.xj.domain;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.Date;
+
+import com.epay.xj.utils.DateUtils;
 
 //@Entity
 //@Table(name="trade_detail")//设置数据库中表名字
@@ -11,7 +14,7 @@ public class TradeDetailDO implements Comparable<TradeDetailDO>{
 //	@Id
 	private String IDCARD;
 	private String ACCOUNT_NO;
-	private String MER_TYPE;
+	private Integer MER_TYPE;
 	private String SOURCE_MERNO;
 	private Timestamp CREATE_TIME;
 	private String SF_TYPE;
@@ -35,10 +38,10 @@ public class TradeDetailDO implements Comparable<TradeDetailDO>{
 	public void setACCOUNT_NO(String aCCOUNT_NO) {
 		ACCOUNT_NO = aCCOUNT_NO;
 	}
-	public String getMER_TYPE() {
+	public Integer getMER_TYPE() {
 		return MER_TYPE;
 	}
-	public void setMER_TYPE(String mER_TYPE) {
+	public void setMER_TYPE(Integer mER_TYPE) {
 		MER_TYPE = mER_TYPE;
 	}
 	public String getSOURCE_MERNO() {
@@ -47,6 +50,7 @@ public class TradeDetailDO implements Comparable<TradeDetailDO>{
 	public void setSOURCE_MERNO(String sOURCE_MERNO) {
 		SOURCE_MERNO = sOURCE_MERNO;
 	}
+	
 	
 	public Timestamp getCREATE_TIME() {
 		return CREATE_TIME;
@@ -80,7 +84,7 @@ public class TradeDetailDO implements Comparable<TradeDetailDO>{
 	}
 	@Override
 	public int compareTo(TradeDetailDO o) {
-		return this.CREATE_TIME.getNanos()-o.getCREATE_TIME().getNanos();
+		return this.CREATE_TIME.getNanos() -o.getCREATE_TIME().getNanos();
 	}
 	
 	

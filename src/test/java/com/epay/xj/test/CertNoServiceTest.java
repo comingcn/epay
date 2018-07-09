@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.epay.xj.domain.CertNoDO;
 import com.epay.xj.mapper.CertListMapper;
 import com.epay.xj.service.CertListBeanService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,9 +48,10 @@ public class CertNoServiceTest {
     	System.out.println(list.size());
     }
 
-    
+//    @Test
     public void findOneqaqa() throws Exception {
-    	mp.getAll();
+    	List<CertNoDO> l = mp.getAll();
+    	l.size();
     }
     	
 }

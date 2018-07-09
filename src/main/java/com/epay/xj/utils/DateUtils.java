@@ -1,5 +1,6 @@
 package com.epay.xj.utils;
 
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +33,26 @@ public class DateUtils {
         dateFormat.applyPattern(DateUtils.yyyyMMdd);
         try {
             return dateFormat.parse(dateText);
+        } catch (java.text.ParseException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
+    
+    /**
+     * @Title: yyyyMMdd
+     * @Description:
+     * @param: @param dateText
+     * @param: @return
+     * @return: Date
+     * @author yanghf
+     * @Date 2018年6月28日 上午11:43:35
+     */
+    public synchronized static Date formatTimeStamp(String timeStampStr) {
+        dateFormat.applyPattern(DateUtils.FORMAT_YYYY_MM_DD_HH_MM_SS);
+        try {
+            return dateFormat.parse(timeStampStr);
         } catch (java.text.ParseException e) {
             e.printStackTrace();
         }
@@ -79,9 +100,36 @@ public class DateUtils {
      * @param date2
      * @return
      */
-    public static int differentDaysByMillisecond(Date date1,Date date2)
+    public static int differentDaysByMillisecond(Timestamp date1,Timestamp date2)
     {
         int days = (int) ((date2.getTime() - date1.getTime()) / (1000*3600*24));
+        return days;
+    }
+    
+    
+    /**
+     * 通过时间秒毫秒数判断两个时间的间隔
+     * @param date1
+     * @param date2
+     * @return
+     */
+    public static int compare(Date date1,Date date2)
+    {
+        int days = (int) ((date2.getTime() - date1.getTime()));
+        return days;
+    }
+    
+    /**
+     * 通过时间秒毫秒数判断两个时间的间隔
+     * @param date1
+     * @param date2
+     * @return
+     */
+    public static int compare(String dateBegin,String dateEnd)
+    {
+    	Date date1 = formatTimeStamp(dateBegin);
+    	Date date2 = formatTimeStamp(dateEnd);
+        int days = (int) ((date2.getTime() - date1.getTime()));
         return days;
     }
 

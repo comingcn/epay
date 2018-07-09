@@ -42,6 +42,21 @@ public class TaskServer {
 		List<TradeDetailDO> tradeDetailList = new ArrayList<TradeDetailDO>();
 		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA where IDCARD=" + certNo;
 		List list = entityManager.createNativeQuery(sql).getResultList();
+		for (Object object : list) {
+			Object[] arr = (Object[]) object;
+			TradeDetailDO t = new TradeDetailDO();
+			Timestamp timeStamp = (Timestamp) arr[0];
+			t.setCREATE_TIME(timeStamp);
+			t.setID((BigDecimal)arr[1]);
+			t.setIDCARD((String)arr[2]);
+			t.setACCOUNT_NO((String)arr[3]);
+			t.setSOURCE_MERNO((String)arr[4]);
+			t.setMER_TYPE((Integer)arr[5]);
+			t.setAMOUNT((BigDecimal)arr[6]);
+			t.setSF_TYPE(arr[7].toString());
+			t.setRETURN_CODE(arr[8].toString());
+			tradeDetailList.add(t);
+		}
 		return tradeDetailList;
 	}
 
@@ -169,17 +184,15 @@ public class TaskServer {
 					if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
 					//逾期失败日期
 					overDueBeginDate = o.getCREATE_TIME();
-					overDueSumMoney = o.getAmout();
+					overDueSumMoney = o.getAMOUNT();
 					continue;
-				}else if("0000".contains(o.getReturnCode())){
+				}else if("0000".contains(o.getRETURN_CODE())){
 					if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
 					//逾期天数
-					Date date1 = DateUtils.yyyyMMddToDate(overDueBeginDate);
-					Date date2 = DateUtils.yyyyMMddToDate(o.getTxtDate());
-					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(date1, date2);
+					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
 					//逾期days天以上
 					if(overDueBeginDayTemp>initProperties.getOverDueDayDic().get(days)){
-						overDueSumMoney = overDueSumMoney.add(o.getAmout());
+						overDueSumMoney = overDueSumMoney.add(o.getAMOUNT());
 						overDueBeginDate = null;
 					}
 				}

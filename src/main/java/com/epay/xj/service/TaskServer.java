@@ -5,10 +5,14 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -40,7 +44,8 @@ public class TaskServer {
 
 	public List<TradeDetailDO> getTradeDetail(String certNo, String beginTime, String endTime) {
 		List<TradeDetailDO> tradeDetailList = new ArrayList<TradeDetailDO>();
-		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA where IDCARD=" + certNo;
+		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA where IDCARD=" + certNo+ " and CREATE_TIME between TIMESTAMP_FORMAT('"+beginTime+
+				"','yyyy-mm-dd') and TIMESTAMP_FORMAT('"+ endTime+"','yyyy-mm-dd') order by CREATE_TIME asc";
 		List list = entityManager.createNativeQuery(sql).getResultList();
 		for (Object object : list) {
 			Object[] arr = (Object[]) object;
@@ -60,11 +65,94 @@ public class TaskServer {
 		return tradeDetailList;
 	}
 
+	public void sliceTask(List<String> taskList,String updateTime) throws InterruptedException{
+		 // 每500条数据开启一条线程
+        int threadSize = 500;
+        // 总数据条数
+        int dataSize = taskList.size();
+        // 线程数
+        int threadNum = dataSize / threadSize + 1;
+        // 定义标记,过滤threadNum为整数
+        boolean special = dataSize % threadSize == 0;
+        // 创建一个线程池
+        ExecutorService exec = Executors.newFixedThreadPool(threadNum);
+        // 定义一个任务集合
+        List<Callable<Integer>> tasks = new ArrayList<Callable<Integer>>();
+        Callable<Integer> task = null;
+        List<String> cutList = null;
+        logger.info("线程数：{}", threadNum);
+     // 确定每条线程的数据
+        for (int i = 0; i < threadNum; i++) {
+            if (i == threadNum - 1) {
+                if (special) {
+                    break;
+                }
+                cutList = taskList.subList(threadSize * i, dataSize);
+            } else {
+                cutList = taskList.subList(threadSize * i, threadSize * (i + 1));
+            }
+            // System.out.println("第" + (i + 1) + "组：" + cutList.toString());
+            final List<String> listStr = cutList;
+            final String udpateTimes = updateTime;
+            task = new Callable<Integer>() {
+                @Override
+                public Integer call() throws Exception {
+                	Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
+                    System.out.println(Thread.currentThread().getName() + "线程：" + listStr);
+                    logger.info("{}程数：集合数量：{}", Thread.currentThread().getName(),listStr.size());
+                    for (int i = 0; i < listStr.size(); i++) {
+            			long sysBeginTime = System.nanoTime();
+            			for (int month : overDueMouth.values()) {
+            				String beginTime = DateUtils.getDateOfXMonthsAgo(udpateTimes, month);
+            				Map<String, String> indexMap = new HashMap<String, String>();
+            				Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
+            				List<TradeDetailDO> list = getTradeDetail(listStr.get(i), beginTime, udpateTimes);
+            				for (TradeDetailDO tradeDetail : list) {
+            					overDueMouth(list, indexMap, month, returnCodeDic);
+            				}
+            				for(Map.Entry<String,String> entry : indexMap.entrySet()){
+            					System.out.println("p:"+entry.getKey()+",v:"+entry.getValue());
+            				}
+            			}
+            			String useTime = String.valueOf((System.nanoTime() - sysBeginTime)/Math.pow(10, 9));
+            			logger.info("useTime:{}秒",useTime);
+            			// 天数统计
+            		}
+                    return 1;
+                }
+            };
+            // 这里提交的任务容器列表和返回的Future列表存在顺序对应的关系
+            tasks.add(task);
+        }
+        List<Future<Integer>> results = exec.invokeAll(tasks);
+        for (Future<Integer> future : results) {
+            try {
+				System.out.println(future.get());
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
+        // 关闭线程池
+        exec.shutdown();
+	}
+	
+	public void deal1(String updateTime, String flag) {
+		Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
+		List<String> taskList = getTaskList(updateTime, flag);
+		try {
+			sliceTask(taskList, updateTime);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 	public void deal(String updateTime, String flag) {
 		Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
 		List<String> taskList = getTaskList(updateTime, flag);
 		for (int i = 0; i < taskList.size(); i++) {
+			long sysBeginTime = System.nanoTime();
 			for (int month : overDueMouth.values()) {
 				String beginTime = DateUtils.getDateOfXMonthsAgo(updateTime, month);
 				Map<String, String> indexMap = new HashMap<String, String>();
@@ -73,7 +161,12 @@ public class TaskServer {
 				for (TradeDetailDO tradeDetail : list) {
 					overDueMouth(list, indexMap, month, returnCodeDic);
 				}
+				for(Map.Entry<String,String> entry : indexMap.entrySet()){
+					System.out.println("p:"+entry.getKey()+",v:"+entry.getValue());
+				}
 			}
+			String useTime = String.valueOf((System.nanoTime() - sysBeginTime)/Math.pow(10, 9));
+			logger.info("useTime:{}秒",useTime);
 			// 天数统计
 		}
 	}
@@ -161,7 +254,7 @@ public class TaskServer {
 		for (TradeDetailDO o : list) {
 			String merId = o.getSOURCE_MERNO();//银行卡
 			//非指定机构不参与逾期统计
-//			if(!orgTypeList.contains(o.getMerType()))continue;
+//			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
 			if(!map.containsKey(merId)){
 				records = new ArrayList<TradeDetailDO>();	
 				records.add(o);
@@ -170,7 +263,7 @@ public class TaskServer {
 				records.add(o);
 			}
 			map.put(merId, records);
-		} 
+		}
 		//排序和计算逾期
 		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
 			List<TradeDetailDO> cardNolist = entry.getValue();
@@ -202,7 +295,8 @@ public class TaskServer {
 				overDueBeginDate = null;
 			}
 		}
-		return overDueSumMoney.toString();
+		
+		return overDueSumMoney==null?"0":overDueSumMoney.toString();
 	}
 	
 	
@@ -222,16 +316,16 @@ public class TaskServer {
 		//逾期天数值
 		int overDueOneDays = 0;
 		//逾期日期值
-		String overDueBeginDate = null ;
+		Timestamp overDueBeginDate = null ;
 		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
 		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
 		List<TradeDetailDO> records = null;
 		for (TradeDetailDO o : list) {
-			String merId = o.getMerId();//银行卡
+			String merId = o.getSOURCE_MERNO();//银行卡
 			//非指定机构不参与逾期统计
-//			if(!orgTypeList.contains(o.getMerType()))continue;
+//			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
 			if(!map.containsKey(merId)){
-				records = new ArrayList<TradeDetailDO>();	
+				records = new ArrayList<TradeDetailDO>();
 				records.add(o);
 			}else{
 				records = map.get(merId);
@@ -248,17 +342,15 @@ public class TaskServer {
 			//逾期天数值
 			for (TradeDetailDO o : cardNolist) {
 				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getReturnCode())){
+				if(ywbzLst.contains(o.getRETURN_CODE())){
 					if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
 					//逾期失败日期
-					overDueBeginDate = o.getTxtDate();
+					overDueBeginDate = o.getCREATE_TIME();
 					continue;
-				}else if("0000".contains(o.getReturnCode())){
+				}else if("0000".contains(o.getRETURN_CODE())){
 					if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
 					//逾期天数
-					Date date1 = DateUtils.yyyyMMddToDate(overDueBeginDate);
-					Date date2 = DateUtils.yyyyMMddToDate(o.getTxtDate());
-					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(date1, date2);
+					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
 					//逾期一天以上
 					if(overDueBeginDayTemp>initProperties.getOverDueDayDic().get("1d")){
 						overDueOneDays = overDueBeginDayTemp +overDueOneDays;
@@ -291,14 +383,14 @@ public class TaskServer {
 		//最大逾期次数值
 		int max = 0;
 		//逾期日期值
-		String overDueBeginDate = null ;
+		Timestamp overDueBeginDate = null ;
 		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
 		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
 		List<TradeDetailDO> records = null;
 		for (TradeDetailDO o : list) {
-			String merId = o.getMerId();//银行卡
+			String merId = o.getSOURCE_MERNO();//银行卡
 			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMerType()))continue;
+			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
 			if(!map.containsKey(merId)){
 				records = new ArrayList<TradeDetailDO>();	
 				records.add(o);
@@ -317,17 +409,15 @@ public class TaskServer {
 			//逾期天数值
 			for (TradeDetailDO o : cardNolist) {
 				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getReturnCode())){
+				if(ywbzLst.contains(o.getCREATE_TIME())){
 					if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
 					//逾期失败日期
-					overDueBeginDate = o.getTxtDate();
+					overDueBeginDate = o.getCREATE_TIME();
 					continue;
-				}else if("0000".contains(o.getReturnCode())){
+				}else if("0000".contains(o.getRETURN_CODE())){
 					if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
 					//逾期天数
-					Date date1 = DateUtils.yyyyMMddToDate(overDueBeginDate);
-					Date date2 = DateUtils.yyyyMMddToDate(o.getTxtDate());
-					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(date1, date2);
+					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
 					//逾期一天以上
 					if(overDueBeginDayTemp>initProperties.getOverDueDayDic().get("1d")){
 						overDueOneDayTimes = overDueOneDayTimes +1;
@@ -363,14 +453,14 @@ public class TaskServer {
 		//逾期天数值
 		int overDueOneDayTimes = 0;
 		//逾期日期值
-		String overDueBeginDate = null ;
+		Timestamp overDueBeginDate = null ;
 		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
 		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
 		List<TradeDetailDO> records = null;
 		for (TradeDetailDO o : list) {
-			String merId = o.getMerId();//银行卡
+			String merId = o.getSOURCE_MERNO();//银行卡
 			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMerType()))continue;
+			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
 			if(!map.containsKey(merId)){
 				records = new ArrayList<TradeDetailDO>();	
 				records.add(o);
@@ -389,17 +479,15 @@ public class TaskServer {
 			//逾期天数值
 			for (TradeDetailDO o : cardNolist) {
 				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getReturnCode())){
+				if(ywbzLst.contains(o.getRETURN_CODE())){
 					if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
 					//逾期失败日期
-					overDueBeginDate = o.getTxtDate();
+					overDueBeginDate = o.getCREATE_TIME();
 					continue;
-				}else if("0000".contains(o.getReturnCode())){
+				}else if("0000".contains(o.getRETURN_CODE())){
 					if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
 					//逾期天数
-					Date date1 = DateUtils.yyyyMMddToDate(overDueBeginDate);
-					Date date2 = DateUtils.yyyyMMddToDate(o.getTxtDate());
-					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(date1, date2);
+					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
 					//逾期一天以上
 					if(overDueBeginDayTemp>initProperties.getOverDueDayDic().get("1d")){
 						overDueOneDayTimes = overDueOneDayTimes +1;
@@ -434,9 +522,9 @@ public class TaskServer {
 		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
 		List<TradeDetailDO> records = null;
 		for (TradeDetailDO o : list) {
-			String merId = o.getMerId();//银行卡
+			String merId = o.getSOURCE_MERNO();//银行卡
 			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMerType()))continue;
+			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
 			if(!map.containsKey(merId)){
 				records = new ArrayList<TradeDetailDO>();	
 				records.add(o);
@@ -451,7 +539,7 @@ public class TaskServer {
 			List<TradeDetailDO> cardNolist = entry.getValue();
 			for (TradeDetailDO o : cardNolist) {
 				//余额不足,划扣失败,看做该机构下有逾期，逾期机构数加1
-				if(ywbzLst.contains(o.getReturnCode())){
+				if(ywbzLst.contains(o.getRETURN_CODE())){
 					overDueOneOrgCount++;
 					//跳出当前循环，继续往下寻找
 					break;
@@ -480,9 +568,9 @@ public class TaskServer {
 		List<TradeDetailDO> records = null;
 		
 		for (TradeDetailDO o : list) {
-			String cordNo = o.getCardNo()+extKey;
+			String cordNo = o.getSOURCE_MERNO()+extKey;
 			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMerType()))continue;
+			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
 			if(!map.containsKey(cordNo)){
 				records = new ArrayList<TradeDetailDO>();	
 				records.add(o);
@@ -505,20 +593,20 @@ public class TaskServer {
 			Collections.sort(cardNolist);
 			double amout = 0;
 			//逾期日期值
-			int overDueBeginDate = 0 ;
+			Timestamp overDueBeginDate = null ;
 			//逾期天数值
 			int overDueBeginDay = 0;
 			for (TradeDetailDO o : cardNolist) {
 				if(cardNolist.size()<=1)continue;
 				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getReturnCode())){
+				if(ywbzLst.contains(o.getRETURN_CODE())){
 					//记录失败金额
-					amout = o.getAmout().doubleValue();
+					amout = o.getAMOUNT().doubleValue();
 					//逾期失败日期
-					overDueBeginDate = Integer.valueOf(o.getTxtDate());
+					overDueBeginDate = o.getCREATE_TIME();
 					continue;
-				}else if(success.contains(o.getReturnCode())){
-					String merId = o.getMerId()+extKey;//机构平均值主键
+				}else if(success.contains(o.getRETURN_CODE())){
+					String merId = o.getSOURCE_MERNO()+extKey;//机构平均值主键
 					if(!averageOrgOverDue.containsKey(merId)){
 						int i = averageOrgOverDue.get(merId);
 						//逾期次数
@@ -527,9 +615,9 @@ public class TaskServer {
 						averageOrgOverDue.put(merId, 1);
 					}
 					//划扣成功,最终划扣成功且划扣成功金额=失败金额
-					if(amout==o.getAmout().doubleValue()){
+					if(amout==o.getAMOUNT().doubleValue()){
 						//计算逾期天数
-						int overDueBeginDayTemp = Integer.valueOf(o.getTxtDate())-overDueBeginDate;
+						int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
 						averageOrgOverDay.put(merId, overDueBeginDayTemp+ overDueBeginDay);
 					}
 				}
@@ -562,9 +650,9 @@ public class TaskServer {
 		List<TradeDetailDO> records = null;
 		
 		for (TradeDetailDO o : list) {
-			String cordNo = o.getCardNo()+extKey;
+			String cordNo = o.getSOURCE_MERNO()+extKey;
 			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMerType()))continue;
+			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
 			if(!map.containsKey(cordNo)){
 				records = new ArrayList<TradeDetailDO>();	
 				records.add(o);
@@ -587,20 +675,20 @@ public class TaskServer {
 			Collections.sort(cardNolist);
 			double amout = 0;
 			//逾期日期值
-			int overDueBeginDate = 0 ;
+			Timestamp overDueBeginDate = null ;
 			//逾期天数值
 			int overDueBeginDay = 0;
 			for (TradeDetailDO o : cardNolist) {
 				if(cardNolist.size()<=1)continue;
 				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getReturnCode())){
+				if(ywbzLst.contains(o.getRETURN_CODE())){
 					//记录失败金额
-					amout = o.getAmout().doubleValue();
+					amout = o.getAMOUNT().doubleValue();
 					//逾期失败日期
-					overDueBeginDate = Integer.valueOf(o.getTxtDate());
+					overDueBeginDate = o.getCREATE_TIME();
 					continue;
-				}else if(success.contains(o.getReturnCode())){
-					String merId = o.getMerId()+extKey;//机构平均值主键
+				}else if(success.contains(o.getRETURN_CODE())){
+					String merId = o.getSOURCE_MERNO()+extKey;//机构平均值主键
 					if(!averageOrgOverDue.containsKey(merId)){
 						int i = averageOrgOverDue.get(merId);
 						//逾期次数
@@ -609,9 +697,9 @@ public class TaskServer {
 						averageOrgOverDue.put(merId, 1);
 					}
 					//划扣成功,最终划扣成功且划扣成功金额=失败金额
-					if(amout==o.getAmout().doubleValue()){
+					if(amout==o.getAMOUNT().doubleValue()){
 						//计算逾期天数
-						int overDueBeginDayTemp = Integer.valueOf(o.getTxtDate())-overDueBeginDate;
+						int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
 						averageOrgOverDay.put(merId, overDueBeginDayTemp+ overDueBeginDay);
 					}
 				}
@@ -645,9 +733,9 @@ public class TaskServer {
 		List<TradeDetailDO> records = null;
 		
 		for (TradeDetailDO o : list) {
-			String cordNo = o.getCardNo()+extKey;
+			String cordNo = o.getSOURCE_MERNO()+extKey;
 			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMerType()))continue;
+			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
 			if(!map.containsKey(cordNo)){
 				records = new ArrayList<TradeDetailDO>();	
 				records.add(o);
@@ -670,20 +758,20 @@ public class TaskServer {
 			Collections.sort(cardNolist);
 			double amout = 0;
 			//逾期日期值
-			int overDueBeginDate = 0 ;
+			Timestamp overDueBeginDate = null ;
 			//逾期天数值
 			int overDueBeginDay = 0;
 			for (TradeDetailDO o : cardNolist) {
 				if(cardNolist.size()<=1)continue;
 				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getReturnCode())){
+				if(ywbzLst.contains(o.getRETURN_CODE())){
 					//记录失败金额
-					amout = o.getAmout().doubleValue();
+					amout = o.getAMOUNT().doubleValue();
 					//逾期失败日期
-					overDueBeginDate = Integer.valueOf(o.getTxtDate());
+					overDueBeginDate = o.getCREATE_TIME();
 					continue;
-				}else if(success.contains(o.getReturnCode())){
-					String merId = o.getMerId()+extKey;//机构平均值主键
+				}else if(success.contains(o.getRETURN_CODE())){
+					String merId = o.getSOURCE_MERNO()+extKey;//机构平均值主键
 					if(!averageOrgOverDue.containsKey(merId)){
 						int i = averageOrgOverDue.get(merId);
 						//逾期次数
@@ -692,9 +780,9 @@ public class TaskServer {
 						averageOrgOverDue.put(merId, 1);
 					}
 					//划扣成功,最终划扣成功且划扣成功金额=失败金额
-					if(amout==o.getAmout().doubleValue()){
+					if(amout==o.getAMOUNT().doubleValue()){
 						//计算逾期天数
-						int overDueBeginDayTemp = Integer.valueOf(o.getTxtDate())-overDueBeginDate;
+						int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
 						averageOrgOverDay.put(merId, overDueBeginDayTemp+ overDueBeginDay);
 					}
 				}
@@ -726,9 +814,9 @@ public class TaskServer {
 		List<TradeDetailDO> records = null;
 		
 		for (TradeDetailDO o : list) {
-			String cordNo = o.getCardNo()+extKey;
+			String cordNo = o.getSOURCE_MERNO()+extKey;
 			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMerType()))continue;
+			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
 			if(!map.containsKey(cordNo)){
 				records = new ArrayList<TradeDetailDO>();	
 				records.add(o);
@@ -751,20 +839,20 @@ public class TaskServer {
 			Collections.sort(cardNolist);
 			double amout = 0;
 			//逾期日期值
-			int overDueBeginDate = 0 ;
+			Timestamp overDueBeginDate = null ;
 			//逾期天数值
 			int overDueBeginDay = 0;
 			for (TradeDetailDO o : cardNolist) {
 				if(cardNolist.size()<=1)continue;
 				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getReturnCode())){
+				if(ywbzLst.contains(o.getRETURN_CODE())){
 					//记录失败金额
-					amout = o.getAmout().doubleValue();
+					amout = o.getAMOUNT().doubleValue();
 					//逾期失败日期
-					overDueBeginDate = Integer.valueOf(o.getTxtDate());
+					overDueBeginDate = o.getCREATE_TIME();
 					continue;
-				}else if(success.contains(o.getReturnCode())){
-					String merId = o.getMerId()+extKey;//机构平均值主键
+				}else if(success.contains(o.getRETURN_CODE())){
+					String merId = o.getSOURCE_MERNO()+extKey;//机构平均值主键
 					if(!averageOrgOverDue.containsKey(merId)){
 						int i = averageOrgOverDue.get(merId);
 						//逾期次数
@@ -773,9 +861,9 @@ public class TaskServer {
 						averageOrgOverDue.put(merId, 1);
 					}
 					//划扣成功,最终划扣成功且划扣成功金额=失败金额
-					if(amout==o.getAmout().doubleValue()){
+					if(amout==o.getAMOUNT().doubleValue()){
 						//计算逾期天数
-						int overDueBeginDayTemp = Integer.valueOf(o.getTxtDate())-overDueBeginDate;
+						int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
 						averageOrgOverDay.put(merId, overDueBeginDayTemp+ overDueBeginDay);
 					}
 				}

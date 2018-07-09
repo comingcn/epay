@@ -17,6 +17,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.epay.xj.domain.CertNoDO;
 import com.epay.xj.mapper.CertListMapper;
 import com.epay.xj.service.CertListBeanService;
+import com.epay.xj.service.TaskServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(SpringRunner.class)
@@ -29,10 +30,14 @@ public class CertNoServiceTest {
     @Autowired
     private CertListBeanService certListBeanService;
     
+    
+    @Autowired
+    private TaskServer taskServer;
+    
     @Resource
     private CertListMapper mp;
     Logger logger = LoggerFactory.getLogger(getClass());
-    @Test
+//    @Test
     public void findOne() throws Exception {
     	List<String> list =certListBeanService.findAll();
     	for (String string : list) {
@@ -52,6 +57,14 @@ public class CertNoServiceTest {
     public void findOneqaqa() throws Exception {
     	List<CertNoDO> l = mp.getAll();
     	l.size();
+    }
+    
+    @Test
+    public void dealOverDue(){
+    	long beginTime = System.nanoTime();
+    	taskServer.deal1("20180101", null);
+    	String useTime = String.valueOf((System.nanoTime() - beginTime)/Math.pow(10, 9));
+		logger.info("useTime:{}秒",useTime);
     }
     	
 }

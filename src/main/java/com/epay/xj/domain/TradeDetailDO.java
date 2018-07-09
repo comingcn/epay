@@ -84,9 +84,11 @@ public class TradeDetailDO implements Comparable<TradeDetailDO>{
 	}
 	@Override
 	public int compareTo(TradeDetailDO o) {
-		return this.CREATE_TIME.getNanos() -o.getCREATE_TIME().getNanos();
+		int i = 0;
+		if(this.CREATE_TIME.after(o.getCREATE_TIME())){
+			i=-1;
+		}
+		return i;
 	}
-	
-	
 	
 }

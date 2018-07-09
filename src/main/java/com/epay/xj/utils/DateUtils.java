@@ -15,6 +15,9 @@ public class DateUtils {
      * yyyyMMdd时间格式
      */
     private static final String yyyyMMdd = "yyyyMMdd";
+    
+    /** "yyyy-MM-dd HH:mm:ss"格式类型 */
+    public static final String FORMAT_YYYY_MM_DD_HH_MM_SS = "yyyy-MM-dd HH:mm:ss";
 
     /**
      * @Title: yyyyMMdd
@@ -101,6 +104,18 @@ public class DateUtils {
         c.add(Calendar.MONTH, -monthAmount);
         
         return DateUtils.yyyyMMddToString(c.getTime());
+    }
+    
+    /**
+     * @Description: 获取现在时间str
+     * @param pattern
+     * @return 
+     * @author LZG
+     * @date 2018年07月07日
+     */
+    public static synchronized String getNow() {
+        dateFormat.applyPattern(DateUtils.FORMAT_YYYY_MM_DD_HH_MM_SS);
+        return dateFormat.format(new Date());
     }
 
     public static void main(String[] args) {

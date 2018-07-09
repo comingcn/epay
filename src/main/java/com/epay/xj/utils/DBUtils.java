@@ -88,5 +88,20 @@ public class DBUtils {
             e.printStackTrace();
         }
     }
+    
+    /**
+     * @Description: 关闭connection
+     * @param conn 
+     * @author LZG
+     * @date 2018年07月08日
+     */
+    public static void close(Connection conn) {
+        try {
+            if (conn != null)
+                conn.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
 }

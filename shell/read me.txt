@@ -1,0 +1,16 @@
+常见问题与错误说明
+
+1、"/bin/sh^M: bad interpreter: No such file or directory"
+win下编写的shell脚本，传到Linux并不能直接执行。
+解决方案：
+（1）yum -y install dos2unix
+（2）dos2unix ./install.sh
+
+2、no permission……
+chmod u+x epay.sh
+
+3、mavan打包后META-INF文件夹下没有MANIFEST.MF文件
+解决方案：
+第1种方法，pom.xml添加Main-class，重新打包。
+第2种方法，shell脚本执行jar后面加上要执行class文件。
+例如：java -jar /root/jar/epay-0.0.1-SNAPSHOT.jar com.epay.xj.EpayApplication

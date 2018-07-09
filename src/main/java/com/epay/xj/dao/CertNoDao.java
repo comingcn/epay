@@ -6,7 +6,6 @@
  */
 package com.epay.xj.dao;
 
-import java.util.Date;
 import java.util.List;
 
 import com.epay.xj.domain.CertNoDomain;
@@ -21,6 +20,6 @@ public interface CertNoDao {
     // 添加方法
     public void add(List<CertNoDomain> certNoDomainList);
     
-    // 根据结束日期查找所有
+    // 根据所有身份证实体
     public List<CertNoDomain> finAllCertNo();
 }

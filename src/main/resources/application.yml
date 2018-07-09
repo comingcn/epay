@@ -2,11 +2,41 @@ spring:
   profiles:
     active: dev
   datasource:
-    driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/sh_epay
-    username: root
-    password: yanghf
+#    driver-class-name: com.ibm.db2.jcc.DB2Driver
+#    url: jdbc:db2://DESKTOP-O9QMFLM:60000/test
+#    username: db2inst1
+#    password: 1qaz@WSX
+#    testWhileIdle: true
+#    validationQuery: SELECT 1
+    driver-class-name: com.ibm.db2.jcc.DB2Driver
+    url: jdbc:db2://131.252.83.213:60000/etl
+    username: db2inst1
+    password: 1qaz@WSX
+    testWhileIdle: true
+    validationQuery: SELECT 1
+#    driver-class-name: com.mysql.jdbc.Driver
+#    url: jdbc:mysql://127.0.0.1:3306/sh_epay
+#    username: root
+#    password: yanghf
+    connection-initial-size: 10
+    connection-minimum-size: 10
+    connection-maximum-size: 50
+    connection-maxwait-time: 6000
+    connection-maxactive-time: 6000
+    connection-minlive-time: 300000
+    
+#  mybatis:
+##    config-location: classpath:mybatis/mybatis.cfg.xml    # mybatis配置文件所在路径
+#    type-aliases-package: com.epay.xj.domain
+#    mapper-locations: classpath:mapper/*.xml
+  
   jpa:
     hibernate:
       ddl-auto: update
+      naming: 
+        implicit-strategy:  org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyHbmImpl
+        physical-strateg: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrateg
     show-sql: true
+    properties: 
+      hibernate:  
+        dialect:  org.hibernate.dialect.DB2Dialect

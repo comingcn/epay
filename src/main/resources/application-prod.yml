@@ -1,7 +1,0 @@
-server:
-  context-path: /demo
-  port: 8082
-grade:
-  score: A
-  course: 数学
-

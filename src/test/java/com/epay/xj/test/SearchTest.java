@@ -39,7 +39,6 @@ public class SearchTest {
 		a.setCode("1");
 		a.setMoney(100);
 		lst.add(a);
-		lst.add(a);
 		a = new A();
 		a.setId(6);
 		a.setCode("0");
@@ -67,32 +66,32 @@ public class SearchTest {
 		lst.add(a);
 		a = new A();
 		a.setId(11);
-		a.setCode("1");
-		a.setMoney(100);
+		a.setCode("0");
+		a.setMoney(1000);
 		lst.add(a);
 		return lst;
 	}
 	public static void main(String[] args) throws Exception, JsonMappingException, IOException {
 		List<A> lst = getData();
-		StringWriter str=new StringWriter();
-		ObjectMapper om = new ObjectMapper();
-		om.writeValue(str, lst);
-		System.out.println(str);
-		Map<String,Object> point1 = new HashMap<String,Object>();
-		search(lst, point1);
+//		StringWriter str=new StringWriter();
+//		ObjectMapper om = new ObjectMapper();
+//		om.writeValue(str, lst);
+//		System.out.println(str);
+//		Map<String,Object> point1 = new HashMap<String,Object>();
+//		search(lst, point1);
 		Point point = new Point();
 		search(lst, point);
 		StringWriter str1=new StringWriter();
 		ObjectMapper om1 = new ObjectMapper();
 		om1.writeValue(str1, point);
 		System.out.println(str1);
-		StringWriter str2=new StringWriter();
-		ObjectMapper om2 = new ObjectMapper();
-		om1.writeValue(str2, lst);
-		System.out.println(str2);
-		for(Map.Entry<String, Object> entry:point1.entrySet()){
-			System.out.println("key:"+entry.getKey()+",value:"+entry.getValue());
-		}
+//		StringWriter str2=new StringWriter();
+//		ObjectMapper om2 = new ObjectMapper();
+//		om1.writeValue(str2, lst);
+//		System.out.println(str2);
+//		for(Map.Entry<String, Object> entry:point1.entrySet()){
+//			System.out.println("key:"+entry.getKey()+",value:"+entry.getValue());
+//		}
 	}
 	
 	

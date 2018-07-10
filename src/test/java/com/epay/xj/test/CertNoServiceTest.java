@@ -4,8 +4,6 @@ package com.epay.xj.test;
 import java.io.StringWriter;
 import java.util.List;
 
-import javax.annotation.Resource;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -14,8 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.epay.xj.domain.CertNoDO;
-import com.epay.xj.mapper.CertListMapper;
 import com.epay.xj.service.CertListBeanService;
 import com.epay.xj.service.TaskServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,8 +30,8 @@ public class CertNoServiceTest {
     @Autowired
     private TaskServer taskServer;
     
-    @Resource
-    private CertListMapper mp;
+//    @Resource
+//    private CertListMapper mp;
     Logger logger = LoggerFactory.getLogger(getClass());
 //    @Test
     public void findOne() throws Exception {
@@ -53,11 +49,6 @@ public class CertNoServiceTest {
     	System.out.println(list.size());
     }
 
-//    @Test
-    public void findOneqaqa() throws Exception {
-    	List<CertNoDO> l = mp.getAll();
-    	l.size();
-    }
     
     @Test
     public void dealOverDue(){

@@ -95,6 +95,22 @@ public class DateUtils {
     }
     
     /**
+     * 判断当前时间是否在指定时间范围内
+     * @param begin
+     * @param end
+     * @param now
+     * @return
+     */
+    public synchronized static boolean judge(Timestamp begin,Timestamp end,Timestamp now)
+    {
+    	long b = begin.getTime();
+    	long e = end.getTime();
+    	long n = now.getTime();
+    	if(n>=b&& n<=e)return true;
+    	return false;
+    }
+    
+    /**
      * 通过时间秒毫秒数判断两个时间的间隔
      * @param date1
      * @param date2
@@ -154,6 +170,19 @@ public class DateUtils {
         return DateUtils.yyyyMMddToString(c.getTime());
     }
     
+    
+    public static synchronized Timestamp getDateOfXMonthsAgo(Timestamp date, int monthAmount) {
+    	Timestamp now = new Timestamp(System.currentTimeMillis());   
+    	SimpleDateFormat df = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");   
+        // 获得一个日历的实例
+        Calendar c = Calendar.getInstance();
+        // 设置日历时间
+        c.setTime(date);
+        // 在日历的月份上减去N个月
+        c.add(Calendar.MONTH, -monthAmount);
+        return new Timestamp(c.getTimeInMillis());
+    }
+    
     /**
      * @Description: 获取现在时间str
      * @param pattern
@@ -186,6 +215,10 @@ public class DateUtils {
     public static void main(String[] args) {
         //test1();
         test2();
+        //
+        Timestamp date = new Timestamp(DateUtils.yyyyMMddToDate("20180101").getTime()) ;
+        Timestamp t = getDateOfXMonthsAgo(date, 3);
+        t.getTime();
     }
     
     public static void test1() {

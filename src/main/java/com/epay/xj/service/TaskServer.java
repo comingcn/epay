@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,9 +64,31 @@ public class TaskServer {
 		return tradeDetailList;
 	}
 
+	public List<TradeDetailDO> fatherList(String certNo) {
+		List<TradeDetailDO> tradeDetailList = new ArrayList<TradeDetailDO>();
+		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA where IDCARD=" + certNo+ " order by CREATE_TIME asc";
+		List list = entityManager.createNativeQuery(sql).getResultList();
+		for (Object object : list) {
+			Object[] arr = (Object[]) object;
+			TradeDetailDO t = new TradeDetailDO();
+			Timestamp timeStamp = (Timestamp) arr[0];
+			t.setCREATE_TIME(timeStamp);
+			t.setID((BigDecimal)arr[1]);
+			t.setIDCARD((String)arr[2]);
+			t.setACCOUNT_NO((String)arr[3]);
+			t.setSOURCE_MERNO((String)arr[4]);
+			t.setMER_TYPE((Integer)arr[5]);
+			t.setAMOUNT((BigDecimal)arr[6]);
+			t.setSF_TYPE(arr[7].toString());
+			t.setRETURN_CODE(arr[8].toString());
+			tradeDetailList.add(t);
+		}
+		return tradeDetailList;
+	}
+	
 	public void sliceTask(List<String> taskList,String updateTime) throws InterruptedException{
 		 // 每500条数据开启一条线程
-        int threadSize = 500;
+        int threadSize = 5000;
         // 总数据条数
         int dataSize = taskList.size();
         // 线程数
@@ -91,31 +112,39 @@ public class TaskServer {
             } else {
                 cutList = taskList.subList(threadSize * i, threadSize * (i + 1));
             }
-            // System.out.println("第" + (i + 1) + "组：" + cutList.toString());
             final List<String> listStr = cutList;
             final String udpateTimes = updateTime;
             task = new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
                 	Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
-                    System.out.println(Thread.currentThread().getName() + "线程：" + listStr);
                     logger.info("{}程数：集合数量：{}", Thread.currentThread().getName(),listStr.size());
                     for (int i = 0; i < listStr.size(); i++) {
             			long sysBeginTime = System.nanoTime();
+            			//如果是人的所有记录
+            			List<TradeDetailDO> fatherList = fatherList(listStr.get(i));
+            			Map<Integer,List<TradeDetailDO>> tradeMap = new HashMap<Integer,List<TradeDetailDO>>();
             			for (int month : overDueMouth.values()) {
-            				String beginTime = DateUtils.getDateOfXMonthsAgo(udpateTimes, month);
+            				tradeMap.put(month, getListByMonth(fatherList, month, udpateTimes));
+            			}
+            			for (int month : overDueMouth.values()) {
+//            				String beginTime = DateUtils.getDateOfXMonthsAgo(udpateTimes, month);
             				Map<String, String> indexMap = new HashMap<String, String>();
             				Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
-            				List<TradeDetailDO> list = getTradeDetail(listStr.get(i), beginTime, udpateTimes);
-            				for (TradeDetailDO tradeDetail : list) {
-            					overDueMouth(list, indexMap, month, returnCodeDic);
-            				}
+//            				List<TradeDetailDO> list = getTradeDetail(listStr.get(i), beginTime, udpateTimes);
+            				List<TradeDetailDO> list = tradeMap.get(month);
+            				logger.info("certNo:{},month:{},集合数量:{}",listStr.get(i),month,list.size());
+            				overDueMouth(list, indexMap, month, returnCodeDic);
+//            				for (TradeDetailDO tradeDetail : list) {
+//            					overDueMouth(list, indexMap, month, returnCodeDic);
+//            				}
+            				//每个人指定月份下所有预期类指标
             				for(Map.Entry<String,String> entry : indexMap.entrySet()){
             					System.out.println("p:"+entry.getKey()+",v:"+entry.getValue());
             				}
             			}
             			String useTime = String.valueOf((System.nanoTime() - sysBeginTime)/Math.pow(10, 9));
-            			logger.info("useTime:{}秒",useTime);
+            			logger.info("certNo：{},useTime:{}秒",listStr.get(i),useTime);
             			// 天数统计
             		}
                     return 1;
@@ -135,6 +164,18 @@ public class TaskServer {
         }
         // 关闭线程池
         exec.shutdown();
+	}
+	
+	public List<TradeDetailDO> getListByMonth(List<TradeDetailDO> fatherList,int month,String udpateTimes){
+		List<TradeDetailDO> list = new ArrayList<TradeDetailDO>();
+		Timestamp end = new Timestamp(DateUtils.yyyyMMddToDate(udpateTimes).getTime()) ;
+        Timestamp begin = DateUtils.getDateOfXMonthsAgo(end, month);
+		for (TradeDetailDO o : fatherList) {
+			if(DateUtils.judge(begin, end, o.getCREATE_TIME())){
+				list.add(o);
+			}
+		}
+		return list;
 	}
 	
 	public void deal1(String updateTime, String flag) {
@@ -269,7 +310,7 @@ public class TaskServer {
 			List<TradeDetailDO> cardNolist = entry.getValue();
 			if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
 			//对集合按照日期进行排序
-			Collections.sort(cardNolist);
+			//Collections.sort(cardNolist);
 			//逾期天数值
 			for (TradeDetailDO o : cardNolist) {
 				//余额不足,划扣失败
@@ -338,7 +379,7 @@ public class TaskServer {
 			List<TradeDetailDO> cardNolist = entry.getValue();
 			if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
 			//对集合按照日期进行排序
-			Collections.sort(cardNolist);
+			//Collections.sort(cardNolist);
 			//逾期天数值
 			for (TradeDetailDO o : cardNolist) {
 				//余额不足,划扣失败
@@ -405,7 +446,7 @@ public class TaskServer {
 			List<TradeDetailDO> cardNolist = entry.getValue();
 			if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
 			//对集合按照日期进行排序
-			Collections.sort(cardNolist);
+			//Collections.sort(cardNolist);
 			//逾期天数值
 			for (TradeDetailDO o : cardNolist) {
 				//余额不足,划扣失败
@@ -475,7 +516,7 @@ public class TaskServer {
 			List<TradeDetailDO> cardNolist = entry.getValue();
 			if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
 			//对集合按照日期进行排序
-			Collections.sort(cardNolist);
+			//Collections.sort(cardNolist);
 			//逾期天数值
 			for (TradeDetailDO o : cardNolist) {
 				//余额不足,划扣失败
@@ -590,7 +631,7 @@ public class TaskServer {
 			List<TradeDetailDO> cardNolist = entry.getValue();
 			if(cardNolist.size()<=1)continue;
 			//对集合按照日期进行排序
-			Collections.sort(cardNolist);
+			//Collections.sort(cardNolist);
 			double amout = 0;
 			//逾期日期值
 			Timestamp overDueBeginDate = null ;
@@ -672,7 +713,7 @@ public class TaskServer {
 			List<TradeDetailDO> cardNolist = entry.getValue();
 			if(cardNolist.size()<=1)continue;
 			//对集合按照日期进行排序
-			Collections.sort(cardNolist);
+			//Collections.sort(cardNolist);
 			double amout = 0;
 			//逾期日期值
 			Timestamp overDueBeginDate = null ;
@@ -755,7 +796,7 @@ public class TaskServer {
 			List<TradeDetailDO> cardNolist = entry.getValue();
 			if(cardNolist.size()<=1)continue;
 			//对集合按照日期进行排序
-			Collections.sort(cardNolist);
+			//Collections.sort(cardNolist);
 			double amout = 0;
 			//逾期日期值
 			Timestamp overDueBeginDate = null ;
@@ -836,7 +877,7 @@ public class TaskServer {
 			List<TradeDetailDO> cardNolist = entry.getValue();
 			if(cardNolist.size()<=1)continue;
 			//对集合按照日期进行排序
-			Collections.sort(cardNolist);
+			//Collections.sort(cardNolist);
 			double amout = 0;
 			//逾期日期值
 			Timestamp overDueBeginDate = null ;

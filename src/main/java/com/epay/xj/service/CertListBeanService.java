@@ -10,11 +10,9 @@ import javax.persistence.PersistenceContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.epay.xj.domain.TradeDetailDO;
-import com.epay.xj.mapper.CertListMapper;
 
 
 @Service
@@ -25,8 +23,8 @@ public class CertListBeanService {
 //	private InitProperties initProperties;
 //	@Autowired
 //	private CertListBeanRepository certListBeanRepository;
-	@Autowired
-	private CertListMapper cartListMapper;	
+//	@Autowired
+//	private CertListMapper cartListMapper;	
 	@PersistenceContext
 	private EntityManager entityManager;
 	

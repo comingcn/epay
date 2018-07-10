@@ -199,9 +199,7 @@ public class TaskServer {
 				Map<String, String> indexMap = new HashMap<String, String>();
 				Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
 				List<TradeDetailDO> list = getTradeDetail(taskList.get(i), beginTime, updateTime);
-				for (TradeDetailDO tradeDetail : list) {
-					overDueMouth(list, indexMap, month, returnCodeDic);
-				}
+				overDueMouth(list, indexMap, month, returnCodeDic);
 				for(Map.Entry<String,String> entry : indexMap.entrySet()){
 					System.out.println("p:"+entry.getKey()+",v:"+entry.getValue());
 				}
@@ -450,7 +448,7 @@ public class TaskServer {
 			//逾期天数值
 			for (TradeDetailDO o : cardNolist) {
 				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getCREATE_TIME())){
+				if(ywbzLst.contains(o.getRETURN_CODE())){
 					if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
 					//逾期失败日期
 					overDueBeginDate = o.getCREATE_TIME();
@@ -664,12 +662,6 @@ public class TaskServer {
 				}
 			}
 		}
-		
-		//逾期天数计算
-		for(Map.Entry<String,Integer> entry : averageOrgOverDay.entrySet()){
-			
-		}
-		//3333
 	}
 	
 	/**
@@ -746,12 +738,6 @@ public class TaskServer {
 				}
 			}
 		}
-		
-		//逾期天数计算
-		for(Map.Entry<String,Integer> entry : averageOrgOverDay.entrySet()){
-			
-		}
-		//3333
 	}
 	
 	
@@ -829,12 +815,6 @@ public class TaskServer {
 				}
 			}
 		}
-		
-		//逾期天数计算
-		for(Map.Entry<String,Integer> entry : averageOrgOverDay.entrySet()){
-			
-		}
-		//3333
 	}
 	/**
 	 * 逾期一天以上计算
@@ -910,11 +890,5 @@ public class TaskServer {
 				}
 			}
 		}
-		
-		//逾期天数计算
-		for(Map.Entry<String,Integer> entry : averageOrgOverDay.entrySet()){
-			
-		}
-		//3333
 	}
 }

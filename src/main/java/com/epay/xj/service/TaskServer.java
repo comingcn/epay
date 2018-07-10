@@ -25,6 +25,7 @@ import org.springframework.util.StringUtils;
 import com.epay.xj.domain.TradeDetailDO;
 import com.epay.xj.properties.InitProperties;
 import com.epay.xj.utils.DateUtils;
+import com.epay.xj.utils.MathUtil;
 
 @Service
 public class TaskServer {
@@ -231,7 +232,20 @@ public class TaskServer {
 			indexMap.put("YQ033", overDueTotalMoneySum(list, returnCodeDic, "1d"));
 			indexMap.put("YQ032", overDueTotalMoneySum(list, returnCodeDic, "7d"));
 			indexMap.put("YQ031", overDueTotalMoneySum(list, returnCodeDic, "30d"));
-
+			
+			/******************************* 平均逾期次数 ***************************************/
+            int dkOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "dk", returnCodeDic));
+            int xjOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "xj", returnCodeDic));
+            int yhOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "yh", returnCodeDic));
+            int xdOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "xd", returnCodeDic));
+            //一个人所有类型机构的逾期机构数
+            int overDueOrgAmount = dkOverDueOrgAmount + xjOverDueOrgAmount + yhOverDueOrgAmount + xdOverDueOrgAmount;
+		
+            indexMap.put("YQ022", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
+            indexMap.put("YQ023", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
+            indexMap.put("YQ024", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
+            indexMap.put("YQ025", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
+            
 		} else if (month == 6) {
 			/******************************* 逾期一天以上次数 ***************************************/
 			indexMap.put("YQ001", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
@@ -251,6 +265,20 @@ public class TaskServer {
 			indexMap.put("YQ030", overDueTotalMoneySum(list, returnCodeDic, "1d"));
 			indexMap.put("YQ029", overDueTotalMoneySum(list, returnCodeDic, "7d"));
 			indexMap.put("YQ028", overDueTotalMoneySum(list, returnCodeDic, "30d"));
+			
+			/******************************* 平均逾期次数 ***************************************/
+            int dkOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "dk", returnCodeDic));
+            int xjOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "xj", returnCodeDic));
+            int yhOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "yh", returnCodeDic));
+            int xdOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "xd", returnCodeDic));
+            //一个人所有类型机构的逾期机构数
+            int overDueOrgAmount = dkOverDueOrgAmount + xjOverDueOrgAmount + yhOverDueOrgAmount + xdOverDueOrgAmount;
+        
+            indexMap.put("YQ005", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
+            indexMap.put("YQ006", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
+            indexMap.put("YQ007", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
+            indexMap.put("YQ008", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
+            
 		} else if (month == 12) {
 			/******************************* 逾期一天以上次数 ***************************************/
 			indexMap.put("YQ038", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
@@ -272,7 +300,7 @@ public class TaskServer {
 		}
 	}
 
-		/**
+        /**
 	 * 逾期金额总和 : 近x个月逾期x天以上金额总和
 	 * 逾期类型3  3.在同一家公司划扣因余额不足失败，直至划扣成功为止
 	 * @param list
@@ -917,4 +945,56 @@ public class TaskServer {
 		}
 		//3333
 	}
+	
+      /**
+      * @Description: 计算某类机构的逾期总次数
+      * @param list
+      * @param string
+      * @param returnCodeDic
+      * @return 
+      * @author LZG
+      * @date 2018年07月10日
+      */
+     private int avgOrgOverDueCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
+         
+         Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
+         List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
+         List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
+         
+         //某类机构的逾期逾期总次数
+         int averageOrgOverDueTime = 0;
+         
+         //定义一个用户的银行卡在不同机构下拥有的消费记录集合
+         Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
+         List<TradeDetailDO> records = null;
+         for (TradeDetailDO o : list) {
+             String merId = o.getSOURCE_MERNO();//银行卡
+             //非指定机构不参与逾期统计
+             if(!orgTypeList.contains(o.getMER_TYPE()))continue;
+             if(!map.containsKey(merId)){
+                 records = new ArrayList<TradeDetailDO>();   
+                 records.add(o);
+             }else{
+                 records = map.get(merId);
+                 records.add(o);
+             }
+             map.put(merId, records);
+         }
+         //排序和计算逾期
+         for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
+             List<TradeDetailDO> cardNolist = entry.getValue();
+             for (TradeDetailDO o : cardNolist) {
+                 //余额不足,划扣失败,看做该机构下有逾期，逾期机构数加1
+                 if(ywbzLst.contains(o.getRETURN_CODE())){
+                     averageOrgOverDueTime++;
+                     //跳出当前循环，继续往下寻找
+                     break;
+                 }
+             }
+         }
+         
+         return averageOrgOverDueTime;
+         
+     }
+     
 }

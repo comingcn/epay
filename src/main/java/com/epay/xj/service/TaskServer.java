@@ -1,7 +1,5 @@
 package com.epay.xj.service;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -30,9 +28,6 @@ import com.epay.xj.domain.TradeDetailDO;
 import com.epay.xj.properties.InitProperties;
 import com.epay.xj.utils.DateUtils;
 import com.epay.xj.utils.MathUtil;
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class TaskServer {
@@ -415,21 +410,7 @@ public class TaskServer {
 		//逾期日期值
 		Timestamp overDueBeginDate = null ;
 		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-		List<TradeDetailDO> records = null;
-		for (TradeDetailDO o : list) {
-			String merId = o.getSOURCE_MERNO();//银行卡
-			//非指定机构不参与逾期统计
-//			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
-			if(!map.containsKey(merId)){
-				records = new ArrayList<TradeDetailDO>();
-				records.add(o);
-			}else{
-				records = map.get(merId);
-				records.add(o);
-			}
-			map.put(merId, records);
-		}
+		Map<String,List<TradeDetailDO>> map = merTypeMap(list, null);
 		//排序和计算逾期
 		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
 			List<TradeDetailDO> cardNolist = entry.getValue();
@@ -482,21 +463,7 @@ public class TaskServer {
 		//逾期日期值
 		Timestamp overDueBeginDate = null ;
 		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-		List<TradeDetailDO> records = null;
-		for (TradeDetailDO o : list) {
-			String merId = o.getSOURCE_MERNO();//银行卡
-			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
-			if(!map.containsKey(merId)){
-				records = new ArrayList<TradeDetailDO>();	
-				records.add(o);
-			}else{
-				records = map.get(merId);
-				records.add(o);
-			}
-			map.put(merId, records);
-		}
+		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
 		//排序和计算逾期
 		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
 			List<TradeDetailDO> cardNolist = entry.getValue();
@@ -626,11 +593,17 @@ public class TaskServer {
 	 */
 	public Map<String,List<TradeDetailDO>>  merTypeMap(List<TradeDetailDO> list,List<String> orgTypeList){
 		Map<String,List<TradeDetailDO>> map =  new HashMap<String,List<TradeDetailDO>>();
+		//逾期金额总和，包括四种机构都要统计
+		List<String> sumDic = initProperties.getOverDueMoneySumDic();
 		List<TradeDetailDO> records = null;
 		for (TradeDetailDO o : list) {
 			String merId = o.getSOURCE_MERNO();//银行卡
 			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
+			if(orgTypeList!=null){
+				if(!orgTypeList.contains(o.getMER_TYPE()))continue;
+			}else{
+				if(!sumDic.contains(o.getMER_TYPE()))continue;
+			}
 			if(!map.containsKey(merId)){
 				records = new ArrayList<TradeDetailDO>();	
 				records.add(o);

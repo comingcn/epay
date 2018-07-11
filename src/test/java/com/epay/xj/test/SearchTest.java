@@ -79,12 +79,12 @@ public class SearchTest {
 //		System.out.println(str);
 //		Map<String,Object> point1 = new HashMap<String,Object>();
 //		search(lst, point1);
-		Point point = new Point();
-		search(lst, point);
-		StringWriter str1=new StringWriter();
-		ObjectMapper om1 = new ObjectMapper();
-		om1.writeValue(str1, point);
-		System.out.println(str1);
+//		Point point = new Point();
+//		search(lst, point);
+//		StringWriter str1=new StringWriter();
+//		ObjectMapper om1 = new ObjectMapper();
+//		om1.writeValue(str1, point);
+//		System.out.println(str1);
 //		StringWriter str2=new StringWriter();
 //		ObjectMapper om2 = new ObjectMapper();
 //		om1.writeValue(str2, lst);
@@ -92,6 +92,10 @@ public class SearchTest {
 //		for(Map.Entry<String, Object> entry:point1.entrySet()){
 //			System.out.println("key:"+entry.getKey()+",value:"+entry.getValue());
 //		}
+		
+		int threadSize=20;
+		int dataSize = 500;
+		System.out.println(dataSize%20);
 	}
 	
 	

@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.alibaba.fastjson.JSON;
 import com.epay.xj.domain.TradeDetailDO;
 import com.epay.xj.properties.InitProperties;
 import com.epay.xj.utils.DateUtils;
@@ -112,7 +113,7 @@ public class TaskServer {
 	
 	public void sliceTask(List<String> taskList,String updateTime) throws InterruptedException{
 		 // 每500条数据开启一条线程
-        int threadSize = 5000;
+        int threadSize = Integer.valueOf(initProperties.getThreadSize());
         // 总数据条数
         int dataSize = taskList.size();
         // 线程数
@@ -120,13 +121,13 @@ public class TaskServer {
         // 定义标记,过滤threadNum为整数
         boolean special = dataSize % threadSize == 0;
         // 创建一个线程池
-        int theadSize = Integer.valueOf(initProperties.getThreadSize());
-        ExecutorService exec = Executors.newFixedThreadPool(theadSize);
+        int theadPoolSize = Integer.valueOf(initProperties.getThreadPoolSize());
+        ExecutorService exec = Executors.newFixedThreadPool(theadPoolSize);
         // 定义一个任务集合
         List<Callable<List<Map<String,List<Map<String,String>>>>>> tasks = new ArrayList<Callable<List<Map<String,List<Map<String,String>>>>>>();
         Callable<List<Map<String,List<Map<String,String>>>>> task = null;
         List<String> cutList = null;
-        logger.info("taskSize:{},线程数：{}",taskList.size(), theadSize);
+        logger.info("taskSize:{},线程数：{},单个线程处理记录数量:{}",taskList.size(), theadPoolSize,threadSize);
      // 确定每条线程的数据
         for (int i = 0; i < threadNum; i++) {
             if (i == threadNum - 1) {
@@ -179,23 +180,15 @@ public class TaskServer {
         for (Future<List<Map<String,List<Map<String,String>>>>> future : results) {
 			try {
 				//遍历所有人list
+				long sysBeginTime = System.nanoTime();
 				for (Map<String, List<Map<String, String>>> map : future.get()) {
 					//循环每个人指标结果集
 					for (Map.Entry<String, List<Map<String, String>>> entry : map.entrySet()) {
-						StringWriter str=new StringWriter();
-						ObjectMapper om = new ObjectMapper();
-						try {
-							om.writeValue(str, entry.getValue());
-							logger.info("certNo:{},index:{}", entry.getKey(),str);
-						} catch (JsonGenerationException e) {
-							e.printStackTrace();
-						} catch (JsonMappingException e) {
-							e.printStackTrace();
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-					}
+						logger.info("certNo:{},index:{}", entry.getKey(),JSON.toJSONString(entry.getValue()));
+					}	
 				}
+				String useTime = String.valueOf((System.nanoTime() - sysBeginTime)/Math.pow(10, 9));
+				logger.info("写入记录useTime:{}秒",useTime);
 			} catch (ExecutionException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

@@ -86,6 +86,8 @@ public class TradeDetailDO implements Comparable<TradeDetailDO>{
 	public int compareTo(TradeDetailDO o) {
 		int i = 0;
 		if(this.CREATE_TIME.after(o.getCREATE_TIME())){
+			i=1;
+		}else{
 			i=-1;
 		}
 		return i;

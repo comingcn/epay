@@ -9,13 +9,14 @@ spring:
 #    testWhileIdle: true
 #    validationQuery: SELECT 1
     driver-class-name: com.ibm.db2.jcc.DB2Driver
-    url: jdbc:db2://131.252.83.213:60000/etl
+#    url: jdbc:db2://131.252.83.213:60000/etl
+    url: jdbc:db2://10.118.192.35:50000/cp_edw
     username: db2inst1
     password: 1qaz@WSX
     testWhileIdle: true
     validationQuery: SELECT 1
 #    driver-class-name: com.mysql.jdbc.Driver
-#    url: jdbc:mysql://127.0.0.1:3306/sh_epay
+#    url: jdbc:mysql://192.168.65.93:3306/sh_epay
 #    username: root
 #    password: yanghf
     connection-initial-size: 40
@@ -36,7 +37,8 @@ spring:
       naming: 
         implicit-strategy:  org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyHbmImpl
         physical-strateg: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrateg
-    show-sql: true
+    show-sql: false 
     properties: 
       hibernate:  
+#        dialect:  org.hibernate.dialect.MySQL5Dialect
         dialect:  org.hibernate.dialect.DB2Dialect

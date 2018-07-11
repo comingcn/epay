@@ -24,6 +24,8 @@ public class InitProperties {
 	
 	private String overDueType;
 	
+	private String threadSize;
+	
 	private Map<String,Integer>  overDueMonth = new HashMap<String,Integer>();
 	
 	private Map<String,Integer> overDueDayDic = new HashMap<String,Integer>();
@@ -122,4 +124,13 @@ public class InitProperties {
 	public void setReturnCodeDic(Map<String, String[]> returnCodeDic) {
 		this.returnCodeDic = returnCodeDic;
 	}
+
+	public String getThreadSize() {
+		return threadSize;
+	}
+
+	public void setThreadSize(String threadSize) {
+		this.threadSize = threadSize;
+	}
+	
 }

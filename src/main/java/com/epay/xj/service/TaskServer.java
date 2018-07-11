@@ -1,9 +1,12 @@
 package com.epay.xj.service;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +29,9 @@ import com.epay.xj.domain.TradeDetailDO;
 import com.epay.xj.properties.InitProperties;
 import com.epay.xj.utils.DateUtils;
 import com.epay.xj.utils.MathUtil;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class TaskServer {
@@ -38,13 +44,13 @@ public class TaskServer {
 	private EntityManager entityManager;
 
 	public List<String> getTaskList(String updateTime, String flag) {
-		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST";
+		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST_PY";
 		return entityManager.createNativeQuery(sql).getResultList();
 	}
-
+	
 	public List<TradeDetailDO> getTradeDetail(String certNo, String beginTime, String endTime) {
 		List<TradeDetailDO> tradeDetailList = new ArrayList<TradeDetailDO>();
-		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA where IDCARD=" + certNo+ " and CREATE_TIME between TIMESTAMP_FORMAT('"+beginTime+
+		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA_PY where IDCARD='" + certNo+ "' and CREATE_TIME between TIMESTAMP_FORMAT('"+beginTime+
 				"','yyyy-mm-dd') and TIMESTAMP_FORMAT('"+ endTime+"','yyyy-mm-dd') order by CREATE_TIME asc";
 		List list = entityManager.createNativeQuery(sql).getResultList();
 		for (Object object : list) {
@@ -65,26 +71,43 @@ public class TaskServer {
 		return tradeDetailList;
 	}
 
-	public List<TradeDetailDO> fatherList(String certNo) {
+	/**
+	 * 获取certNo下的不同月份下的所有
+	 * @param certNo
+	 * @param updateTime
+	 * @return
+	 */
+	public Map<Integer,List<TradeDetailDO>> fatherList(String certNo,String updateTime) {
 		List<TradeDetailDO> tradeDetailList = new ArrayList<TradeDetailDO>();
-		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA where IDCARD=" + certNo+ " order by CREATE_TIME asc";
-		List list = entityManager.createNativeQuery(sql).getResultList();
-		for (Object object : list) {
-			Object[] arr = (Object[]) object;
-			TradeDetailDO t = new TradeDetailDO();
-			Timestamp timeStamp = (Timestamp) arr[0];
-			t.setCREATE_TIME(timeStamp);
-			t.setID((BigDecimal)arr[1]);
-			t.setIDCARD((String)arr[2]);
-			t.setACCOUNT_NO((String)arr[3]);
-			t.setSOURCE_MERNO((String)arr[4]);
-			t.setMER_TYPE((Integer)arr[5]);
-			t.setAMOUNT((BigDecimal)arr[6]);
-			t.setSF_TYPE(arr[7].toString());
-			t.setRETURN_CODE(arr[8].toString());
-			tradeDetailList.add(t);
+		Map<Integer,List<TradeDetailDO>> tradeMap = new HashMap<Integer,List<TradeDetailDO>>();
+		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA_PY where IDCARD='" + certNo+ "'";
+		try {
+			List list = entityManager.createNativeQuery(sql).getResultList();
+			for (Object object : list) {
+				Object[] arr = (Object[]) object;
+				TradeDetailDO t = new TradeDetailDO();
+				Timestamp timeStamp = (Timestamp) arr[0];
+				t.setCREATE_TIME(timeStamp);
+				t.setID((BigDecimal)arr[1]);
+				t.setIDCARD((String)arr[2]);
+				t.setACCOUNT_NO((String)arr[3]);
+				t.setSOURCE_MERNO((String)arr[4]);
+				t.setMER_TYPE((Integer)arr[5]);
+				t.setAMOUNT((BigDecimal)arr[6]);
+				t.setSF_TYPE(arr[7].toString());
+				t.setRETURN_CODE(arr[8].toString());
+				tradeDetailList.add(t);
+			}
+			Collections.sort(tradeDetailList);
+			Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
+			for (int month : overDueMouth.values()) {
+				tradeMap.put(month, getListByMonth(tradeDetailList, month, updateTime));
+			}
+		} catch (Exception e) {
+			logger.error("执行sql:{},error:{}",sql,e.getMessage());
+			e.printStackTrace();
 		}
-		return tradeDetailList;
+		return tradeMap;
 	}
 	
 	public void sliceTask(List<String> taskList,String updateTime) throws InterruptedException{
@@ -97,12 +120,13 @@ public class TaskServer {
         // 定义标记,过滤threadNum为整数
         boolean special = dataSize % threadSize == 0;
         // 创建一个线程池
-        ExecutorService exec = Executors.newFixedThreadPool(threadNum);
+        int theadSize = Integer.valueOf(initProperties.getThreadSize());
+        ExecutorService exec = Executors.newFixedThreadPool(theadSize);
         // 定义一个任务集合
-        List<Callable<Integer>> tasks = new ArrayList<Callable<Integer>>();
-        Callable<Integer> task = null;
+        List<Callable<List<Map<String,List<Map<String,String>>>>>> tasks = new ArrayList<Callable<List<Map<String,List<Map<String,String>>>>>>();
+        Callable<List<Map<String,List<Map<String,String>>>>> task = null;
         List<String> cutList = null;
-        logger.info("线程数：{}", threadNum);
+        logger.info("taskSize:{},线程数：{}",taskList.size(), theadSize);
      // 确定每条线程的数据
         for (int i = 0; i < threadNum; i++) {
             if (i == threadNum - 1) {
@@ -115,49 +139,63 @@ public class TaskServer {
             }
             final List<String> listStr = cutList;
             final String udpateTimes = updateTime;
-            task = new Callable<Integer>() {
+            final Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
+            final Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
+            task = new Callable<List<Map<String,List<Map<String,String>>>>>() {
                 @Override
-                public Integer call() throws Exception {
-                	Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
-                    logger.info("{}程数：集合数量：{}", Thread.currentThread().getName(),listStr.size());
+                public List<Map<String,List<Map<String,String>>>> call() throws Exception {
+                	List<Map<String,List<Map<String,String>>>> lst = new ArrayList<Map<String,List<Map<String,String>>>>();
+//                    logger.info("{}程数：集合数量：{}", Thread.currentThread().getName(),listStr.size());
                     for (int i = 0; i < listStr.size(); i++) {
-            			long sysBeginTime = System.nanoTime();
+            			String certNo = listStr.get(i);
+            			Map<String,List<Map<String,String>>> everyPersonMap = new HashMap<String,List<Map<String,String>>>();
+            			List<Map<String,String>> indexList = new ArrayList<Map<String,String>>();
             			//如果是人的所有记录
-            			List<TradeDetailDO> fatherList = fatherList(listStr.get(i));
-            			Map<Integer,List<TradeDetailDO>> tradeMap = new HashMap<Integer,List<TradeDetailDO>>();
+            			Map<Integer,List<TradeDetailDO>> tradeMap = fatherList(certNo,udpateTimes);
             			for (int month : overDueMouth.values()) {
-            				tradeMap.put(month, getListByMonth(fatherList, month, udpateTimes));
-            			}
-            			for (int month : overDueMouth.values()) {
-//            				String beginTime = DateUtils.getDateOfXMonthsAgo(udpateTimes, month);
+            				//指标结果集
             				Map<String, String> indexMap = new HashMap<String, String>();
-            				Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
-//            				List<TradeDetailDO> list = getTradeDetail(listStr.get(i), beginTime, udpateTimes);
             				List<TradeDetailDO> list = tradeMap.get(month);
-            				logger.info("certNo:{},month:{},集合数量:{}",listStr.get(i),month,list.size());
             				overDueMouth(list, indexMap, month, returnCodeDic);
-//            				for (TradeDetailDO tradeDetail : list) {
-//            					overDueMouth(list, indexMap, month, returnCodeDic);
-//            				}
-            				//每个人指定月份下所有预期类指标
-            				for(Map.Entry<String,String> entry : indexMap.entrySet()){
-            					System.out.println("p:"+entry.getKey()+",v:"+entry.getValue());
+            				if(everyPersonMap.get(certNo).isEmpty()){
+            					indexList.add(indexMap);
+            					everyPersonMap.put(certNo, indexList);
+            				}else{
+            					everyPersonMap.get(certNo).add(indexMap);
             				}
             			}
-            			String useTime = String.valueOf((System.nanoTime() - sysBeginTime)/Math.pow(10, 9));
-            			logger.info("certNo：{},useTime:{}秒",listStr.get(i),useTime);
-            			// 天数统计
+            			lst.add(everyPersonMap);
             		}
-                    return 1;
+                    return lst;
                 }
             };
             // 这里提交的任务容器列表和返回的Future列表存在顺序对应的关系
             tasks.add(task);
         }
-        List<Future<Integer>> results = exec.invokeAll(tasks);
-        for (Future<Integer> future : results) {
-            try {
-				System.out.println(future.get());
+        
+        List<Future<List<Map<String,List<Map<String,String>>>>>> results = exec.invokeAll(tasks);
+        
+        
+        for (Future<List<Map<String,List<Map<String,String>>>>> future : results) {
+			try {
+				//遍历所有人list
+				for (Map<String, List<Map<String, String>>> map : future.get()) {
+					//循环每个人指标结果集
+					for (Map.Entry<String, List<Map<String, String>>> entry : map.entrySet()) {
+						StringWriter str=new StringWriter();
+						ObjectMapper om = new ObjectMapper();
+						try {
+							om.writeValue(str, entry.getValue());
+							logger.info("certNo:{},index:{}", entry.getKey(),str);
+						} catch (JsonGenerationException e) {
+							e.printStackTrace();
+						} catch (JsonMappingException e) {
+							e.printStackTrace();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
 			} catch (ExecutionException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -180,9 +218,8 @@ public class TaskServer {
 	}
 	
 	public void deal1(String updateTime, String flag) {
-		Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
-		List<String> taskList = getTaskList(updateTime, flag);
 		try {
+			List<String> taskList = getTaskList(updateTime, flag);
 			sliceTask(taskList, updateTime);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
@@ -323,7 +360,7 @@ public class TaskServer {
 			//非指定机构不参与逾期统计
 //			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
 			if(!map.containsKey(merId)){
-				records = new ArrayList<TradeDetailDO>();	
+				records = new ArrayList<TradeDetailDO>();
 				records.add(o);
 			}else{
 				records = map.get(merId);
@@ -522,21 +559,7 @@ public class TaskServer {
 		//逾期日期值
 		Timestamp overDueBeginDate = null ;
 		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-		List<TradeDetailDO> records = null;
-		for (TradeDetailDO o : list) {
-			String merId = o.getSOURCE_MERNO();//银行卡
-			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
-			if(!map.containsKey(merId)){
-				records = new ArrayList<TradeDetailDO>();	
-				records.add(o);
-			}else{
-				records = map.get(merId);
-				records.add(o);
-			}
-			map.put(merId, records);
-		}
+		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
 		//排序和计算逾期
 		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
 			List<TradeDetailDO> cardNolist = entry.getValue();
@@ -586,21 +609,7 @@ public class TaskServer {
 		//逾期天数值
 		int overDueOneOrgCount = 0;
 		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-		List<TradeDetailDO> records = null;
-		for (TradeDetailDO o : list) {
-			String merId = o.getSOURCE_MERNO();//银行卡
-			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
-			if(!map.containsKey(merId)){
-				records = new ArrayList<TradeDetailDO>();	
-				records.add(o);
-			}else{
-				records = map.get(merId);
-				records.add(o);
-			}
-			map.put(merId, records);
-		}
+		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
 		//排序和计算逾期
 		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
 			List<TradeDetailDO> cardNolist = entry.getValue();
@@ -617,6 +626,30 @@ public class TaskServer {
 	}
 	
 	/**
+	 * 每个商户的所有记录
+	 * @param list
+	 * @param orgTypeList
+	 * @return
+	 */
+	public Map<String,List<TradeDetailDO>>  merTypeMap(List<TradeDetailDO> list,List<String> orgTypeList){
+		Map<String,List<TradeDetailDO>> map =  new HashMap<String,List<TradeDetailDO>>();
+		List<TradeDetailDO> records = null;
+		for (TradeDetailDO o : list) {
+			String merId = o.getSOURCE_MERNO();//银行卡
+			//非指定机构不参与逾期统计
+			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
+			if(!map.containsKey(merId)){
+				records = new ArrayList<TradeDetailDO>();	
+				records.add(o);
+			}else{
+				records = map.get(merId);
+				records.add(o);
+			}
+			map.put(merId, records);
+		}
+		return map;
+	}
+	/**
 	 * 在消费金融机构逾期1天以上次数
 	 * @param list
 	 * @param indexMap
@@ -626,27 +659,11 @@ public class TaskServer {
 	public void consumerFinanceOrgOverDueOneDay(List<TradeDetailDO> list,Map<String,Integer> indexMap ,String orgType , Map<String, String[]> returnCodeDic){
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//机构类型
-		String extKey = "_"+orgType;
 //		int days = initProperties.getOverDueDayDic().get("1d");
 		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
 		List<String> success = Arrays.asList(returnCodeDic.get("success"));
 		//定义一个用户在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-		List<TradeDetailDO> records = null;
-		
-		for (TradeDetailDO o : list) {
-			String cordNo = o.getSOURCE_MERNO()+extKey;
-			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
-			if(!map.containsKey(cordNo)){
-				records = new ArrayList<TradeDetailDO>();	
-				records.add(o);
-			}else{
-				records = map.get(cordNo);
-				records.add(o);
-			}
-			map.put(cordNo, records);
-		}
+		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
 		//key orgKey,value:逾期次数（不同机构的逾期次数）
 		Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
 		//key orgKey,value:逾期天数（不同机构的逾期天数）
@@ -673,7 +690,7 @@ public class TaskServer {
 					overDueBeginDate = o.getCREATE_TIME();
 					continue;
 				}else if(success.contains(o.getRETURN_CODE())){
-					String merId = o.getSOURCE_MERNO()+extKey;//机构平均值主键
+					String merId = o.getSOURCE_MERNO();//机构平均值主键
 					if(!averageOrgOverDue.containsKey(merId)){
 						int i = averageOrgOverDue.get(merId);
 						//逾期次数
@@ -702,27 +719,11 @@ public class TaskServer {
 	public void bankOrgOverDueOneDay(List<TradeDetailDO> list,Map<String,Integer> indexMap ,String orgType , Map<String, String[]> returnCodeDic){
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//机构类型
-		String extKey = "_"+orgType;
 //		int days = initProperties.getOverDueDayDic().get("1d");
 		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
 		List<String> success = Arrays.asList(returnCodeDic.get("success"));
 		//定义一个用户在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-		List<TradeDetailDO> records = null;
-		
-		for (TradeDetailDO o : list) {
-			String cordNo = o.getSOURCE_MERNO()+extKey;
-			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
-			if(!map.containsKey(cordNo)){
-				records = new ArrayList<TradeDetailDO>();	
-				records.add(o);
-			}else{
-				records = map.get(cordNo);
-				records.add(o);
-			}
-			map.put(cordNo, records);
-		}
+		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
 		//key orgKey,value:逾期次数（不同机构的逾期次数）
 		Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
 		//key orgKey,value:逾期天数（不同机构的逾期天数）
@@ -749,7 +750,7 @@ public class TaskServer {
 					overDueBeginDate = o.getCREATE_TIME();
 					continue;
 				}else if(success.contains(o.getRETURN_CODE())){
-					String merId = o.getSOURCE_MERNO()+extKey;//机构平均值主键
+					String merId = o.getSOURCE_MERNO();//机构平均值主键
 					if(!averageOrgOverDue.containsKey(merId)){
 						int i = averageOrgOverDue.get(merId);
 						//逾期次数
@@ -779,27 +780,11 @@ public class TaskServer {
 	public void smallLoanOrgOverDueOneDay(List<TradeDetailDO> list,Map<String,Integer> indexMap ,String orgType , Map<String, String[]> returnCodeDic){
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//机构类型
-		String extKey = "_"+orgType;
 //		int days = initProperties.getOverDueDayDic().get("1d");
 		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
 		List<String> success = Arrays.asList(returnCodeDic.get("success"));
 		//定义一个用户在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-		List<TradeDetailDO> records = null;
-		
-		for (TradeDetailDO o : list) {
-			String cordNo = o.getSOURCE_MERNO()+extKey;
-			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
-			if(!map.containsKey(cordNo)){
-				records = new ArrayList<TradeDetailDO>();	
-				records.add(o);
-			}else{
-				records = map.get(cordNo);
-				records.add(o);
-			}
-			map.put(cordNo, records);
-		}
+		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
 		//key orgKey,value:逾期次数（不同机构的逾期次数）
 		Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
 		//key orgKey,value:逾期天数（不同机构的逾期天数）
@@ -826,7 +811,7 @@ public class TaskServer {
 					overDueBeginDate = o.getCREATE_TIME();
 					continue;
 				}else if(success.contains(o.getRETURN_CODE())){
-					String merId = o.getSOURCE_MERNO()+extKey;//机构平均值主键
+					String merId = o.getSOURCE_MERNO();//机构平均值主键
 					if(!averageOrgOverDue.containsKey(merId)){
 						int i = averageOrgOverDue.get(merId);
 						//逾期次数
@@ -854,27 +839,11 @@ public class TaskServer {
 	public void calculateOverDue(List<TradeDetailDO> list,Map<String,Integer> indexMap ,String orgType , Map<String, String[]> returnCodeDic){
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//机构类型
-		String extKey = "_"+orgType;
 //		int days = initProperties.getOverDueDayDic().get("1d");
 		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
 		List<String> success = Arrays.asList(returnCodeDic.get("success"));
 		//定义一个用户在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-		List<TradeDetailDO> records = null;
-		
-		for (TradeDetailDO o : list) {
-			String cordNo = o.getSOURCE_MERNO()+extKey;
-			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
-			if(!map.containsKey(cordNo)){
-				records = new ArrayList<TradeDetailDO>();	
-				records.add(o);
-			}else{
-				records = map.get(cordNo);
-				records.add(o);
-			}
-			map.put(cordNo, records);
-		}
+		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
 		//key orgKey,value:逾期次数（不同机构的逾期次数）
 		Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
 		//key orgKey,value:逾期天数（不同机构的逾期天数）
@@ -901,7 +870,7 @@ public class TaskServer {
 					overDueBeginDate = o.getCREATE_TIME();
 					continue;
 				}else if(success.contains(o.getRETURN_CODE())){
-					String merId = o.getSOURCE_MERNO()+extKey;//机构平均值主键
+					String merId = o.getSOURCE_MERNO();//机构平均值主键
 					if(!averageOrgOverDue.containsKey(merId)){
 						int i = averageOrgOverDue.get(merId);
 						//逾期次数
@@ -939,21 +908,7 @@ public class TaskServer {
          int averageOrgOverDueTime = 0;
          
          //定义一个用户的银行卡在不同机构下拥有的消费记录集合
-         Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-         List<TradeDetailDO> records = null;
-         for (TradeDetailDO o : list) {
-             String merId = o.getSOURCE_MERNO();//银行卡
-             //非指定机构不参与逾期统计
-             if(!orgTypeList.contains(o.getMER_TYPE()))continue;
-             if(!map.containsKey(merId)){
-                 records = new ArrayList<TradeDetailDO>();   
-                 records.add(o);
-             }else{
-                 records = map.get(merId);
-                 records.add(o);
-             }
-             map.put(merId, records);
-         }
+         Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
          //排序和计算逾期
          for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
              List<TradeDetailDO> cardNolist = entry.getValue();

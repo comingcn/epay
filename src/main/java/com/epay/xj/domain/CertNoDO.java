@@ -4,8 +4,8 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-@Entity
-@Table(name="cert_no")//设置数据库中表名字
+//@Entity
+//@Table(name="cert_no")//设置数据库中表名字
 public class CertNoDO {
 
 	@Id

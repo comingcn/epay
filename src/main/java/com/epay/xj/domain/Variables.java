@@ -13,8 +13,8 @@ import javax.persistence.Table;
  * @author yanghf
  * @date 2018年7月2日 下午4:27:37
  */
-@Entity
-@Table(name="variables")//设置数据库中表名字
+//@Entity
+//@Table(name="variables")//设置数据库中表名字
 public class Variables {
 	@Id
 	private String md5CertNo;

@@ -4,8 +4,8 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-@Entity
-@Table(name="bind_card_log")//设置数据库中表名字
+//@Entity
+//@Table(name="bind_card_log")//设置数据库中表名字
 public class BindCardLog {
 
 	private String txnDate;          //VARCHAR(8),	交易日期

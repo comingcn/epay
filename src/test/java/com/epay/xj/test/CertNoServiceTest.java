@@ -33,29 +33,29 @@ public class CertNoServiceTest {
 //    @Resource
 //    private CertListMapper mp;
     Logger logger = LoggerFactory.getLogger(getClass());
-//    @Test
+    @Test
     public void findOne() throws Exception {
     	List<String> list =certListBeanService.findAll();
-    	for (String string : list) {
-    		System.out.println(">>>>"+string);
-    		logger.info(string);
-    		List<Object> tradeDetailLst = certListBeanService.findTradeDetail(string);
-    		StringWriter str=new StringWriter();
-    		ObjectMapper om = new ObjectMapper();
-    		om.writeValue(str, tradeDetailLst);
-    		logger.info(str.toString());
-    		System.out.println(">>>>_____"+ tradeDetailLst.size());
-		}
+//    	for (String string : list) {
+//    		System.out.println(">>>>"+string);
+//    		logger.info(string);
+//    		List<Object> tradeDetailLst = certListBeanService.findTradeDetail(string);
+//    		StringWriter str=new StringWriter();
+//    		ObjectMapper om = new ObjectMapper();
+//    		om.writeValue(str, tradeDetailLst);
+//    		logger.info(str.toString());
+//    		System.out.println(">>>>_____"+ tradeDetailLst.size());
+//		}
     	System.out.println(list.size());
     }
 
     
-    @Test
+//    @Test
     public void dealOverDue(){
     	long beginTime = System.nanoTime();
     	taskServer.deal1("20180101", null);
     	String useTime = String.valueOf((System.nanoTime() - beginTime)/Math.pow(10, 9));
 		logger.info("useTime:{}秒",useTime);
     }
-    	
+    
 }

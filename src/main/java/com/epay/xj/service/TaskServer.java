@@ -24,14 +24,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import com.alibaba.fastjson.JSON;
 import com.epay.xj.domain.OverDueIndex;
 import com.epay.xj.domain.TradeDetailDO;
 import com.epay.xj.properties.InitProperties;
 import com.epay.xj.utils.DateUtils;
-import com.epay.xj.utils.MathUtil;
 
 @Service
+@Transactional
 public class TaskServer {
 
 	Logger logger = LoggerFactory.getLogger(getClass());
@@ -46,19 +45,20 @@ public class TaskServer {
 		return entityManager.createNativeQuery(sql).getResultList();
 	}
 	
-	public List<TradeDetailDO> getTradeDetail(String certNo, String beginTime, String endTime) {
-		List<TradeDetailDO> tradeDetailList = new ArrayList<TradeDetailDO>();
-		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA_PY where IDCARD='" + certNo+ "' and CREATE_TIME between TIMESTAMP_FORMAT('"+beginTime+
-				"','yyyy-mm-dd') and TIMESTAMP_FORMAT('"+ endTime+"','yyyy-mm-dd') order by CREATE_TIME asc";
-		List list = entityManager.createNativeQuery(sql).getResultList();
-		return tradeDetailList;
-	}
-	
-	
-	@Transactional
-	public void batchInsert(){
-		
-		
+	/**
+	 * batchInsert
+	 * @param list
+	 */
+	public void batchInsert(List<OverDueIndex> list){
+		int size =  list.size();
+        for (int i = 0; i < size; i++) {
+        	OverDueIndex dd =  list.get(i);
+        	entityManager.persist(dd);
+            if (i % 10000 == 0 || i==(size-1)) { // 每1000条数据执行一次，或者最后不足1000条时执行
+            	entityManager.flush();
+            	entityManager.clear();
+            }
+        }
 	}
 	/**
 	 * 获取certNo下的不同月份下的所有
@@ -86,91 +86,91 @@ public class TaskServer {
 	
 	public void sliceTask(List<String> taskList,String updateTime) throws InterruptedException{
 		 // 每500条数据开启一条线程
-        int threadSize = Integer.valueOf(initProperties.getThreadSize());
-        // 总数据条数
-        int dataSize = taskList.size();
-        // 线程数
-        int threadNum = dataSize / threadSize + 1;
-        // 定义标记,过滤threadNum为整数
-        boolean special = dataSize % threadSize == 0;
-        // 创建一个线程池
-        int theadPoolSize = Integer.valueOf(initProperties.getThreadPoolSize());
-        ExecutorService exec = Executors.newFixedThreadPool(theadPoolSize);
-        // 定义一个任务集合
-        List<Callable<List<Map<String,List<Map<String,String>>>>>> tasks = new ArrayList<Callable<List<Map<String,List<Map<String,String>>>>>>();
-        Callable<List<Map<String,List<Map<String,String>>>>> task = null;
-        List<String> cutList = null;
-        logger.info("taskSize:{},线程数：{},单个线程处理记录数量:{}",taskList.size(), theadPoolSize,threadSize);
-     // 确定每条线程的数据
-        for (int i = 0; i < threadNum; i++) {
-            if (i == threadNum - 1) {
-                if (special) {
-                    break;
-                }
-                cutList = taskList.subList(threadSize * i, dataSize);
-            } else {
-                cutList = taskList.subList(threadSize * i, threadSize * (i + 1));
-            }
-            final List<String> listStr = cutList;
-            final String udpateTimes = updateTime;
-            final Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
-            final Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
-            task = new Callable<List<Map<String,List<Map<String,String>>>>>() {
-                @Override
-                public List<Map<String,List<Map<String,String>>>> call() throws Exception {
-                	List<Map<String,List<Map<String,String>>>> lst = new ArrayList<Map<String,List<Map<String,String>>>>();
-//                    logger.info("{}程数：集合数量：{}", Thread.currentThread().getName(),listStr.size());
-                    for (int i = 0; i < listStr.size(); i++) {
-            			String certNo = listStr.get(i);
-            			OverDueIndex odi = new OverDueIndex();
-            			odi.setCertNo(certNo);
-            			Map<String,List<Map<String,String>>> everyPersonMap = new HashMap<String,List<Map<String,String>>>();
-            			List<Map<String,String>> indexList = new ArrayList<Map<String,String>>();
-            			//如果是人的所有记录
-            			Map<Integer,List<TradeDetailDO>> tradeMap = fatherList(certNo,udpateTimes);
-            			for (int month : overDueMouth.values()) {
-            				//指标结果集
-            				Map<String, String> indexMap = new HashMap<String, String>();
-            				List<TradeDetailDO> list = tradeMap.get(month);
-            				overDueMouth(list, odi, month, returnCodeDic);
-            				if(everyPersonMap.get(certNo)==null || everyPersonMap.get(certNo).isEmpty()){
-            					indexList.add(indexMap);
-            					everyPersonMap.put(certNo, indexList);
-            				}else{
-            					everyPersonMap.get(certNo).add(indexMap);
-            				}
-            			}
-            			lst.add(everyPersonMap);
-            		}
-                    return null;
-                }
-            };
-            // 这里提交的任务容器列表和返回的Future列表存在顺序对应的关系
-            tasks.add(task);
-        }
-        
-        List<Future<List<Map<String,List<Map<String,String>>>>>> results = exec.invokeAll(tasks);
-        
-        
-        for (Future<List<Map<String,List<Map<String,String>>>>> future : results) {
+       int threadSize = Integer.valueOf(initProperties.getThreadSize());
+       // 总数据条数
+       int dataSize = taskList.size();
+       // 线程数
+       int threadNum = dataSize / threadSize + 1;
+       // 定义标记,过滤threadNum为整数
+       boolean special = dataSize % threadSize == 0;
+       // 创建一个线程池
+       int theadPoolSize = Integer.valueOf(initProperties.getThreadPoolSize());
+       ExecutorService exec = Executors.newFixedThreadPool(theadPoolSize);
+       // 定义一个任务集合
+       List<Callable<List<OverDueIndex>>> tasks = new ArrayList<Callable<List<OverDueIndex>>>();
+       Callable<List<OverDueIndex>> task = null;
+       List<String> cutList = null;
+       logger.info("taskSize:{},线程数：{},单个线程处理记录数量:{}",taskList.size(), theadPoolSize,threadSize);
+    // 确定每条线程的数据
+       for (int i = 0; i < threadNum; i++) {
+           if (i == threadNum - 1) {
+               if (special) {
+                   break;
+               }
+               cutList = taskList.subList(threadSize * i, dataSize);
+           } else {
+               cutList = taskList.subList(threadSize * i, threadSize * (i + 1));
+           }
+           final List<String> listStr = cutList;
+           final String udpateTimes = updateTime;
+           final Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
+           final Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
+           task = new Callable<List<OverDueIndex>>() {
+               @Override
+               public List<OverDueIndex> call() throws Exception {
+               	List<OverDueIndex> lst = new ArrayList<OverDueIndex>();
+//                   logger.info("{}程数：集合数量：{}", Thread.currentThread().getName(),listStr.size());
+                   for (int i = 0; i < listStr.size(); i++) {
+           			String certNo = listStr.get(i);
+           			OverDueIndex odi = new OverDueIndex();
+           			odi.setCERT_NO(certNo);
+           			Map<String,List<Map<String,String>>> everyPersonMap = new HashMap<String,List<Map<String,String>>>();
+           			List<Map<String,String>> indexList = new ArrayList<Map<String,String>>();
+           			//如果是人的所有记录
+           			Map<Integer,List<TradeDetailDO>> tradeMap = fatherList(certNo,udpateTimes);
+           			for (int month : overDueMouth.values()) {
+           				//指标结果集
+           				Map<String, String> indexMap = new HashMap<String, String>();
+           				List<TradeDetailDO> list = tradeMap.get(month);
+           				overDueMouth(list, odi, month, returnCodeDic);
+           				if(everyPersonMap.get(certNo)==null || everyPersonMap.get(certNo).isEmpty()){
+           					indexList.add(indexMap);
+           					everyPersonMap.put(certNo, indexList);
+           				}else{
+           					everyPersonMap.get(certNo).add(indexMap);
+           				}
+           			}
+           			lst.add(odi);
+           		}
+                   return lst;
+               }
+           };
+           // 这里提交的任务容器列表和返回的Future列表存在顺序对应的关系
+           tasks.add(task);
+       }
+       
+       List<Future<List<OverDueIndex>>> results = exec.invokeAll(tasks);
+       StringBuffer sb = new StringBuffer();
+       long sysBeginTime = System.nanoTime();
+       for (Future<List<OverDueIndex>> future : results) {
 			try {
 				//遍历所有人list
-				long sysBeginTime = System.nanoTime();
-				for (Map<String, List<Map<String, String>>> map : future.get()) {
-					//循环每个人指标结果集
-					for (Map.Entry<String, List<Map<String, String>>> entry : map.entrySet()) {
-						logger.info("certNo:{},index:{}", entry.getKey(),JSON.toJSONString(entry.getValue()));
-					}
-				}
-				String useTime = String.valueOf((System.nanoTime() - sysBeginTime)/Math.pow(10, 9));
-				logger.info("写入记录useTime:{}秒",useTime);
+				
+				List<OverDueIndex> lst = future.get();
+				sb.append("size:").append(lst.size());
+				batchInsert(lst);
+//				for (OverDueIndex overDueIndex : lst) {
+//					logger.info("certNo:{},index:{}", overDueIndex.getCertNo(),JSON.toJSONString(overDueIndex));
+//				}
 			} catch (ExecutionException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-        }
-        // 关闭线程池
-        exec.shutdown();
+       }
+       String useTime = String.valueOf((System.nanoTime() - sysBeginTime)/Math.pow(10, 9));
+       logger.info("sb:{},写入记录useTime:{}秒",sb.toString(),useTime);
+       // 关闭线程池
+       exec.shutdown();
 	}
 	
 	public List<TradeDetailDO> getListByMonth(List<TradeDetailDO> fatherList,int month,String udpateTimes){
@@ -258,14 +258,25 @@ public class TaskServer {
             BigDecimal overDueOrgAmount = dkOverDueOrgAmount.add(xjOverDueOrgAmount).add(dkOverDueOrgAmount)
             		.add(yhOverDueOrgAmount).add(xdOverDueOrgAmount);
             
-//            indexMap.put("YQ022", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
-            odi.setYQ022(dkOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
-//            indexMap.put("YQ023", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
-            odi.setYQ023(xjOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
-//            indexMap.put("YQ024", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
-            odi.setYQ024(yhOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
-//            indexMap.put("YQ025", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
-            odi.setYQ025(xdOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
+            if(overDueOrgAmount.intValue()==0){
+//              indexMap.put("YQ022", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
+                odi.setYQ022(overDueOrgAmount);
+//                indexMap.put("YQ023", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
+                odi.setYQ023(overDueOrgAmount);
+//                indexMap.put("YQ024", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
+                odi.setYQ024(overDueOrgAmount);
+//                indexMap.put("YQ025", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
+                odi.setYQ025(overDueOrgAmount);
+            }else{
+//              indexMap.put("YQ022", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
+                odi.setYQ022(dkOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
+//                indexMap.put("YQ023", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
+                odi.setYQ023(xjOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
+//                indexMap.put("YQ024", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
+                odi.setYQ024(yhOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
+//                indexMap.put("YQ025", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
+                odi.setYQ025(xdOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
+            }
 		} else if (month == 6) {
 			/******************************* 逾期一天以上次数 ***************************************/
 //			indexMap.put("YQ001", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
@@ -305,15 +316,25 @@ public class TaskServer {
             //一个人所有类型机构的逾期机构数
 			 BigDecimal overDueOrgAmount = dkOverDueOrgAmount.add(xjOverDueOrgAmount).add(dkOverDueOrgAmount)
 	            		.add(yhOverDueOrgAmount).add(xdOverDueOrgAmount);
-            
-//            indexMap.put("YQ005", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
-            odi.setYQ005(dkOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
-//            indexMap.put("YQ006", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
-            odi.setYQ006(xjOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
-//            indexMap.put("YQ007", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
-            odi.setYQ007(yhOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
-//            indexMap.put("YQ008", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
-            odi.setYQ008(xdOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
+	            if(overDueOrgAmount.intValue()==0){
+//	              indexMap.put("YQ005", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
+	                odi.setYQ005(overDueOrgAmount);
+//	                indexMap.put("YQ006", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
+	                odi.setYQ006(overDueOrgAmount);
+//	                indexMap.put("YQ007", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
+	                odi.setYQ007(overDueOrgAmount);
+//	                indexMap.put("YQ008", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
+	                odi.setYQ008(overDueOrgAmount);
+	            }else{
+//	              indexMap.put("YQ005", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
+	                odi.setYQ005(dkOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
+//	                indexMap.put("YQ006", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
+	                odi.setYQ006(xjOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
+//	                indexMap.put("YQ007", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
+	                odi.setYQ007(yhOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
+//	                indexMap.put("YQ008", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
+	                odi.setYQ008(xdOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
+	            }
             
 		} else if (month == 12) {
 			/******************************* 逾期一天以上次数 ***************************************/

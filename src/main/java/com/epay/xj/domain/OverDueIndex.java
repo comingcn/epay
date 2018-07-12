@@ -4,61 +4,64 @@ import java.math.BigDecimal;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Table;
 @Entity
+@Table(name="cp_kpi.P1055_YQ")
 public class OverDueIndex {
 
 	@Id
-	private String CertNo;//身份证号
-	private int YQ001;	//6个月	逾期一天以上	近6个月在贷款类机构逾期1天以上次数
-	private int YQ002;	//6个月	逾期一天以上	近6个月在消费金融机构逾期1天以上次数
-	private int YQ003;	//6个月	逾期一天以上	近6个月在银行类机构逾期1天以上次数
-	private int YQ004;	//6个月	逾期一天以上	近6个月在小贷款类机构逾期1天以上次数
-	private BigDecimal YQ005;	//6个月	平均逾期次数	近6个月逾期的平均每家机构逾期次数
-	private BigDecimal YQ006;	//6个月	平均逾期次数	近6个月在消费金融机构逾期的平均每家机构逾期次数
-	private BigDecimal YQ007;	//6个月	平均逾期次数	近6个月在银行类机构逾期的平均每家机构逾期次数
-	private BigDecimal YQ008;	//6个月	平均逾期次数	近6个月在小贷贷款类机构逾期的平均每家机构逾期次数
-	private int YQ009;	//6个月	逾期机构数	近6个月发生逾期的贷款类机构数
-	private int YQ010;	//6个月	逾期机构数	近6个月发生逾期的消费金融类机构数
-	private int YQ011;	//6个月	逾期机构数	近6个月发生逾期的银行类机构数
-	private int YQ012;	//6个月	逾期机构数	近6个月发生逾期的小贷贷款类机构数
-	private int YQ013;	//3个月	逾期一天以上次数	近3个月在贷款类机构逾期1天以上次数
-	private int YQ014;	//3个月	逾期一天以上次数	近3个月在消费金融机构逾期1天以上次数
-	private int YQ015;	//3个月	逾期一天以上次数	近3个月在银行类机构逾期1天以上次数
-	private int YQ016;	//3个月	逾期一天以上次数	近3个月在小贷贷款类机构逾期1天以上次数
-	private int YQ017;	//3个月	逾期机构数	近3个月发生逾期的贷款类机构数
-	private int YQ018;	//3个月	逾期机构数	近3个月发生逾期的消费金融类机构数
-	private int YQ019;	//3个月	逾期机构数	近3个月发生逾期的银行类机构数
-	private int YQ020;	//3个月	逾期机构数	近3个月发生逾期的小贷类机构数
-	private BigDecimal YQ021;	//3个月	平均逾期次数	近3个月逾期的平均每家机构逾期次数
-	private BigDecimal YQ022;	//3个月	平均逾期次数	近3个月在消费金融机构逾期的平均每家机构逾期次数
-	private BigDecimal YQ023;	//3个月	平均逾期次数	近3个月在银行类机构逾期的平均每家机构逾期次数
-	private BigDecimal YQ024;	//3个月	平均逾期次数	近3个月在小贷类机构逾期的平均每家机构逾期次数
-	private BigDecimal YQ025;	//3个月	平均逾期次数	近3个月在贷款类机构逾期的平均每家机构逾期次数
-	private int YQ026;	//6个月	逾期天数总和	近6个月逾期1天以上天数总和
-	private int YQ027;	//3个月	逾期天数总和	近3个月逾期1天以上天数总和
-	private BigDecimal YQ028;	//6个月	逾期金额总和	近6个月逾期30天以上金额总和
-	private BigDecimal YQ029;	//6个月	逾期金额总和	近6个月逾期7天以上金额总和
-	private BigDecimal YQ030;	//6个月	逾期金额总和	近6个月逾期1天以上金额总和
-	private BigDecimal YQ031;	//3个月	逾期金额总和	近3个月逾期30天以上金额总和
-	private BigDecimal YQ032;	//3个月	逾期金额总和	近3个月逾期7天以上金额总和
-	private BigDecimal YQ033;	//3个月	逾期金额总和	近3个月逾期1天以上金额总和
-	private int YQ034;	//12个月	逾期机构数	近12个月发生逾期的贷款类机构数
-	private int YQ035;	//12个月	逾期机构数	近12个月发生逾期的银行类机构数
-	private int YQ036;	//12个月	逾期机构数	近12个月发生逾期的消费金融类机构数
-	private int YQ037;	//12个月	逾期机构数	近12个月发生逾期的小贷贷款类机构数
-	private int YQ038;	//12个月	逾期1天以上	近12个月在贷款类机构逾期1天以上的次数
-	private int YQ039;	//12个月	逾期1天以上	近12个月在消费金融类机构逾期1天以上的次数
-	private int YQ040;	//12个月	逾期1天以上	近12个月在银行类机构逾期1天以上的次数
-	private int YQ041;	//12个月	逾期1天以上	近12个月在小额贷款行业逾期1天以上的次数
-	private int YQ042;	//12个月	最大逾期次数	近12个月在消费金融机构逾期的最大每家机构逾期次数
-	private int YQ043;	//12个月	最大逾期次数	近12个月在贷款机构逾期的最大每家机构逾期次数
-	private int YQ044;	//12个月	最大逾期次数	近12个月在银行类机构逾期的最大每家机构逾期次数
-	private int YQ045;	//12个月	最大逾期次数	近12个月在小贷类机构逾期的最大每家机构逾期次数
-	public String getCertNo() {
-		return CertNo;
+	public String CERT_NO;//身份证号
+	public int YQ001;	//6个月	逾期一天以上	近6个月在贷款类机构逾期1天以上次数
+	public int YQ002;	//6个月	逾期一天以上	近6个月在消费金融机构逾期1天以上次数
+	public int YQ003;	//6个月	逾期一天以上	近6个月在银行类机构逾期1天以上次数
+	public int YQ004;	//6个月	逾期一天以上	近6个月在小贷款类机构逾期1天以上次数
+	public BigDecimal YQ005;	//6个月	平均逾期次数	近6个月逾期的平均每家机构逾期次数
+	public BigDecimal YQ006;	//6个月	平均逾期次数	近6个月在消费金融机构逾期的平均每家机构逾期次数
+	public BigDecimal YQ007;	//6个月	平均逾期次数	近6个月在银行类机构逾期的平均每家机构逾期次数
+	public BigDecimal YQ008;	//6个月	平均逾期次数	近6个月在小贷贷款类机构逾期的平均每家机构逾期次数
+	public int YQ009;	//6个月	逾期机构数	近6个月发生逾期的贷款类机构数
+	public int YQ010;	//6个月	逾期机构数	近6个月发生逾期的消费金融类机构数
+	public int YQ011;	//6个月	逾期机构数	近6个月发生逾期的银行类机构数
+	public int YQ012;	//6个月	逾期机构数	近6个月发生逾期的小贷贷款类机构数
+	public int YQ013;	//3个月	逾期一天以上次数	近3个月在贷款类机构逾期1天以上次数
+	public int YQ014;	//3个月	逾期一天以上次数	近3个月在消费金融机构逾期1天以上次数
+	public int YQ015;	//3个月	逾期一天以上次数	近3个月在银行类机构逾期1天以上次数
+	public int YQ016;	//3个月	逾期一天以上次数	近3个月在小贷贷款类机构逾期1天以上次数
+	public int YQ017;	//3个月	逾期机构数	近3个月发生逾期的贷款类机构数
+	public int YQ018;	//3个月	逾期机构数	近3个月发生逾期的消费金融类机构数
+	public int YQ019;	//3个月	逾期机构数	近3个月发生逾期的银行类机构数
+	public int YQ020;	//3个月	逾期机构数	近3个月发生逾期的小贷类机构数
+	public BigDecimal YQ021;	//3个月	平均逾期次数	近3个月逾期的平均每家机构逾期次数
+	public BigDecimal YQ022;	//3个月	平均逾期次数	近3个月在消费金融机构逾期的平均每家机构逾期次数
+	public BigDecimal YQ023;	//3个月	平均逾期次数	近3个月在银行类机构逾期的平均每家机构逾期次数
+	public BigDecimal YQ024;	//3个月	平均逾期次数	近3个月在小贷类机构逾期的平均每家机构逾期次数
+	public BigDecimal YQ025;	//3个月	平均逾期次数	近3个月在贷款类机构逾期的平均每家机构逾期次数
+	public int YQ026;	//6个月	逾期天数总和	近6个月逾期1天以上天数总和
+	public int YQ027;	//3个月	逾期天数总和	近3个月逾期1天以上天数总和
+	public BigDecimal YQ028;	//6个月	逾期金额总和	近6个月逾期30天以上金额总和
+	public BigDecimal YQ029;	//6个月	逾期金额总和	近6个月逾期7天以上金额总和
+	public BigDecimal YQ030;	//6个月	逾期金额总和	近6个月逾期1天以上金额总和
+	public BigDecimal YQ031;	//3个月	逾期金额总和	近3个月逾期30天以上金额总和
+	public BigDecimal YQ032;	//3个月	逾期金额总和	近3个月逾期7天以上金额总和
+	public BigDecimal YQ033;	//3个月	逾期金额总和	近3个月逾期1天以上金额总和
+	public int YQ034;	//12个月	逾期机构数	近12个月发生逾期的贷款类机构数
+	public int YQ035;	//12个月	逾期机构数	近12个月发生逾期的银行类机构数
+	public int YQ036;	//12个月	逾期机构数	近12个月发生逾期的消费金融类机构数
+	public int YQ037;	//12个月	逾期机构数	近12个月发生逾期的小贷贷款类机构数
+	public int YQ038;	//12个月	逾期1天以上	近12个月在贷款类机构逾期1天以上的次数
+	public int YQ039;	//12个月	逾期1天以上	近12个月在消费金融类机构逾期1天以上的次数
+	public int YQ040;	//12个月	逾期1天以上	近12个月在银行类机构逾期1天以上的次数
+	public int YQ041;	//12个月	逾期1天以上	近12个月在小额贷款行业逾期1天以上的次数
+	public int YQ042;	//12个月	最大逾期次数	近12个月在消费金融机构逾期的最大每家机构逾期次数
+	public int YQ043;	//12个月	最大逾期次数	近12个月在贷款机构逾期的最大每家机构逾期次数
+	public int YQ044;	//12个月	最大逾期次数	近12个月在银行类机构逾期的最大每家机构逾期次数
+	public int YQ045;	//12个月	最大逾期次数	近12个月在小贷类机构逾期的最大每家机构逾期次数
+	
+	public String getCERT_NO() {
+		return CERT_NO;
 	}
-	public void setCertNo(String certNo) {
-		CertNo = certNo;
+	public void setCERT_NO(String cERT_NO) {
+		CERT_NO = cERT_NO;
 	}
 	public int getYQ001() {
 		return YQ001;

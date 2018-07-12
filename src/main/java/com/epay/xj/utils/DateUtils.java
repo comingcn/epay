@@ -211,11 +211,74 @@ public class DateUtils {
         }
         return null;
     }
+    
+    /**
+     * @Description: 通过日期计算两个日期之间的天数(20160909 - 20181001)
+     * @param dateBegin
+     * @param dateEnd
+     * @return 
+     * @author LZG
+     * @date 2018年07月11日
+     */
+    public static synchronized int getIntervalDayAmount(Date dateBegin, Date dateEnd) {
+      
+        Calendar cal1 = Calendar.getInstance();
+        cal1.setTime(dateBegin);
+        
+        Calendar cal2 = Calendar.getInstance();
+        cal2.setTime(dateEnd);
+        
+        int day1= cal1.get(Calendar.DAY_OF_YEAR);
+        int day2 = cal2.get(Calendar.DAY_OF_YEAR);
+        
+        int year1 = cal1.get(Calendar.YEAR);
+        int year2 = cal2.get(Calendar.YEAR);
+        //同一年
+        if(year1 != year2) {
+            int timeDistance = 0 ;
+            for(int i = year1 ; i < year2 ; i ++) {
+                //闰年
+                if(i%4==0 && i%100!=0 || i%400==0) {
+                    timeDistance += 366;
+                } else  {    //不是闰年
+                    timeDistance += 365;
+                }
+            }
+            
+            return timeDistance + (day2-day1) ;
+        } else { //不同年
+            return day2-day1;
+        }
+        
+    }
 
     public static void main(String[] args) {
         //test1();
-        test2();
-        //
+        //test2();
+        //test3();
+        test4();
+    }
+
+
+    /**
+     * @Description:  
+     * @author LZG
+     * @date 2018年07月12日
+     */
+      	
+    private static void test4() {
+        int result = DateUtils.getIntervalDayAmount(DateUtils.yyyyMMddToDate("20180711"), DateUtils.yyyyMMddToDate("20180712"));
+        System.out.println(result);
+    }
+
+
+    /**
+     * @Description:  
+     * @author LZG
+     * @date 2018年07月12日
+     */
+      	
+    private static void test3() {
         Timestamp date = new Timestamp(DateUtils.yyyyMMddToDate("20180101").getTime()) ;
         Timestamp t = getDateOfXMonthsAgo(date, 3);
         t.getTime();

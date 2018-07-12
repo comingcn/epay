@@ -44,6 +44,11 @@ public class TaskServer {
 	public List<String> getTaskList(String updateTime, String flag) {
 		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST";
 		return entityManager.createNativeQuery(sql).getResultList();
+	    
+	    //19条记录(该人)的测试
+//	    List<String> testList = new ArrayList<String>();
+//	    testList.add("20171106202645552");
+//	    return testList;
 	}
 	
 	public List<TradeDetailDO> getTradeDetail(String certNo, String beginTime, String endTime) {
@@ -343,6 +348,8 @@ public class TaskServer {
 //			indexMap.put("YQ045", everyOrgOverDueMaxTimes(list, "xd", returnCodeDic));
 			odi.setYQ045(everyOrgOverDueMaxTimes(list, "xd", returnCodeDic));
 		}
+		
+		//System.out.println(odi);
 	}
 
 	/**

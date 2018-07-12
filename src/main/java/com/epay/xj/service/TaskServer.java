@@ -348,534 +348,631 @@ public class TaskServer {
 		}
 	}
 
-        /**
-	 * 逾期金额总和 : 近x个月逾期x天以上金额总和
-	 * 逾期类型3  3.在同一家公司划扣因余额不足失败，直至划扣成功为止
-	 * @param list
-	 * @param indexMap
-	 * @param orgType
-	 * @param returnCodeDic
-	 */
-	public BigDecimal overDueTotalMoneySum(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic,String days){
-//		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
-//		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
-		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
-//		List<String> success = Arrays.asList(returnCodeDic.get("success"));//划扣成功
-		//逾期天数值
-		BigDecimal overDueSumMoney = null;
-		//逾期日期值
-		Timestamp overDueBeginDate = null ;
-		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-		List<TradeDetailDO> records = null;
-		for (TradeDetailDO o : list) {
-			String merId = o.getSOURCE_MERNO();//银行卡
-			//非指定机构不参与逾期统计
-//			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
-			if(!map.containsKey(merId)){
-				records = new ArrayList<TradeDetailDO>();
-				records.add(o);
-			}else{
-				records = map.get(merId);
-				records.add(o);
-			}
-			map.put(merId, records);
-		}
-		//排序和计算逾期
-		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
-			List<TradeDetailDO> cardNolist = entry.getValue();
-			if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
-			//对集合按照日期进行排序
-			//Collections.sort(cardNolist);
-			//逾期天数值
-			for (TradeDetailDO o : cardNolist) {
-				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getRETURN_CODE())){
-					if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
-					//逾期失败日期
-					overDueBeginDate = o.getCREATE_TIME();
-					overDueSumMoney = o.getAMOUNT();
-					continue;
-				}else if("0000".contains(o.getRETURN_CODE())){
-					if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
-					//逾期天数
-					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
-					//逾期days天以上
-					if(overDueBeginDayTemp>initProperties.getOverDueDayDic().get(days)){
-						overDueSumMoney = overDueSumMoney.add(o.getAMOUNT());
-						overDueBeginDate = null;
-					}
-				}
-			}
-			//还原标记第一次划扣失败时间
-			if(!StringUtils.isEmpty(overDueBeginDate)){
-				overDueBeginDate = null;
-			}
-		}
-		if(overDueSumMoney!=null){
-			overDueSumMoney =  overDueSumMoney.setScale(2, BigDecimal.ROUND_HALF_UP);
-		}
-		return overDueSumMoney;
-	}
-	
-	
 	/**
-	 * 逾期天数总和 : 近x个月逾期x天以上天数总和
-	 * 逾期类型3  3.在同一家公司划扣因余额不足失败，直至划扣成功为止
-	 * @param list
-	 * @param indexMap
-	 * @param orgType
-	 * @param returnCodeDic
-	 */
-	public int overDueDaysSum(List<TradeDetailDO> list,String orgType, Map<String, String[]> returnCodeDic){
-		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
-		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
-		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
-		List<String> success = Arrays.asList(returnCodeDic.get("success"));//划扣成功
-		//逾期天数值
-		int overDueOneDays = 0;
-		//逾期日期值
-		Timestamp overDueBeginDate = null ;
-		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
-		//排序和计算逾期
-		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
-			List<TradeDetailDO> cardNolist = entry.getValue();
-			if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
-			//对集合按照日期进行排序
-			//Collections.sort(cardNolist);
-			//逾期天数值
-			for (TradeDetailDO o : cardNolist) {
-				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getRETURN_CODE())){
-					if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
-					//逾期失败日期
-					overDueBeginDate = o.getCREATE_TIME();
-					continue;
-				}else if(success.contains(o.getRETURN_CODE())){
-					if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
-					//逾期天数
-					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
-					//逾期一天以上
-					if(overDueBeginDayTemp>initProperties.getOverDueDayDic().get("1d")){
-						overDueOneDays = overDueBeginDayTemp +overDueOneDays;
-						overDueBeginDate = null;
-					}
-				}
-			}
-			//还原标记第一次划扣失败时间
-			if(!StringUtils.isEmpty(overDueBeginDate)){
-				overDueBeginDate = null;
-			}
-		}
-		return overDueOneDays;
-	}
-	/**
-	 * 近12个月在xx机构逾期的最大每家机构逾期次数
-	 * 逾期类型3  3.在同一家公司划扣因余额不足失败，直至划扣成功为止
-	 * @param list
-	 * @param indexMap
-	 * @param orgType
-	 * @param returnCodeDic
-	 */
-	public int everyOrgOverDueMaxTimes(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
-		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
-		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
-		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
-		List<String> success = Arrays.asList(returnCodeDic.get("success"));//划扣成功
-		//逾期天数值
-		int overDueOneDayTimes = 0;
-		//最大逾期次数值
-		int max = 0;
-		//逾期日期值
-		Timestamp overDueBeginDate = null ;
-		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
-		//排序和计算逾期
-		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
-			List<TradeDetailDO> cardNolist = entry.getValue();
-			if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
-			//对集合按照日期进行排序
-			//Collections.sort(cardNolist);
-			//逾期天数值
-			for (TradeDetailDO o : cardNolist) {
-				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getRETURN_CODE())){
-					if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
-					//逾期失败日期
-					overDueBeginDate = o.getCREATE_TIME();
-					continue;
-				}else if(success.contains(o.getRETURN_CODE())){
-					if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
-					//逾期天数
-					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
-					//逾期一天以上
-					if(overDueBeginDayTemp>initProperties.getOverDueDayDic().get("1d")){
-						overDueOneDayTimes = overDueOneDayTimes +1;
-						overDueBeginDate = null;
-					}
-				}
-			}
-			//比较当前逾期的次数和最大逾期次数值比较
-			if(max<=overDueOneDayTimes){
-				max = overDueOneDayTimes;
-			}
-			//还原标记第一次划扣失败时间
-			if(!StringUtils.isEmpty(overDueBeginDate)){
-				overDueBeginDate = null;
-			}
-		}
-		return max;
-	}
-	
-	/**
-	 * 在贷款类机构逾期1天以上次数
-	 * 逾期类型3  3.在同一家公司划扣因余额不足失败，直至划扣成功为止
-	 * @param list
-	 * @param indexMap
-	 * @param orgType
-	 * @param returnCodeDic
-	 */
-	public int loanOrgOverDueOneDay(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
-		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
-		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
-		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
-		List<String> success = Arrays.asList(returnCodeDic.get("success"));//划扣成功
-		//逾期天数值
-		int overDueOneDayTimes = 0;
-		//逾期日期值
-		Timestamp overDueBeginDate = null ;
-		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
-		//排序和计算逾期
-		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
-			List<TradeDetailDO> cardNolist = entry.getValue();
-			if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
-			//对集合按照日期进行排序
-			//Collections.sort(cardNolist);
-			//逾期天数值
-			for (TradeDetailDO o : cardNolist) {
-				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getRETURN_CODE())){
-					if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
-					//逾期失败日期
-					overDueBeginDate = o.getCREATE_TIME();
-					continue;
-				}else if(success.contains(o.getRETURN_CODE())){
-					if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
-					//逾期天数
-					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
-					//逾期一天以上
-					if(overDueBeginDayTemp>initProperties.getOverDueDayDic().get("1d")){
-						overDueOneDayTimes = overDueOneDayTimes +1;
-					}
-				}
-			}
-			//还原标记第一次划扣失败时间
-			if(!StringUtils.isEmpty(overDueBeginDate)){
-				overDueBeginDate = null;
-			}
-		}
-		return overDueOneDayTimes;
-	}
-	
-	
-	/**
-	 * 逾期机构数
-	 * 逾期类型3  3.在同一家公司划扣因余额不足失败，可视为一次在该机构下的逾期
-	 * @param list
-	 * @param indexMap
-	 * @param orgType
-	 * @param returnCodeDic
-	 */
-	public int overDueOrgCount(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
-		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
-		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
-		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
-//		List<String> success = Arrays.asList(returnCodeDic.get("success"));//划扣成功
-		//逾期天数值
-		int overDueOneOrgCount = 0;
-		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
-		//排序和计算逾期
-		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
-			List<TradeDetailDO> cardNolist = entry.getValue();
-			for (TradeDetailDO o : cardNolist) {
-				//余额不足,划扣失败,看做该机构下有逾期，逾期机构数加1
-				if(ywbzLst.contains(o.getRETURN_CODE())){
-					overDueOneOrgCount++;
-					//跳出当前循环，继续往下寻找
-					break;
-				}
-			}
-		}
-		return overDueOneOrgCount;
-	}
-	
-	/**
-	 * 每个商户的所有记录
-	 * @param list
-	 * @param orgTypeList
-	 * @return
-	 */
-	public Map<String,List<TradeDetailDO>>  merTypeMap(List<TradeDetailDO> list,List<String> orgTypeList){
-		Map<String,List<TradeDetailDO>> map =  new HashMap<String,List<TradeDetailDO>>();
-		List<TradeDetailDO> records = null;
-		for (TradeDetailDO o : list) {
-			String merId = o.getSOURCE_MERNO();//银行卡
-			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
-			if(!map.containsKey(merId)){
-				records = new ArrayList<TradeDetailDO>();	
-				records.add(o);
-			}else{
-				records = map.get(merId);
-				records.add(o);
-			}
-			map.put(merId, records);
-		}
-		return map;
-	}
-	/**
-	 * 在消费金融机构逾期1天以上次数
-	 * @param list
-	 * @param indexMap
-	 * @param orgType
-	 * @param returnCodeDic
-	 */
-	public void consumerFinanceOrgOverDueOneDay(List<TradeDetailDO> list,Map<String,Integer> indexMap ,String orgType , Map<String, String[]> returnCodeDic){
-		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
-		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//机构类型
-//		int days = initProperties.getOverDueDayDic().get("1d");
-		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
-		List<String> success = Arrays.asList(returnCodeDic.get("success"));
-		//定义一个用户在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
-		//key orgKey,value:逾期次数（不同机构的逾期次数）
-		Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
-		//key orgKey,value:逾期天数（不同机构的逾期天数）
-		Map<String,Integer> averageOrgOverDay = new HashMap<String,Integer>();
-		//排序和计算逾期
-		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
-			String cardNo = entry.getKey();
-			List<TradeDetailDO> cardNolist = entry.getValue();
-			if(cardNolist.size()<=1)continue;
-			//对集合按照日期进行排序
-			//Collections.sort(cardNolist);
-			double amout = 0;
-			//逾期日期值
-			Timestamp overDueBeginDate = null ;
-			//逾期天数值
-			int overDueBeginDay = 0;
-			for (TradeDetailDO o : cardNolist) {
-				if(cardNolist.size()<=1)continue;
-				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getRETURN_CODE())){
-					//记录失败金额
-					amout = o.getAMOUNT().doubleValue();
-					//逾期失败日期
-					overDueBeginDate = o.getCREATE_TIME();
-					continue;
-				}else if(success.contains(o.getRETURN_CODE())){
-					String merId = o.getSOURCE_MERNO();//机构平均值主键
-					if(!averageOrgOverDue.containsKey(merId)){
-						int i = averageOrgOverDue.get(merId);
-						//逾期次数
-						averageOrgOverDue.put(merId, ++i);
-					}else{
-						averageOrgOverDue.put(merId, 1);
-					}
-					//划扣成功,最终划扣成功且划扣成功金额=失败金额
-					if(amout==o.getAMOUNT().doubleValue()){
-						//计算逾期天数
-						int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
-						averageOrgOverDay.put(merId, overDueBeginDayTemp+ overDueBeginDay);
-					}
-				}
-			}
-		}
-	}
-	
-	/**
-	 * 在银行类机构逾期1天以上次数
-	 * @param list
-	 * @param indexMap
-	 * @param orgType
-	 * @param returnCodeDic
-	 */
-	public void bankOrgOverDueOneDay(List<TradeDetailDO> list,Map<String,Integer> indexMap ,String orgType , Map<String, String[]> returnCodeDic){
-		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
-		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//机构类型
-//		int days = initProperties.getOverDueDayDic().get("1d");
-		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
-		List<String> success = Arrays.asList(returnCodeDic.get("success"));
-		//定义一个用户在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
-		//key orgKey,value:逾期次数（不同机构的逾期次数）
-		Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
-		//key orgKey,value:逾期天数（不同机构的逾期天数）
-		Map<String,Integer> averageOrgOverDay = new HashMap<String,Integer>();
-		//排序和计算逾期
-		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
-			String cardNo = entry.getKey();
-			List<TradeDetailDO> cardNolist = entry.getValue();
-			if(cardNolist.size()<=1)continue;
-			//对集合按照日期进行排序
-			//Collections.sort(cardNolist);
-			double amout = 0;
-			//逾期日期值
-			Timestamp overDueBeginDate = null ;
-			//逾期天数值
-			int overDueBeginDay = 0;
-			for (TradeDetailDO o : cardNolist) {
-				if(cardNolist.size()<=1)continue;
-				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getRETURN_CODE())){
-					//记录失败金额
-					amout = o.getAMOUNT().doubleValue();
-					//逾期失败日期
-					overDueBeginDate = o.getCREATE_TIME();
-					continue;
-				}else if(success.contains(o.getRETURN_CODE())){
-					String merId = o.getSOURCE_MERNO();//机构平均值主键
-					if(!averageOrgOverDue.containsKey(merId)){
-						int i = averageOrgOverDue.get(merId);
-						//逾期次数
-						averageOrgOverDue.put(merId, ++i);
-					}else{
-						averageOrgOverDue.put(merId, 1);
-					}
-					//划扣成功,最终划扣成功且划扣成功金额=失败金额
-					if(amout==o.getAMOUNT().doubleValue()){
-						//计算逾期天数
-						int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
-						averageOrgOverDay.put(merId, overDueBeginDayTemp+ overDueBeginDay);
-					}
-				}
-			}
-		}
-	}
-	
-	
-	/**
-	 * 在小贷款类机构逾期1天以上次数
-	 * @param list
-	 * @param indexMap
-	 * @param orgType
-	 * @param returnCodeDic
-	 */
-	public void smallLoanOrgOverDueOneDay(List<TradeDetailDO> list,Map<String,Integer> indexMap ,String orgType , Map<String, String[]> returnCodeDic){
-		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
-		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//机构类型
-//		int days = initProperties.getOverDueDayDic().get("1d");
-		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
-		List<String> success = Arrays.asList(returnCodeDic.get("success"));
-		//定义一个用户在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
-		//key orgKey,value:逾期次数（不同机构的逾期次数）
-		Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
-		//key orgKey,value:逾期天数（不同机构的逾期天数）
-		Map<String,Integer> averageOrgOverDay = new HashMap<String,Integer>();
-		//排序和计算逾期
-		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
-			String cardNo = entry.getKey();
-			List<TradeDetailDO> cardNolist = entry.getValue();
-			if(cardNolist.size()<=1)continue;
-			//对集合按照日期进行排序
-			//Collections.sort(cardNolist);
-			double amout = 0;
-			//逾期日期值
-			Timestamp overDueBeginDate = null ;
-			//逾期天数值
-			int overDueBeginDay = 0;
-			for (TradeDetailDO o : cardNolist) {
-				if(cardNolist.size()<=1)continue;
-				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getRETURN_CODE())){
-					//记录失败金额
-					amout = o.getAMOUNT().doubleValue();
-					//逾期失败日期
-					overDueBeginDate = o.getCREATE_TIME();
-					continue;
-				}else if(success.contains(o.getRETURN_CODE())){
-					String merId = o.getSOURCE_MERNO();//机构平均值主键
-					if(!averageOrgOverDue.containsKey(merId)){
-						int i = averageOrgOverDue.get(merId);
-						//逾期次数
-						averageOrgOverDue.put(merId, ++i);
-					}else{
-						averageOrgOverDue.put(merId, 1);
-					}
-					//划扣成功,最终划扣成功且划扣成功金额=失败金额
-					if(amout==o.getAMOUNT().doubleValue()){
-						//计算逾期天数
-						int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
-						averageOrgOverDay.put(merId, overDueBeginDayTemp+ overDueBeginDay);
-					}
-				}
-			}
-		}
-	}
-	/**
-	 * 逾期一天以上计算
-	 * @param list
-	 * @param indexMap
-	 * @param orgType
-	 * @param returnCodeDic
-	 */
-	public void calculateOverDue(List<TradeDetailDO> list,Map<String,Integer> indexMap ,String orgType , Map<String, String[]> returnCodeDic){
-		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
-		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//机构类型
-//		int days = initProperties.getOverDueDayDic().get("1d");
-		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
-		List<String> success = Arrays.asList(returnCodeDic.get("success"));
-		//定义一个用户在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
-		//key orgKey,value:逾期次数（不同机构的逾期次数）
-		Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
-		//key orgKey,value:逾期天数（不同机构的逾期天数）
-		Map<String,Integer> averageOrgOverDay = new HashMap<String,Integer>();
-		//排序和计算逾期
-		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
-			String cardNo = entry.getKey();
-			List<TradeDetailDO> cardNolist = entry.getValue();
-			if(cardNolist.size()<=1)continue;
-			//对集合按照日期进行排序
-			//Collections.sort(cardNolist);
-			double amout = 0;
-			//逾期日期值
-			Timestamp overDueBeginDate = null ;
-			//逾期天数值
-			int overDueBeginDay = 0;
-			for (TradeDetailDO o : cardNolist) {
-				if(cardNolist.size()<=1)continue;
-				//余额不足,划扣失败
-				if(ywbzLst.contains(o.getRETURN_CODE())){
-					//记录失败金额
-					amout = o.getAMOUNT().doubleValue();
-					//逾期失败日期
-					overDueBeginDate = o.getCREATE_TIME();
-					continue;
-				}else if(success.contains(o.getRETURN_CODE())){
-					String merId = o.getSOURCE_MERNO();//机构平均值主键
-					if(!averageOrgOverDue.containsKey(merId)){
-						int i = averageOrgOverDue.get(merId);
-						//逾期次数
-						averageOrgOverDue.put(merId, ++i);
-					}else{
-						averageOrgOverDue.put(merId, 1);
-					}
-					//划扣成功,最终划扣成功且划扣成功金额=失败金额
-					if(amout==o.getAMOUNT().doubleValue()){
-						//计算逾期天数
-						int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
-						averageOrgOverDay.put(merId, overDueBeginDayTemp+ overDueBeginDay);
-					}
-				}
-			}
-		}
-	}
-	
+     * 逾期金额总和 : 近x个月逾期x天以上金额总和
+     * 逾期类型3  3.在同一家公司划扣因余额不足失败，直至划扣成功为止
+     * @param list
+     * @param indexMap
+     * @param orgType
+     * @param returnCodeDic
+     */
+    public BigDecimal overDueTotalMoneySum(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic,String days){
+        
+        List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
+        //逾期金额总和
+        BigDecimal overDueSumMoney = null;
+        BigDecimal singleOverDueSumMoney = new BigDecimal("0.00");
+        //逾期日期值
+        Timestamp overDueBeginDate = null ;
+        //定义一个用户的银行卡在不同机构下拥有的消费记录集合
+        Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
+        List<TradeDetailDO> records = null;
+        
+        for (TradeDetailDO o : list) {
+            //商户号
+            String merId = o.getSOURCE_MERNO();
+            
+            if(!map.containsKey(merId)){
+                records = new ArrayList<TradeDetailDO>();   
+                records.add(o);
+            }else{
+                records = map.get(merId);
+                records.add(o);
+            }
+            map.put(merId, records);
+        }
+        //排序和计算逾期
+        for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
+            List<TradeDetailDO> cardNolist = entry.getValue();
+            if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
+            
+            //逾期天数值
+            for (TradeDetailDO o : cardNolist) {
+                //余额不足,划扣失败
+                if(ywbzLst.contains(o.getRETURN_CODE())){
+                    if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
+                    //逾期失败日期
+                    overDueBeginDate = o.getCREATE_TIME();
+                    overDueSumMoney = o.getAMOUNT();
+                    continue;
+                }else if("0000".contains(o.getRETURN_CODE())){
+                    if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
+                    //逾期天数
+                    int overDueBeginDayTemp = DateUtils.getIntervalDayAmount(overDueBeginDate, o.getCREATE_TIME());
+                    //逾期days(天)
+                    if(overDueBeginDayTemp > initProperties.getOverDueDayDic().get(days)){
+                        singleOverDueSumMoney = singleOverDueSumMoney.add(overDueSumMoney);
+                    }
+                }
+                
+                //还原标记第一次划扣失败时间
+                if(!StringUtils.isEmpty(overDueBeginDate)){
+                    overDueBeginDate = null;
+                }
+            }
+        }
+        
+        if(overDueSumMoney!=null){
+            overDueSumMoney =  overDueSumMoney.setScale(2, BigDecimal.ROUND_HALF_UP);
+        }
+        return overDueSumMoney;
+    }
+    
+    /**
+     * 逾期天数总和 : 近x个月逾期x天以上天数总和
+     * 逾期类型3  3.在同一家公司划扣因余额不足失败，直至划扣成功为止
+     * @param list
+     * @param indexMap
+     * @param orgType
+     * @param returnCodeDic
+     */
+    public int overDueDaysSum(List<TradeDetailDO> list,String orgType, Map<String, String[]> returnCodeDic){
+        //余额不足失败返回码
+        List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
+        //逾期天数值
+        int overDueOneDays = 0;
+        //逾期日期值
+        Timestamp overDueBeginDate = null ;
+        
+        //定义一个用户的银行卡在不同机构下拥有的消费记录集合
+        Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
+        List<TradeDetailDO> records = null;
+        
+        for (TradeDetailDO o : list) {
+            //商户号
+            String merId = o.getSOURCE_MERNO();
+            if(!map.containsKey(merId)){
+                records = new ArrayList<TradeDetailDO>();
+                records.add(o);
+            }else{
+                records = map.get(merId);
+                records.add(o);
+            }
+            map.put(merId, records);
+        }
+        
+        //计算逾期
+        for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
+            List<TradeDetailDO> cardNolist = entry.getValue();
+            if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
+            
+            for (TradeDetailDO o : cardNolist) {
+                //余额不足,划扣失败
+                if(ywbzLst.contains(o.getRETURN_CODE())){
+                    if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
+                    //逾期失败日期
+                    overDueBeginDate = o.getCREATE_TIME();
+                    continue;
+                }else if("0000".contains(o.getRETURN_CODE())){
+                    if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
+                    //逾期天数
+                    int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
+                    //逾期一天以上
+                    if(overDueBeginDayTemp>initProperties.getOverDueDayDic().get("1d")){
+                        overDueOneDays = overDueBeginDayTemp +overDueOneDays;
+                        overDueBeginDate = null;
+                    }
+                }
+            }
+            //还原标记第一次划扣失败时间
+            if(!StringUtils.isEmpty(overDueBeginDate)){
+                overDueBeginDate = null;
+            }
+        }
+        return overDueOneDays;
+    }
+    
+    /**
+     * 近12个月在xx机构逾期的最大每家机构逾期次数
+     * 逾期类型3  3.在同一家公司划扣因余额不足失败，直至划扣成功为止
+     * @param list
+     * @param indexMap
+     * @param orgType
+     * @param returnCodeDic
+     */
+    public int everyOrgOverDueMaxTimes(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
+        List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//余额不足失败返回码
+        //List<String> success = Arrays.asList(returnCodeDic.get("success"));//划扣成功返回码
+        
+        //逾期天数值
+        int overDueOneDayTimes = 0;
+        //最大逾期次数值
+        int max = 0;
+        //逾期日期值
+        Timestamp overDueBeginDate = null ;
+        //定义一个用户的银行卡在不同机构下拥有的消费记录集合
+        Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
+        List<TradeDetailDO> records = null;
+        
+        for (TradeDetailDO o : list) {
+            //商户号
+            String merId = o.getSOURCE_MERNO();
+            //非指定机构不参与逾期统计
+            if(!orgTypeList.contains(o.getMER_TYPE().toString()))
+                continue;
+            if(!map.containsKey(merId)){
+                records = new ArrayList<TradeDetailDO>();   
+                records.add(o);
+            }else{
+                records = map.get(merId);
+                records.add(o);
+            }
+            map.put(merId, records);
+        }
+        //计算逾期
+        for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
+            List<TradeDetailDO> cardNolist = entry.getValue();
+            if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
+            
+            for (TradeDetailDO o : cardNolist) {
+                //余额不足,划扣失败
+                if(ywbzLst.contains(o.getRETURN_CODE())){
+                    if(!StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
+                    //逾期失败日期
+                    overDueBeginDate = o.getCREATE_TIME();
+                    overDueOneDayTimes = overDueOneDayTimes +1;
+                }
+                
+                //比较当前逾期的次数和最大逾期次数值比较
+                if(max<=overDueOneDayTimes){
+                    max = overDueOneDayTimes;
+                }
+                //还原标记第一次划扣失败时间
+                if(!StringUtils.isEmpty(overDueBeginDate)){
+                    overDueBeginDate = null;
+                }
+            }
+        }
+        return max;
+    }
+    
+    /**
+     * 在贷款类机构逾期1天以上次数
+     * 逾期类型3  3.在同一家公司划扣因余额不足失败，直至划扣成功为止
+     * @param list
+     * @param indexMap
+     * @param orgType
+     * @param returnCodeDic
+     */
+    public int loanOrgOverDueOneDay(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
+        List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//余额不足失败返回码
+        
+        //逾期天数值
+        int overDueOneDayTimes = 0;
+        //逾期日期值
+        Timestamp overDueBeginDate = null ;
+        //定义一个用户的银行卡在不同机构下拥有的消费记录集合
+        Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
+        List<TradeDetailDO> records = null;
+        
+        for (TradeDetailDO o : list) {
+            //商户号
+            String merId = o.getSOURCE_MERNO();
+            //非指定机构不参与逾期统计
+            if(!orgTypeList.contains(o.getMER_TYPE().toString()))
+                continue;
+            
+            if(!map.containsKey(merId)) {
+                records = new ArrayList<TradeDetailDO>();   
+                records.add(o);
+            } else {
+                records = map.get(merId);
+                records.add(o);
+            }
+            map.put(merId, records);
+        }
+        
+        //计算逾期
+        for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
+            List<TradeDetailDO> cardNolist = entry.getValue();
+            if(cardNolist.size()<=1)continue;//如果记录小于等于一条就不参与逾期统计
+            
+            for (TradeDetailDO o : cardNolist) {
+                //余额不足,划扣失败
+                if(ywbzLst.contains(o.getRETURN_CODE())){
+                    if(!StringUtils.isEmpty(overDueBeginDate)) //非空跳过找成功
+                        continue;//标记第一次划扣失败时间
+                    //逾期失败日期
+                    overDueBeginDate = o.getCREATE_TIME();
+                    continue;
+                }else if("0000".contains(o.getRETURN_CODE())){
+                    if(StringUtils.isEmpty(overDueBeginDate))
+                        continue;//标记第一次划扣失败时间
+                    //逾期天数
+                    int overDueBeginDayTemp = DateUtils.getIntervalDayAmount(overDueBeginDate, o.getCREATE_TIME());
+                    //逾期一天以上
+                    if(overDueBeginDayTemp > initProperties.getOverDueDayDic().get("1d")){
+                        overDueOneDayTimes = overDueOneDayTimes +1;
+                    }
+                }
+                //还原标记第一次划扣失败时间
+                if(!StringUtils.isEmpty(overDueBeginDate)){
+                    overDueBeginDate = null;
+                }
+            }
+        }
+        return overDueOneDayTimes;
+    }
+    
+    
+    /**
+     * 逾期机构数
+     * 逾期类型3  3.在同一家公司划扣因余额不足失败，可视为一次在该机构下的逾期
+     * @param list
+     * @param indexMap
+     * @param orgType
+     * @param returnCodeDic
+     */
+    public int overDueOrgCount(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
+        List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//余额不足失败返回码
+        
+        //逾期天数值
+        int overDueOneOrgCount = 0;
+        //定义一个用户的银行卡在不同机构下拥有的消费记录集合
+        Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
+        List<TradeDetailDO> records = null;
+        
+        for (TradeDetailDO o : list) {
+            //商户号
+            String merId = o.getSOURCE_MERNO();
+            //非指定机构不参与逾期统计
+            if(!orgTypeList.contains(o.getMER_TYPE().toString()))
+                continue;
+            if(!map.containsKey(merId)){
+                records = new ArrayList<TradeDetailDO>();   
+                records.add(o);
+            }else{
+                records = map.get(merId);
+                records.add(o);
+            }
+            map.put(merId, records);
+        }
+        
+        //计算逾期
+        for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
+            List<TradeDetailDO> cardNolist = entry.getValue();
+            for (TradeDetailDO o : cardNolist) {
+                //余额不足,划扣失败,看做该机构下有逾期，逾期机构数加1
+                if(ywbzLst.contains(o.getRETURN_CODE())){
+                    overDueOneOrgCount++;
+                    //跳出当前循环，继续往下寻找
+                    break;
+                }
+            }
+        }
+        return overDueOneOrgCount;
+    }
+    
+    /**
+     * 在消费金融机构逾期1天以上次数
+     * @param list
+     * @param indexMap
+     * @param orgType
+     * @param returnCodeDic
+     */
+    public void consumerFinanceOrgOverDueOneDay(List<TradeDetailDO> list,Map<String,Integer> indexMap ,String orgType , Map<String, String[]> returnCodeDic){
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//机构类型
+        String extKey = "_"+orgType;
+//      int days = initProperties.getOverDueDayDic().get("1d");
+        List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
+        List<String> success = Arrays.asList(returnCodeDic.get("success"));
+        //定义一个用户在不同机构下拥有的消费记录集合
+        Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
+        List<TradeDetailDO> records = null;
+        
+        for (TradeDetailDO o : list) {
+            String cordNo = o.getSOURCE_MERNO()+extKey;
+            //非指定机构不参与逾期统计
+            if(!orgTypeList.contains(o.getMER_TYPE().toString()))continue;
+            if(!map.containsKey(cordNo)){
+                records = new ArrayList<TradeDetailDO>();   
+                records.add(o);
+            }else{
+                records = map.get(cordNo);
+                records.add(o);
+            }
+            map.put(cordNo, records);
+        }
+        //key orgKey,value:逾期次数（不同机构的逾期次数）
+        Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
+        //key orgKey,value:逾期天数（不同机构的逾期天数）
+        Map<String,Integer> averageOrgOverDay = new HashMap<String,Integer>();
+        //排序和计算逾期
+        for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
+            String cardNo = entry.getKey();
+            List<TradeDetailDO> cardNolist = entry.getValue();
+            if(cardNolist.size()<=1)continue;
+            //对集合按照日期进行排序
+            //Collections.sort(cardNolist);
+            double amout = 0;
+            //逾期日期值
+            Timestamp overDueBeginDate = null ;
+            //逾期天数值
+            int overDueBeginDay = 0;
+            for (TradeDetailDO o : cardNolist) {
+                if(cardNolist.size()<=1)continue;
+                //余额不足,划扣失败
+                if(ywbzLst.contains(o.getRETURN_CODE())){
+                    //记录失败金额
+                    amout = o.getAMOUNT().doubleValue();
+                    //逾期失败日期
+                    overDueBeginDate = o.getCREATE_TIME();
+                    continue;
+                }else if(success.contains(o.getRETURN_CODE())){
+                    String merId = o.getSOURCE_MERNO()+extKey;//机构平均值主键
+                    if(!averageOrgOverDue.containsKey(merId)){
+                        int i = averageOrgOverDue.get(merId);
+                        //逾期次数
+                        averageOrgOverDue.put(merId, ++i);
+                    }else{
+                        averageOrgOverDue.put(merId, 1);
+                    }
+                    //划扣成功,最终划扣成功且划扣成功金额=失败金额
+                    if(amout==o.getAMOUNT().doubleValue()){
+                        //计算逾期天数
+                        int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
+                        averageOrgOverDay.put(merId, overDueBeginDayTemp+ overDueBeginDay);
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * 在银行类机构逾期1天以上次数
+     * @param list
+     * @param indexMap
+     * @param orgType
+     * @param returnCodeDic
+     */
+    public void bankOrgOverDueOneDay(List<TradeDetailDO> list,Map<String,Integer> indexMap ,String orgType , Map<String, String[]> returnCodeDic){
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//机构类型
+        String extKey = "_"+orgType;
+//      int days = initProperties.getOverDueDayDic().get("1d");
+        List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
+        List<String> success = Arrays.asList(returnCodeDic.get("success"));
+        //定义一个用户在不同机构下拥有的消费记录集合
+        Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
+        List<TradeDetailDO> records = null;
+        
+        for (TradeDetailDO o : list) {
+            String cordNo = o.getSOURCE_MERNO()+extKey;
+            //非指定机构不参与逾期统计
+            if(!orgTypeList.contains(o.getMER_TYPE().toString()))continue;
+            if(!map.containsKey(cordNo)){
+                records = new ArrayList<TradeDetailDO>();   
+                records.add(o);
+            }else{
+                records = map.get(cordNo);
+                records.add(o);
+            }
+            map.put(cordNo, records);
+        }
+        //key orgKey,value:逾期次数（不同机构的逾期次数）
+        Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
+        //key orgKey,value:逾期天数（不同机构的逾期天数）
+        Map<String,Integer> averageOrgOverDay = new HashMap<String,Integer>();
+        //排序和计算逾期
+        for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
+            String cardNo = entry.getKey();
+            List<TradeDetailDO> cardNolist = entry.getValue();
+            if(cardNolist.size()<=1)continue;
+            //对集合按照日期进行排序
+            //Collections.sort(cardNolist);
+            double amout = 0;
+            //逾期日期值
+            Timestamp overDueBeginDate = null ;
+            //逾期天数值
+            int overDueBeginDay = 0;
+            for (TradeDetailDO o : cardNolist) {
+                if(cardNolist.size()<=1)continue;
+                //余额不足,划扣失败
+                if(ywbzLst.contains(o.getRETURN_CODE())){
+                    //记录失败金额
+                    amout = o.getAMOUNT().doubleValue();
+                    //逾期失败日期
+                    overDueBeginDate = o.getCREATE_TIME();
+                    continue;
+                }else if(success.contains(o.getRETURN_CODE())){
+                    String merId = o.getSOURCE_MERNO()+extKey;//机构平均值主键
+                    if(!averageOrgOverDue.containsKey(merId)){
+                        int i = averageOrgOverDue.get(merId);
+                        //逾期次数
+                        averageOrgOverDue.put(merId, ++i);
+                    }else{
+                        averageOrgOverDue.put(merId, 1);
+                    }
+                    //划扣成功,最终划扣成功且划扣成功金额=失败金额
+                    if(amout==o.getAMOUNT().doubleValue()){
+                        //计算逾期天数
+                        int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
+                        averageOrgOverDay.put(merId, overDueBeginDayTemp+ overDueBeginDay);
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    /**
+     * 在小贷款类机构逾期1天以上次数
+     * @param list
+     * @param indexMap
+     * @param orgType
+     * @param returnCodeDic
+     */
+    public void smallLoanOrgOverDueOneDay(List<TradeDetailDO> list,Map<String,Integer> indexMap ,String orgType , Map<String, String[]> returnCodeDic){
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//机构类型
+        String extKey = "_"+orgType;
+//      int days = initProperties.getOverDueDayDic().get("1d");
+        List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
+        List<String> success = Arrays.asList(returnCodeDic.get("success"));
+        //定义一个用户在不同机构下拥有的消费记录集合
+        Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
+        List<TradeDetailDO> records = null;
+        
+        for (TradeDetailDO o : list) {
+            String cordNo = o.getSOURCE_MERNO()+extKey;
+            //非指定机构不参与逾期统计
+            if(!orgTypeList.contains(o.getMER_TYPE().toString()))continue;
+            if(!map.containsKey(cordNo)){
+                records = new ArrayList<TradeDetailDO>();   
+                records.add(o);
+            }else{
+                records = map.get(cordNo);
+                records.add(o);
+            }
+            map.put(cordNo, records);
+        }
+        //key orgKey,value:逾期次数（不同机构的逾期次数）
+        Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
+        //key orgKey,value:逾期天数（不同机构的逾期天数）
+        Map<String,Integer> averageOrgOverDay = new HashMap<String,Integer>();
+        //排序和计算逾期
+        for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
+            String cardNo = entry.getKey();
+            List<TradeDetailDO> cardNolist = entry.getValue();
+            if(cardNolist.size()<=1)continue;
+            //对集合按照日期进行排序
+            //Collections.sort(cardNolist);
+            double amout = 0;
+            //逾期日期值
+            Timestamp overDueBeginDate = null ;
+            //逾期天数值
+            int overDueBeginDay = 0;
+            for (TradeDetailDO o : cardNolist) {
+                if(cardNolist.size()<=1)continue;
+                //余额不足,划扣失败
+                if(ywbzLst.contains(o.getRETURN_CODE())){
+                    //记录失败金额
+                    amout = o.getAMOUNT().doubleValue();
+                    //逾期失败日期
+                    overDueBeginDate = o.getCREATE_TIME();
+                    continue;
+                }else if(success.contains(o.getRETURN_CODE())){
+                    String merId = o.getSOURCE_MERNO()+extKey;//机构平均值主键
+                    if(!averageOrgOverDue.containsKey(merId)){
+                        int i = averageOrgOverDue.get(merId);
+                        //逾期次数
+                        averageOrgOverDue.put(merId, ++i);
+                    }else{
+                        averageOrgOverDue.put(merId, 1);
+                    }
+                    //划扣成功,最终划扣成功且划扣成功金额=失败金额
+                    if(amout==o.getAMOUNT().doubleValue()){
+                        //计算逾期天数
+                        int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
+                        averageOrgOverDay.put(merId, overDueBeginDayTemp+ overDueBeginDay);
+                    }
+                }
+            }
+        }
+    }
+    /**
+     * 逾期一天以上计算
+     * @param list
+     * @param indexMap
+     * @param orgType
+     * @param returnCodeDic
+     */
+    public void calculateOverDue(List<TradeDetailDO> list,Map<String,Integer> indexMap ,String orgType , Map<String, String[]> returnCodeDic){
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//机构类型
+        String extKey = "_"+orgType;
+//      int days = initProperties.getOverDueDayDic().get("1d");
+        List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
+        List<String> success = Arrays.asList(returnCodeDic.get("success"));
+        //定义一个用户在不同机构下拥有的消费记录集合
+        Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
+        List<TradeDetailDO> records = null;
+        
+        for (TradeDetailDO o : list) {
+            String cordNo = o.getSOURCE_MERNO()+extKey;
+            //非指定机构不参与逾期统计
+            if(!orgTypeList.contains(o.getMER_TYPE().toString()))continue;
+            if(!map.containsKey(cordNo)){
+                records = new ArrayList<TradeDetailDO>();   
+                records.add(o);
+            }else{
+                records = map.get(cordNo);
+                records.add(o);
+            }
+            map.put(cordNo, records);
+        }
+        //key orgKey,value:逾期次数（不同机构的逾期次数）
+        Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
+        //key orgKey,value:逾期天数（不同机构的逾期天数）
+        Map<String,Integer> averageOrgOverDay = new HashMap<String,Integer>();
+        //排序和计算逾期
+        for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
+            String cardNo = entry.getKey();
+            List<TradeDetailDO> cardNolist = entry.getValue();
+            if(cardNolist.size()<=1)continue;
+            //对集合按照日期进行排序
+            //Collections.sort(cardNolist);
+            double amout = 0;
+            //逾期日期值
+            Timestamp overDueBeginDate = null ;
+            //逾期天数值
+            int overDueBeginDay = 0;
+            for (TradeDetailDO o : cardNolist) {
+                if(cardNolist.size()<=1)continue;
+                //余额不足,划扣失败
+                if(ywbzLst.contains(o.getRETURN_CODE())){
+                    //记录失败金额
+                    amout = o.getAMOUNT().doubleValue();
+                    //逾期失败日期
+                    overDueBeginDate = o.getCREATE_TIME();
+                    continue;
+                }else if(success.contains(o.getRETURN_CODE())){
+                    String merId = o.getSOURCE_MERNO()+extKey;//机构平均值主键
+                    if(!averageOrgOverDue.containsKey(merId)){
+                        int i = averageOrgOverDue.get(merId);
+                        //逾期次数
+                        averageOrgOverDue.put(merId, ++i);
+                    }else{
+                        averageOrgOverDue.put(merId, 1);
+                    }
+                    //划扣成功,最终划扣成功且划扣成功金额=失败金额
+                    if(amout==o.getAMOUNT().doubleValue()){
+                        //计算逾期天数
+                        int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
+                        averageOrgOverDay.put(merId, overDueBeginDayTemp+ overDueBeginDay);
+                    }
+                }
+            }
+        }
+    }
+    
       /**
       * @Description: 计算某类机构的逾期总次数
       * @param list
@@ -889,22 +986,36 @@ public class TaskServer {
          
          Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
          List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
-         List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
+         List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//余额不足失败返回码
          
          //某类机构的逾期逾期总次数
          int averageOrgOverDueTime = 0;
          
          //定义一个用户的银行卡在不同机构下拥有的消费记录集合
-         Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
+         Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
+         List<TradeDetailDO> records = null;
+         
+         for (TradeDetailDO o : list) {
+             String merId = o.getSOURCE_MERNO();
+             //非指定机构不参与逾期统计
+             if(!orgTypeList.contains(o.getMER_TYPE().toString()))
+                 continue;
+             if(!map.containsKey(merId)){
+                 records = new ArrayList<TradeDetailDO>();   
+                 records.add(o);
+             }else{
+                 records = map.get(merId);
+                 records.add(o);
+             }
+             map.put(merId, records);
+         }
+         
          //排序和计算逾期
          for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
              List<TradeDetailDO> cardNolist = entry.getValue();
              for (TradeDetailDO o : cardNolist) {
-                 //余额不足,划扣失败,看做该机构下有逾期，逾期机构数加1
                  if(ywbzLst.contains(o.getRETURN_CODE())){
                      averageOrgOverDueTime++;
-                     //跳出当前循环，继续往下寻找
-                     break;
                  }
              }
          }

@@ -30,8 +30,6 @@ public class InitProperties {
 	
 	private String threadPoolSize;
 	
-	private List<String> overDueMoneySumDic = new ArrayList<String>();
-	
 	private Map<String,Integer>  overDueMonth = new HashMap<String,Integer>();
 	
 	private Map<String,Integer> overDueDayDic = new HashMap<String,Integer>();
@@ -145,14 +143,6 @@ public class InitProperties {
 
 	public void setThreadPoolSize(String threadPoolSize) {
 		this.threadPoolSize = threadPoolSize;
-	}
-
-	public List<String> getOverDueMoneySumDic() {
-		return overDueMoneySumDic;
-	}
-
-	public void setOverDueMoneySumDic(List<String> overDueMoneySumDic) {
-		this.overDueMoneySumDic = overDueMoneySumDic;
 	}
 
 }

@@ -53,7 +53,7 @@ public class CertListBeanService {
 			t.setSOURCE_MERNO((String)arr[4]);
 			t.setMER_TYPE((Integer)arr[5]);
 			t.setAMOUNT((BigDecimal)arr[6]);
-			t.setSF_TYPE(arr[7].toString());
+//			t.setSF_TYPE(arr[7].toString());
 			t.setRETURN_CODE(arr[8].toString());
 			tradeDetailList.add(t);
 		}

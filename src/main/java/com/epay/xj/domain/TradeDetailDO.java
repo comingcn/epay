@@ -2,14 +2,15 @@ package com.epay.xj.domain;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.util.Date;
 
-import com.epay.xj.utils.DateUtils;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 
-//@Entity
+@Entity
 //@Table(name="trade_detail")//设置数据库中表名字
 public class TradeDetailDO implements Comparable<TradeDetailDO>{
 
+	@Id
 	private BigDecimal ID;
 //	@Id
 	private String IDCARD;
@@ -17,7 +18,7 @@ public class TradeDetailDO implements Comparable<TradeDetailDO>{
 	private Integer MER_TYPE;
 	private String SOURCE_MERNO;
 	private Timestamp CREATE_TIME;
-	private String SF_TYPE;
+	private Character SF_TYPE;
 	private BigDecimal AMOUNT;
 	private String RETURN_CODE;
 	public BigDecimal getID() {
@@ -58,10 +59,10 @@ public class TradeDetailDO implements Comparable<TradeDetailDO>{
 	public void setCREATE_TIME(Timestamp cREATE_TIME) {
 		CREATE_TIME = cREATE_TIME;
 	}
-	public String getSF_TYPE() {
+	public Character getSF_TYPE() {
 		return SF_TYPE;
 	}
-	public void setSF_TYPE(String sF_TYPE) {
+	public void setSF_TYPE(Character sF_TYPE) {
 		SF_TYPE = sF_TYPE;
 	}
 	public BigDecimal getAMOUNT() {

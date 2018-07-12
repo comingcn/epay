@@ -18,7 +18,7 @@ public class Main {
             list.add(i + "");
         }
         // 每500条数据开启一条线程
-        int threadSize = 5000;
+        int threadSize = 500;
         // 总数据条数
         int dataSize = list.size();
         // 线程数
@@ -52,6 +52,7 @@ public class Main {
                     for (String string : listStr) {
                     	System.out.println("线程："+Thread.currentThread().getName()+"content："+string);
                     	lst.add(Integer.valueOf(string));
+                    	
 //                    	Thread.currentThread().sleep(10);
 					}
                     return lst;
@@ -64,9 +65,9 @@ public class Main {
         for (Future<List<Integer>> future : results) {
         	List<Integer> lst = future.get();
         	System.out.println("size:"+lst.size());
-        	for (Integer o : lst) {
-        		System.out.println(o);
-			}
+//        	for (Integer o : lst) {
+//        		System.out.println("threadName:"+Thread.currentThread().getName()+":"+o);
+//			}
         }
         // 关闭线程池
         exec.shutdown();

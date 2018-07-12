@@ -16,6 +16,7 @@ import java.util.concurrent.Future;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.alibaba.fastjson.JSON;
+import com.epay.xj.domain.OverDueIndex;
 import com.epay.xj.domain.TradeDetailDO;
 import com.epay.xj.properties.InitProperties;
 import com.epay.xj.utils.DateUtils;
@@ -40,7 +42,7 @@ public class TaskServer {
 	private EntityManager entityManager;
 
 	public List<String> getTaskList(String updateTime, String flag) {
-		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST_PY";
+		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST";
 		return entityManager.createNativeQuery(sql).getResultList();
 	}
 	
@@ -49,24 +51,15 @@ public class TaskServer {
 		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA_PY where IDCARD='" + certNo+ "' and CREATE_TIME between TIMESTAMP_FORMAT('"+beginTime+
 				"','yyyy-mm-dd') and TIMESTAMP_FORMAT('"+ endTime+"','yyyy-mm-dd') order by CREATE_TIME asc";
 		List list = entityManager.createNativeQuery(sql).getResultList();
-		for (Object object : list) {
-			Object[] arr = (Object[]) object;
-			TradeDetailDO t = new TradeDetailDO();
-			Timestamp timeStamp = (Timestamp) arr[0];
-			t.setCREATE_TIME(timeStamp);
-			t.setID((BigDecimal)arr[1]);
-			t.setIDCARD((String)arr[2]);
-			t.setACCOUNT_NO((String)arr[3]);
-			t.setSOURCE_MERNO((String)arr[4]);
-			t.setMER_TYPE((Integer)arr[5]);
-			t.setAMOUNT((BigDecimal)arr[6]);
-			t.setSF_TYPE(arr[7].toString());
-			t.setRETURN_CODE(arr[8].toString());
-			tradeDetailList.add(t);
-		}
 		return tradeDetailList;
 	}
-
+	
+	
+	@Transactional
+	public void batchInsert(){
+		
+		
+	}
 	/**
 	 * 获取certNo下的不同月份下的所有
 	 * @param certNo
@@ -74,26 +67,11 @@ public class TaskServer {
 	 * @return
 	 */
 	public Map<Integer,List<TradeDetailDO>> fatherList(String certNo,String updateTime) {
-		List<TradeDetailDO> tradeDetailList = new ArrayList<TradeDetailDO>();
+//		List<TradeDetailDO> tradeDetailList = new ArrayList<TradeDetailDO>();
 		Map<Integer,List<TradeDetailDO>> tradeMap = new HashMap<Integer,List<TradeDetailDO>>();
-		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA_PY where IDCARD='" + certNo+ "'";
+		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA where IDCARD='" + certNo+ "'";
 		try {
-			List list = entityManager.createNativeQuery(sql).getResultList();
-			for (Object object : list) {
-				Object[] arr = (Object[]) object;
-				TradeDetailDO t = new TradeDetailDO();
-				Timestamp timeStamp = (Timestamp) arr[0];
-				t.setCREATE_TIME(timeStamp);
-				t.setID((BigDecimal)arr[1]);
-				t.setIDCARD((String)arr[2]);
-				t.setACCOUNT_NO((String)arr[3]);
-				t.setSOURCE_MERNO((String)arr[4]);
-				t.setMER_TYPE((Integer)arr[5]);
-				t.setAMOUNT((BigDecimal)arr[6]);
-				t.setSF_TYPE(arr[7].toString());
-				t.setRETURN_CODE(arr[8].toString());
-				tradeDetailList.add(t);
-			}
+			List<TradeDetailDO> tradeDetailList = entityManager.createNativeQuery(sql,TradeDetailDO.class).getResultList();
 			Collections.sort(tradeDetailList);
 			Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
 			for (int month : overDueMouth.values()) {
@@ -144,6 +122,8 @@ public class TaskServer {
 //                    logger.info("{}程数：集合数量：{}", Thread.currentThread().getName(),listStr.size());
                     for (int i = 0; i < listStr.size(); i++) {
             			String certNo = listStr.get(i);
+            			OverDueIndex odi = new OverDueIndex();
+            			odi.setCertNo(certNo);
             			Map<String,List<Map<String,String>>> everyPersonMap = new HashMap<String,List<Map<String,String>>>();
             			List<Map<String,String>> indexList = new ArrayList<Map<String,String>>();
             			//如果是人的所有记录
@@ -152,8 +132,8 @@ public class TaskServer {
             				//指标结果集
             				Map<String, String> indexMap = new HashMap<String, String>();
             				List<TradeDetailDO> list = tradeMap.get(month);
-            				overDueMouth(list, indexMap, month, returnCodeDic);
-            				if(everyPersonMap.get(certNo).isEmpty()){
+            				overDueMouth(list, odi, month, returnCodeDic);
+            				if(everyPersonMap.get(certNo)==null || everyPersonMap.get(certNo).isEmpty()){
             					indexList.add(indexMap);
             					everyPersonMap.put(certNo, indexList);
             				}else{
@@ -162,7 +142,7 @@ public class TaskServer {
             			}
             			lst.add(everyPersonMap);
             		}
-                    return lst;
+                    return null;
                 }
             };
             // 这里提交的任务容器列表和返回的Future列表存在顺序对应的关系
@@ -180,7 +160,7 @@ public class TaskServer {
 					//循环每个人指标结果集
 					for (Map.Entry<String, List<Map<String, String>>> entry : map.entrySet()) {
 						logger.info("certNo:{},index:{}", entry.getKey(),JSON.toJSONString(entry.getValue()));
-					}	
+					}
 				}
 				String useTime = String.valueOf((System.nanoTime() - sysBeginTime)/Math.pow(10, 9));
 				logger.info("写入记录useTime:{}秒",useTime);
@@ -215,111 +195,156 @@ public class TaskServer {
 		}
 	}
 
-	public void deal(String updateTime, String flag) {
-		Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
-		List<String> taskList = getTaskList(updateTime, flag);
-		for (int i = 0; i < taskList.size(); i++) {
-			long sysBeginTime = System.nanoTime();
-			for (int month : overDueMouth.values()) {
-				String beginTime = DateUtils.getDateOfXMonthsAgo(updateTime, month);
-				Map<String, String> indexMap = new HashMap<String, String>();
-				Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
-				List<TradeDetailDO> list = getTradeDetail(taskList.get(i), beginTime, updateTime);
-				overDueMouth(list, indexMap, month, returnCodeDic);
-				for(Map.Entry<String,String> entry : indexMap.entrySet()){
-					System.out.println("p:"+entry.getKey()+",v:"+entry.getValue());
-				}
-			}
-			String useTime = String.valueOf((System.nanoTime() - sysBeginTime)/Math.pow(10, 9));
-			logger.info("useTime:{}秒",useTime);
-			// 天数统计
-		}
-	}
+//	public void deal(String updateTime, String flag) {
+//		Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
+//		List<String> taskList = getTaskList(updateTime, flag);
+//		for (int i = 0; i < taskList.size(); i++) {
+//			long sysBeginTime = System.nanoTime();
+//			for (int month : overDueMouth.values()) {
+//				String beginTime = DateUtils.getDateOfXMonthsAgo(updateTime, month);
+//				Map<String, String> indexMap = new HashMap<String, String>();
+//				Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
+//				List<TradeDetailDO> list = getTradeDetail(taskList.get(i), beginTime, updateTime);
+//				overDueMouth(list, indexMap, month, returnCodeDic);
+//				for(Map.Entry<String,String> entry : indexMap.entrySet()){
+//					System.out.println("p:"+entry.getKey()+",v:"+entry.getValue());
+//				}
+//			}
+//			String useTime = String.valueOf((System.nanoTime() - sysBeginTime)/Math.pow(10, 9));
+//			logger.info("useTime:{}秒",useTime);
+//			// 天数统计
+//		}
+//	}
 
-	private void overDueMouth(List<TradeDetailDO> list, Map<String, String> indexMap, int month,
+	private void overDueMouth(List<TradeDetailDO> list, OverDueIndex odi, int month,
 			Map<String, String[]> returnCodeDic) {
 		if (month == 3) {
 			/******************************* 逾期一天以上次数 ***************************************/
-			indexMap.put("YQ013", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
-			indexMap.put("YQ014", loanOrgOverDueOneDay(list, "xj", returnCodeDic));
-			indexMap.put("YQ015", loanOrgOverDueOneDay(list, "yh", returnCodeDic));
-			indexMap.put("YQ016", loanOrgOverDueOneDay(list, "xd", returnCodeDic));
+//			indexMap.put("YQ013", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
+			odi.setYQ013(loanOrgOverDueOneDay(list, "dk", returnCodeDic));
+//			indexMap.put("YQ014", loanOrgOverDueOneDay(list, "xj", returnCodeDic));
+			odi.setYQ014(loanOrgOverDueOneDay(list, "xj", returnCodeDic));
+//			indexMap.put("YQ015", loanOrgOverDueOneDay(list, "yh", returnCodeDic));
+			odi.setYQ015(loanOrgOverDueOneDay(list, "yh", returnCodeDic));
+//			indexMap.put("YQ016", loanOrgOverDueOneDay(list, "xd", returnCodeDic));
+			odi.setYQ016(loanOrgOverDueOneDay(list, "xd", returnCodeDic));
 			/******************************* 逾期机构数 ***************************************/
-			indexMap.put("YQ017", overDueOrgCount(list, "dk", returnCodeDic));
-			indexMap.put("YQ018", overDueOrgCount(list, "xj", returnCodeDic));
-			indexMap.put("YQ019", overDueOrgCount(list, "yh", returnCodeDic));
-			indexMap.put("YQ020", overDueOrgCount(list, "xd", returnCodeDic));
+//			indexMap.put("YQ017", overDueOrgCount(list, "dk", returnCodeDic));
+			odi.setYQ017(overDueOrgCount(list, "dk", returnCodeDic));
+//			indexMap.put("YQ018", overDueOrgCount(list, "xj", returnCodeDic));
+			odi.setYQ018(overDueOrgCount(list, "xj", returnCodeDic));
+//			indexMap.put("YQ019", overDueOrgCount(list, "yh", returnCodeDic));
+			odi.setYQ019(overDueOrgCount(list, "yh", returnCodeDic));
+//			indexMap.put("YQ020", overDueOrgCount(list, "xd", returnCodeDic));
+			odi.setYQ020(overDueOrgCount(list, "xd", returnCodeDic));
 			/******************************* 逾期天数总和 ***************************************/
-			indexMap.put("YQ027", overDueDaysSum(list, returnCodeDic));
+//			indexMap.put("YQ027", overDueDaysSum(list,"dk", returnCodeDic));
+			odi.setYQ027(overDueDaysSum(list,"dk", returnCodeDic));
 			/******************************* 逾期金额总和 ***************************************/
-			indexMap.put("YQ033", overDueTotalMoneySum(list, returnCodeDic, "1d"));
-			indexMap.put("YQ032", overDueTotalMoneySum(list, returnCodeDic, "7d"));
-			indexMap.put("YQ031", overDueTotalMoneySum(list, returnCodeDic, "30d"));
+//			indexMap.put("YQ033", overDueTotalMoneySum(list, returnCodeDic, "1d"));
+			odi.setYQ033(overDueTotalMoneySum(list, returnCodeDic, "1d"));
+//			indexMap.put("YQ032", overDueTotalMoneySum(list, returnCodeDic, "7d"));
+			odi.setYQ032(overDueTotalMoneySum(list, returnCodeDic, "7d"));
+//			indexMap.put("YQ031", overDueTotalMoneySum(list, returnCodeDic, "30d"));
+			odi.setYQ031(overDueTotalMoneySum(list, returnCodeDic, "30d"));
 			
 			/******************************* 平均逾期次数 ***************************************/
-            int dkOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "dk", returnCodeDic));
-            int xjOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "xj", returnCodeDic));
-            int yhOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "yh", returnCodeDic));
-            int xdOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "xd", returnCodeDic));
+            BigDecimal dkOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "dk", returnCodeDic));
+            BigDecimal xjOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "xj", returnCodeDic));
+            BigDecimal yhOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "yh", returnCodeDic));
+            BigDecimal xdOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "xd", returnCodeDic));
             //一个人所有类型机构的逾期机构数
-            int overDueOrgAmount = dkOverDueOrgAmount + xjOverDueOrgAmount + yhOverDueOrgAmount + xdOverDueOrgAmount;
-		
-            indexMap.put("YQ022", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
-            indexMap.put("YQ023", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
-            indexMap.put("YQ024", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
-            indexMap.put("YQ025", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
             
+            BigDecimal overDueOrgAmount = dkOverDueOrgAmount.add(xjOverDueOrgAmount).add(dkOverDueOrgAmount)
+            		.add(yhOverDueOrgAmount).add(xdOverDueOrgAmount);
+            
+//            indexMap.put("YQ022", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
+            odi.setYQ022(dkOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
+//            indexMap.put("YQ023", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
+            odi.setYQ023(xjOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
+//            indexMap.put("YQ024", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
+            odi.setYQ024(yhOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
+//            indexMap.put("YQ025", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
+            odi.setYQ025(xdOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
 		} else if (month == 6) {
 			/******************************* 逾期一天以上次数 ***************************************/
-			indexMap.put("YQ001", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
-			indexMap.put("YQ002", loanOrgOverDueOneDay(list, "xj", returnCodeDic));
-			indexMap.put("YQ003", loanOrgOverDueOneDay(list, "yh", returnCodeDic));
-			indexMap.put("YQ004", loanOrgOverDueOneDay(list, "xd", returnCodeDic));
+//			indexMap.put("YQ001", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
+			odi.setYQ001(loanOrgOverDueOneDay(list, "dk", returnCodeDic));
+//			indexMap.put("YQ002", loanOrgOverDueOneDay(list, "xj", returnCodeDic));
+			odi.setYQ002(loanOrgOverDueOneDay(list, "xj", returnCodeDic));
+//			indexMap.put("YQ003", loanOrgOverDueOneDay(list, "yh", returnCodeDic));
+			odi.setYQ003(loanOrgOverDueOneDay(list, "yh", returnCodeDic));
+//			indexMap.put("YQ004", loanOrgOverDueOneDay(list, "xd", returnCodeDic));
+			odi.setYQ004(loanOrgOverDueOneDay(list, "xd", returnCodeDic));
 			/******************************* 逾期机构数 ***************************************/
-			indexMap.put("YQ009", overDueOrgCount(list, "dk", returnCodeDic));
-			indexMap.put("YQ010", overDueOrgCount(list, "xj", returnCodeDic));
-			indexMap.put("YQ011", overDueOrgCount(list, "yh", returnCodeDic));
+//			indexMap.put("YQ009", overDueOrgCount(list, "dk", returnCodeDic));
+			odi.setYQ009(overDueOrgCount(list, "dk", returnCodeDic));
+//			indexMap.put("YQ010", overDueOrgCount(list, "xj", returnCodeDic));
+			odi.setYQ010(overDueOrgCount(list, "xj", returnCodeDic));
+//			indexMap.put("YQ011", overDueOrgCount(list, "yh", returnCodeDic));
+			odi.setYQ011(overDueOrgCount(list, "yh", returnCodeDic));
 
 			/******************************* 逾期天数总和 ***************************************/
 
-			indexMap.put("YQ026", overDueDaysSum(list, returnCodeDic));
+//			indexMap.put("YQ026", overDueDaysSum(list,"dk", returnCodeDic));
+			odi.setYQ026(overDueDaysSum(list,"dk", returnCodeDic));
 
 			/******************************* 逾期金额总和 ***************************************/
-			indexMap.put("YQ030", overDueTotalMoneySum(list, returnCodeDic, "1d"));
-			indexMap.put("YQ029", overDueTotalMoneySum(list, returnCodeDic, "7d"));
-			indexMap.put("YQ028", overDueTotalMoneySum(list, returnCodeDic, "30d"));
+//			indexMap.put("YQ030", overDueTotalMoneySum(list, returnCodeDic, "1d"));
+			odi.setYQ030(overDueTotalMoneySum(list, returnCodeDic, "1d"));
+//			indexMap.put("YQ029", overDueTotalMoneySum(list, returnCodeDic, "7d"));
+			odi.setYQ029(overDueTotalMoneySum(list, returnCodeDic, "7d"));
+//			indexMap.put("YQ028", overDueTotalMoneySum(list, returnCodeDic, "30d"));
+			odi.setYQ028(overDueTotalMoneySum(list, returnCodeDic, "30d"));
 			
 			/******************************* 平均逾期次数 ***************************************/
-            int dkOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "dk", returnCodeDic));
-            int xjOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "xj", returnCodeDic));
-            int yhOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "yh", returnCodeDic));
-            int xdOverDueOrgAmount = Integer.valueOf(overDueOrgCount(list, "xd", returnCodeDic));
+			BigDecimal dkOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "dk", returnCodeDic));
+			BigDecimal xjOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "xj", returnCodeDic));
+			BigDecimal yhOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "yh", returnCodeDic));
+			BigDecimal xdOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "xd", returnCodeDic));
             //一个人所有类型机构的逾期机构数
-            int overDueOrgAmount = dkOverDueOrgAmount + xjOverDueOrgAmount + yhOverDueOrgAmount + xdOverDueOrgAmount;
-        
-            indexMap.put("YQ005", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
-            indexMap.put("YQ006", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
-            indexMap.put("YQ007", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
-            indexMap.put("YQ008", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
+			 BigDecimal overDueOrgAmount = dkOverDueOrgAmount.add(xjOverDueOrgAmount).add(dkOverDueOrgAmount)
+	            		.add(yhOverDueOrgAmount).add(xdOverDueOrgAmount);
+            
+//            indexMap.put("YQ005", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
+            odi.setYQ005(dkOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
+//            indexMap.put("YQ006", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
+            odi.setYQ006(xjOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
+//            indexMap.put("YQ007", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
+            odi.setYQ007(yhOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
+//            indexMap.put("YQ008", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
+            odi.setYQ008(xdOverDueOrgAmount.divide(overDueOrgAmount).setScale(2, BigDecimal.ROUND_HALF_UP));
             
 		} else if (month == 12) {
 			/******************************* 逾期一天以上次数 ***************************************/
-			indexMap.put("YQ038", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
-			indexMap.put("YQ039", loanOrgOverDueOneDay(list, "xj", returnCodeDic));
-			indexMap.put("YQ040", loanOrgOverDueOneDay(list, "yh", returnCodeDic));
-			indexMap.put("YQ041", loanOrgOverDueOneDay(list, "xd", returnCodeDic));
+//			indexMap.put("YQ038", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
+			odi.setYQ038(loanOrgOverDueOneDay(list, "dk", returnCodeDic));
+//			indexMap.put("YQ039", loanOrgOverDueOneDay(list, "xj", returnCodeDic));
+			odi.setYQ039(loanOrgOverDueOneDay(list, "xj", returnCodeDic));
+//			indexMap.put("YQ040", loanOrgOverDueOneDay(list, "yh", returnCodeDic));
+			odi.setYQ040(loanOrgOverDueOneDay(list, "yh", returnCodeDic));
+//			indexMap.put("YQ041", loanOrgOverDueOneDay(list, "xd", returnCodeDic));
+			odi.setYQ041(loanOrgOverDueOneDay(list, "xd", returnCodeDic));
 			/******************************* 逾期机构数 ***************************************/
-			indexMap.put("YQ034", overDueOrgCount(list, "dk", returnCodeDic));
-			indexMap.put("YQ035", overDueOrgCount(list, "xj", returnCodeDic));
-			indexMap.put("YQ036", overDueOrgCount(list, "yh", returnCodeDic));
-			indexMap.put("YQ037", overDueOrgCount(list, "xd", returnCodeDic));
+//			indexMap.put("YQ034", overDueOrgCount(list, "dk", returnCodeDic));
+			odi.setYQ034(overDueOrgCount(list, "dk", returnCodeDic));
+//			indexMap.put("YQ035", overDueOrgCount(list, "xj", returnCodeDic));
+			odi.setYQ035(overDueOrgCount(list, "xj", returnCodeDic));
+//			indexMap.put("YQ036", overDueOrgCount(list, "yh", returnCodeDic));
+			odi.setYQ036(overDueOrgCount(list, "yh", returnCodeDic));
+//			indexMap.put("YQ037", overDueOrgCount(list, "xd", returnCodeDic));
+			odi.setYQ037(overDueOrgCount(list, "xd", returnCodeDic));
 			/*******************************
 			 * 12个月 最大逾期次数
 			 ***************************************/
-			indexMap.put("YQ042", everyOrgOverDueMaxTimes(list, "dk", returnCodeDic));
-			indexMap.put("YQ043", everyOrgOverDueMaxTimes(list, "xj", returnCodeDic));
-			indexMap.put("YQ044", everyOrgOverDueMaxTimes(list, "yh", returnCodeDic));
-			indexMap.put("YQ045", everyOrgOverDueMaxTimes(list, "xd", returnCodeDic));
+//			indexMap.put("YQ042", everyOrgOverDueMaxTimes(list, "dk", returnCodeDic));
+			odi.setYQ042(everyOrgOverDueMaxTimes(list, "dk", returnCodeDic));
+//			indexMap.put("YQ043", everyOrgOverDueMaxTimes(list, "xj", returnCodeDic));
+			odi.setYQ043(everyOrgOverDueMaxTimes(list, "xj", returnCodeDic));
+//			indexMap.put("YQ044", everyOrgOverDueMaxTimes(list, "yh", returnCodeDic));
+			odi.setYQ044(everyOrgOverDueMaxTimes(list, "yh", returnCodeDic));
+//			indexMap.put("YQ045", everyOrgOverDueMaxTimes(list, "xd", returnCodeDic));
+			odi.setYQ045(everyOrgOverDueMaxTimes(list, "xd", returnCodeDic));
 		}
 	}
 
@@ -331,7 +356,7 @@ public class TaskServer {
 	 * @param orgType
 	 * @param returnCodeDic
 	 */
-	public String overDueTotalMoneySum(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic,String days){
+	public BigDecimal overDueTotalMoneySum(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic,String days){
 //		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
 //		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
 		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
@@ -387,8 +412,10 @@ public class TaskServer {
 				overDueBeginDate = null;
 			}
 		}
-		
-		return overDueSumMoney==null?"0":overDueSumMoney.toString();
+		if(overDueSumMoney!=null){
+			overDueSumMoney =  overDueSumMoney.setScale(2, BigDecimal.ROUND_HALF_UP);
+		}
+		return overDueSumMoney;
 	}
 	
 	
@@ -400,17 +427,17 @@ public class TaskServer {
 	 * @param orgType
 	 * @param returnCodeDic
 	 */
-	public String overDueDaysSum(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic){
-//		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
-//		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
+	public int overDueDaysSum(List<TradeDetailDO> list,String orgType, Map<String, String[]> returnCodeDic){
+		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
+		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
 		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
-//		List<String> success = Arrays.asList(returnCodeDic.get("success"));//划扣成功
+		List<String> success = Arrays.asList(returnCodeDic.get("success"));//划扣成功
 		//逾期天数值
 		int overDueOneDays = 0;
 		//逾期日期值
 		Timestamp overDueBeginDate = null ;
 		//定义一个用户的银行卡在不同机构下拥有的消费记录集合
-		Map<String,List<TradeDetailDO>> map = merTypeMap(list, null);
+		Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
 		//排序和计算逾期
 		for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
 			List<TradeDetailDO> cardNolist = entry.getValue();
@@ -425,7 +452,7 @@ public class TaskServer {
 					//逾期失败日期
 					overDueBeginDate = o.getCREATE_TIME();
 					continue;
-				}else if("0000".contains(o.getRETURN_CODE())){
+				}else if(success.contains(o.getRETURN_CODE())){
 					if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
 					//逾期天数
 					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
@@ -441,7 +468,7 @@ public class TaskServer {
 				overDueBeginDate = null;
 			}
 		}
-		return String.valueOf(overDueOneDays);
+		return overDueOneDays;
 	}
 	/**
 	 * 近12个月在xx机构逾期的最大每家机构逾期次数
@@ -451,7 +478,7 @@ public class TaskServer {
 	 * @param orgType
 	 * @param returnCodeDic
 	 */
-	public String everyOrgOverDueMaxTimes(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
+	public int everyOrgOverDueMaxTimes(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
 		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
@@ -478,7 +505,7 @@ public class TaskServer {
 					//逾期失败日期
 					overDueBeginDate = o.getCREATE_TIME();
 					continue;
-				}else if("0000".contains(o.getRETURN_CODE())){
+				}else if(success.contains(o.getRETURN_CODE())){
 					if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
 					//逾期天数
 					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
@@ -498,7 +525,7 @@ public class TaskServer {
 				overDueBeginDate = null;
 			}
 		}
-		return String.valueOf(max);
+		return max;
 	}
 	
 	/**
@@ -509,11 +536,11 @@ public class TaskServer {
 	 * @param orgType
 	 * @param returnCodeDic
 	 */
-	public String loanOrgOverDueOneDay(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
+	public int loanOrgOverDueOneDay(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
 		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
-//		List<String> success = Arrays.asList(returnCodeDic.get("success"));//划扣成功
+		List<String> success = Arrays.asList(returnCodeDic.get("success"));//划扣成功
 		//逾期天数值
 		int overDueOneDayTimes = 0;
 		//逾期日期值
@@ -534,7 +561,7 @@ public class TaskServer {
 					//逾期失败日期
 					overDueBeginDate = o.getCREATE_TIME();
 					continue;
-				}else if("0000".contains(o.getRETURN_CODE())){
+				}else if(success.contains(o.getRETURN_CODE())){
 					if(StringUtils.isEmpty(overDueBeginDate))continue;//标记第一次划扣失败时间
 					//逾期天数
 					int overDueBeginDayTemp = DateUtils.differentDaysByMillisecond(overDueBeginDate, o.getCREATE_TIME());
@@ -549,7 +576,7 @@ public class TaskServer {
 				overDueBeginDate = null;
 			}
 		}
-		return String.valueOf(overDueOneDayTimes);
+		return overDueOneDayTimes;
 	}
 	
 	
@@ -561,7 +588,7 @@ public class TaskServer {
 	 * @param orgType
 	 * @param returnCodeDic
 	 */
-	public String overDueOrgCount(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
+	public int overDueOrgCount(List<TradeDetailDO> list,String orgType , Map<String, String[]> returnCodeDic){
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();//商户类型归属分类字典
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));//具体机构类
 		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));//因余额不足失败
@@ -582,7 +609,7 @@ public class TaskServer {
 				}
 			}
 		}
-		return String.valueOf(overDueOneOrgCount);
+		return overDueOneOrgCount;
 	}
 	
 	/**
@@ -593,17 +620,11 @@ public class TaskServer {
 	 */
 	public Map<String,List<TradeDetailDO>>  merTypeMap(List<TradeDetailDO> list,List<String> orgTypeList){
 		Map<String,List<TradeDetailDO>> map =  new HashMap<String,List<TradeDetailDO>>();
-		//逾期金额总和，包括四种机构都要统计
-		List<String> sumDic = initProperties.getOverDueMoneySumDic();
 		List<TradeDetailDO> records = null;
 		for (TradeDetailDO o : list) {
 			String merId = o.getSOURCE_MERNO();//银行卡
 			//非指定机构不参与逾期统计
-			if(orgTypeList!=null){
-				if(!orgTypeList.contains(o.getMER_TYPE()))continue;
-			}else{
-				if(!sumDic.contains(o.getMER_TYPE()))continue;
-			}
+			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
 			if(!map.containsKey(merId)){
 				records = new ArrayList<TradeDetailDO>();	
 				records.add(o);

@@ -324,10 +324,10 @@ public class TaskServer {
 			/******************************* 逾期机构数 ***************************************/
 //			indexMap.put("YQ034", overDueOrgCount(list, "dk", returnCodeDic));
 			odi.setYQ034(overDueOrgCount(list, "dk", returnCodeDic));
-//			indexMap.put("YQ035", overDueOrgCount(list, "xj", returnCodeDic));
-			odi.setYQ035(overDueOrgCount(list, "xj", returnCodeDic));
+//			indexMap.put("YQ035", overDueOrgCount(list, "yh", returnCodeDic));
+			odi.setYQ035(overDueOrgCount(list, "yh", returnCodeDic));
 //			indexMap.put("YQ036", overDueOrgCount(list, "yh", returnCodeDic));
-			odi.setYQ036(overDueOrgCount(list, "yh", returnCodeDic));
+			odi.setYQ036(overDueOrgCount(list, "xj", returnCodeDic));
 //			indexMap.put("YQ037", overDueOrgCount(list, "xd", returnCodeDic));
 			odi.setYQ037(overDueOrgCount(list, "xd", returnCodeDic));
 			/*******************************

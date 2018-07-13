@@ -368,6 +368,31 @@ public class TaskServer {
 			odi.setYQ045(everyOrgOverDueMaxTimes(list, "xd", returnCodeDic));
 		}
 	}
+	
+	/**
+	 * 每个商户的所有记录
+	 * @param list
+	 * @param orgTypeList
+	 * @return
+	 */
+	public Map<String,List<TradeDetailDO>>  merTypeMap(List<TradeDetailDO> list,List<String> orgTypeList){
+		Map<String,List<TradeDetailDO>> map =  new HashMap<String,List<TradeDetailDO>>();
+		List<TradeDetailDO> records = null;
+		for (TradeDetailDO o : list) {
+			String merId = o.getSOURCE_MERNO();//银行卡
+			//非指定机构不参与逾期统计
+			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
+			if(!map.containsKey(merId)){
+				records = new ArrayList<TradeDetailDO>();	
+				records.add(o);
+			}else{
+				records = map.get(merId);
+				records.add(o);
+			}
+			map.put(merId, records);
+		}
+		return map;
+	}
 
 	/**
      * 逾期金额总和 : 近x个月逾期x天以上金额总和
@@ -587,26 +612,7 @@ public class TaskServer {
         //逾期日期值
         Timestamp overDueBeginDate = null ;
         //定义一个用户的银行卡在不同机构下拥有的消费记录集合
-        Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-        List<TradeDetailDO> records = null;
-        
-        for (TradeDetailDO o : list) {
-            //商户号
-            String merId = o.getSOURCE_MERNO();
-            //非指定机构不参与逾期统计
-            if(!orgTypeList.contains(o.getMER_TYPE().toString()))
-                continue;
-            
-            if(!map.containsKey(merId)) {
-                records = new ArrayList<TradeDetailDO>();   
-                records.add(o);
-            } else {
-                records = map.get(merId);
-                records.add(o);
-            }
-            map.put(merId, records);
-        }
-        
+        Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
         //计算逾期
         for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
             List<TradeDetailDO> cardNolist = entry.getValue();
@@ -705,22 +711,7 @@ public class TaskServer {
         List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
         List<String> success = Arrays.asList(returnCodeDic.get("success"));
         //定义一个用户在不同机构下拥有的消费记录集合
-        Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-        List<TradeDetailDO> records = null;
-        
-        for (TradeDetailDO o : list) {
-            String cordNo = o.getSOURCE_MERNO()+extKey;
-            //非指定机构不参与逾期统计
-            if(!orgTypeList.contains(o.getMER_TYPE().toString()))continue;
-            if(!map.containsKey(cordNo)){
-                records = new ArrayList<TradeDetailDO>();   
-                records.add(o);
-            }else{
-                records = map.get(cordNo);
-                records.add(o);
-            }
-            map.put(cordNo, records);
-        }
+        Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
         //key orgKey,value:逾期次数（不同机构的逾期次数）
         Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
         //key orgKey,value:逾期天数（不同机构的逾期天数）
@@ -781,22 +772,7 @@ public class TaskServer {
         List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
         List<String> success = Arrays.asList(returnCodeDic.get("success"));
         //定义一个用户在不同机构下拥有的消费记录集合
-        Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-        List<TradeDetailDO> records = null;
-        
-        for (TradeDetailDO o : list) {
-            String cordNo = o.getSOURCE_MERNO()+extKey;
-            //非指定机构不参与逾期统计
-            if(!orgTypeList.contains(o.getMER_TYPE().toString()))continue;
-            if(!map.containsKey(cordNo)){
-                records = new ArrayList<TradeDetailDO>();   
-                records.add(o);
-            }else{
-                records = map.get(cordNo);
-                records.add(o);
-            }
-            map.put(cordNo, records);
-        }
+        Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
         //key orgKey,value:逾期次数（不同机构的逾期次数）
         Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
         //key orgKey,value:逾期天数（不同机构的逾期天数）
@@ -858,22 +834,7 @@ public class TaskServer {
         List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
         List<String> success = Arrays.asList(returnCodeDic.get("success"));
         //定义一个用户在不同机构下拥有的消费记录集合
-        Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-        List<TradeDetailDO> records = null;
-        
-        for (TradeDetailDO o : list) {
-            String cordNo = o.getSOURCE_MERNO()+extKey;
-            //非指定机构不参与逾期统计
-            if(!orgTypeList.contains(o.getMER_TYPE().toString()))continue;
-            if(!map.containsKey(cordNo)){
-                records = new ArrayList<TradeDetailDO>();   
-                records.add(o);
-            }else{
-                records = map.get(cordNo);
-                records.add(o);
-            }
-            map.put(cordNo, records);
-        }
+        Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
         //key orgKey,value:逾期次数（不同机构的逾期次数）
         Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
         //key orgKey,value:逾期天数（不同机构的逾期天数）
@@ -933,22 +894,7 @@ public class TaskServer {
         List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));
         List<String> success = Arrays.asList(returnCodeDic.get("success"));
         //定义一个用户在不同机构下拥有的消费记录集合
-        Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-        List<TradeDetailDO> records = null;
-        
-        for (TradeDetailDO o : list) {
-            String cordNo = o.getSOURCE_MERNO()+extKey;
-            //非指定机构不参与逾期统计
-            if(!orgTypeList.contains(o.getMER_TYPE().toString()))continue;
-            if(!map.containsKey(cordNo)){
-                records = new ArrayList<TradeDetailDO>();   
-                records.add(o);
-            }else{
-                records = map.get(cordNo);
-                records.add(o);
-            }
-            map.put(cordNo, records);
-        }
+        Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
         //key orgKey,value:逾期次数（不同机构的逾期次数）
         Map<String,Integer> averageOrgOverDue = new HashMap<String,Integer>();
         //key orgKey,value:逾期天数（不同机构的逾期天数）
@@ -1013,23 +959,7 @@ public class TaskServer {
          int averageOrgOverDueTime = 0;
          
          //定义一个用户的银行卡在不同机构下拥有的消费记录集合
-         Map<String,List<TradeDetailDO>> map = new HashMap<String,List<TradeDetailDO>>();
-         List<TradeDetailDO> records = null;
-         
-         for (TradeDetailDO o : list) {
-             String merId = o.getSOURCE_MERNO();
-             //非指定机构不参与逾期统计
-             if(!orgTypeList.contains(o.getMER_TYPE().toString()))
-                 continue;
-             if(!map.containsKey(merId)){
-                 records = new ArrayList<TradeDetailDO>();   
-                 records.add(o);
-             }else{
-                 records = map.get(merId);
-                 records.add(o);
-             }
-             map.put(merId, records);
-         }
+         Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
          
          //排序和计算逾期
          for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {

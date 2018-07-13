@@ -47,6 +47,7 @@ public class BigFileReader {
 	public AtomicLong getCounter() {
 		return counter;
 	}
+	
 
 	private BigFileReader(File file,IHandle handle,String charset,int bufferSize,int threadSize){
 		this.fileLength = file.length();

@@ -42,7 +42,7 @@ public class TaskServer {
 	private EntityManager entityManager;
 
 	public List<String> getTaskList(String updateTime, String flag) {
-		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST";
+		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST_PY";
 		return entityManager.createNativeQuery(sql).getResultList();
 	}
 	
@@ -70,7 +70,7 @@ public class TaskServer {
 	public Map<Integer,List<TradeDetailDO>> fatherList(String certNo,String updateTime) {
 //		List<TradeDetailDO> tradeDetailList = new ArrayList<TradeDetailDO>();
 		Map<Integer,List<TradeDetailDO>> tradeMap = new HashMap<Integer,List<TradeDetailDO>>();
-		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA where IDCARD='" + certNo+ "'";
+		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA_PY where IDCARD='" + certNo+ "'";
 		try {
 			List<TradeDetailDO> tradeDetailList = entityManager.createNativeQuery(sql,TradeDetailDO.class).getResultList();
 			Collections.sort(tradeDetailList);
@@ -120,26 +120,16 @@ public class TaskServer {
                @Override
                public List<OverDueIndex> call() throws Exception {
                	List<OverDueIndex> lst = new ArrayList<OverDueIndex>();
-//                   logger.info("{}程数：集合数量：{}", Thread.currentThread().getName(),listStr.size());
                    for (int i = 0; i < listStr.size(); i++) {
            			String certNo = listStr.get(i);
            			OverDueIndex odi = new OverDueIndex();
            			odi.setCERT_NO(certNo);
-           			Map<String,List<Map<String,String>>> everyPersonMap = new HashMap<String,List<Map<String,String>>>();
-           			List<Map<String,String>> indexList = new ArrayList<Map<String,String>>();
            			//如果是人的所有记录
            			Map<Integer,List<TradeDetailDO>> tradeMap = fatherList(certNo,udpateTimes);
            			for (int month : overDueMouth.values()) {
            				//指标结果集
-           				Map<String, String> indexMap = new HashMap<String, String>();
            				List<TradeDetailDO> list = tradeMap.get(month);
            				overDueMouth(list, odi, month, returnCodeDic);
-           				if(everyPersonMap.get(certNo)==null || everyPersonMap.get(certNo).isEmpty()){
-           					indexList.add(indexMap);
-           					everyPersonMap.put(certNo, indexList);
-           				}else{
-           					everyPersonMap.get(certNo).add(indexMap);
-           				}
            			}
            			lst.add(odi);
            		}
@@ -158,7 +148,7 @@ public class TaskServer {
 				//遍历所有人list
 				
 				List<OverDueIndex> lst = future.get();
-				sb.append("size:").append(lst.size());
+				sb.append("size:").append(lst.size()).append(",");
 				batchInsert(lst);
 //				for (OverDueIndex overDueIndex : lst) {
 //					logger.info("certNo:{},index:{}", overDueIndex.getCertNo(),JSON.toJSONString(overDueIndex));

@@ -262,13 +262,13 @@ public class TaskServer {
              int xdOverDueOrgAmount = overDueOrgCount(list, "xd", returnCodeDic);
             
 //             indexMap.put("YQ022", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), dkOverDueOrgAmount));
-             odi.setYQ022(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), dkOverDueOrgAmount)));
+             odi.setYQ022(MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), dkOverDueOrgAmount));
 //             indexMap.put("YQ023", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), xjOverDueOrgAmount));
-             odi.setYQ023(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount)));
+             odi.setYQ023(MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount));
 //             indexMap.put("YQ024", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), yhOverDueOrgAmount));
-             odi.setYQ024(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount)));
+             odi.setYQ024(MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount));
 //             indexMap.put("YQ025", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), xdOverDueOrgAmount));
-             odi.setYQ025(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount)));
+             odi.setYQ025(MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount));
              
 		} else if (month == 6) {
 			/******************************* 逾期一天以上次数 ***************************************/
@@ -308,13 +308,13 @@ public class TaskServer {
             int xdOverDueOrgAmount = overDueOrgCount(list, "xd", returnCodeDic);
             
 //            indexMap.put("YQ005", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), dkOverDueOrgAmount));
-            odi.setYQ005(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), dkOverDueOrgAmount)));
+            odi.setYQ005(MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), dkOverDueOrgAmount));
 //            indexMap.put("YQ006", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount));
-            odi.setYQ006(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount)));
+            odi.setYQ006(MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount));
 //            indexMap.put("YQ007", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount));
-            odi.setYQ007(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount)));
+            odi.setYQ007(MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount));
 //            indexMap.put("YQ008", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount));
-            odi.setYQ008(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount)));
+            odi.setYQ008(MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount));
             
 		} else if (month == 12) {
 			/******************************* 逾期一天以上次数 ***************************************/
@@ -329,10 +329,10 @@ public class TaskServer {
 			/******************************* 逾期机构数 ***************************************/
 //			indexMap.put("YQ034", overDueOrgCount(list, "dk", returnCodeDic));
 			odi.setYQ034(overDueOrgCount(list, "dk", returnCodeDic));
-//			indexMap.put("YQ035", overDueOrgCount(list, "xj", returnCodeDic));
-			odi.setYQ035(overDueOrgCount(list, "xj", returnCodeDic));
+//			indexMap.put("YQ035", overDueOrgCount(list, "yh", returnCodeDic));
+			odi.setYQ035(overDueOrgCount(list, "yh", returnCodeDic));
 //			indexMap.put("YQ036", overDueOrgCount(list, "yh", returnCodeDic));
-			odi.setYQ036(overDueOrgCount(list, "yh", returnCodeDic));
+			odi.setYQ036(overDueOrgCount(list, "xj", returnCodeDic));
 //			indexMap.put("YQ037", overDueOrgCount(list, "xd", returnCodeDic));
 			odi.setYQ037(overDueOrgCount(list, "xd", returnCodeDic));
 			/*******************************

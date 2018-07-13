@@ -23,18 +23,18 @@ public class MathUtil {
      * @author LZG
      * @date 2018年07月10日
      */
-    public static String divide(int number1, int number2) {
+    public static BigDecimal divide(int number1, int number2) {
         // 一家逾期机构都没有,说明这个人没有逾期,平均逾期自然是0
         if (number2 == 0)
-            return "0";
+            return new BigDecimal("0").setScale(2,BigDecimal.ROUND_HALF_UP);
 
         double result = (double) number1 / number2;
 
         if (result == 0.00)
-            return "0";
+            return new BigDecimal("0").setScale(2,BigDecimal.ROUND_HALF_UP);
         
-        double value = new BigDecimal(result).setScale(2,BigDecimal.ROUND_HALF_UP).doubleValue();
-        return String.valueOf(value);
+        BigDecimal value = new BigDecimal(result).setScale(2,BigDecimal.ROUND_HALF_UP);
+        return value;
     }
 
     // 测试

@@ -92,10 +92,6 @@ public class SearchTest {
 //		for(Map.Entry<String, Object> entry:point1.entrySet()){
 //			System.out.println("key:"+entry.getKey()+",value:"+entry.getValue());
 //		}
-		
-		int threadSize=20;
-		int dataSize = 500;
-		System.out.println(dataSize%20);
 	}
 	
 	

@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.alibaba.fastjson.JSON;
 import com.epay.xj.domain.OverDueIndex;
 import com.epay.xj.domain.TradeDetailDO;
 import com.epay.xj.properties.InitProperties;
@@ -141,14 +142,14 @@ public class TaskServer {
        }
        
        List<Future<List<OverDueIndex>>> results = exec.invokeAll(tasks);
-       StringBuffer sb = new StringBuffer();
+//       StringBuffer sb = new StringBuffer();
        long sysBeginTime = System.nanoTime();
        for (Future<List<OverDueIndex>> future : results) {
 			try {
 				//遍历所有人list
 				
 				List<OverDueIndex> lst = future.get();
-				sb.append("size:").append(lst.size()).append(",");
+//				sb.append("size:").append(lst.size()).append(",");
 				batchInsert(lst);
 //				for (OverDueIndex overDueIndex : lst) {
 //					logger.info("certNo:{},index:{}", overDueIndex.getCertNo(),JSON.toJSONString(overDueIndex));
@@ -159,7 +160,7 @@ public class TaskServer {
 			}
        }
        String useTime = String.valueOf((System.nanoTime() - sysBeginTime)/Math.pow(10, 9));
-       logger.info("sb:{},写入记录useTime:{}秒",sb.toString(),useTime);
+       logger.info("sb:{},写入记录useTime:{}秒",null,useTime);
        // 关闭线程池
        exec.shutdown();
 	}
@@ -186,6 +187,20 @@ public class TaskServer {
 		}
 	}
 
+	public void onePerson(String certNo,String updateTime){
+		Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
+		Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
+			OverDueIndex odi = new OverDueIndex();
+			odi.setCERT_NO(certNo);
+			//如果是人的所有记录
+			Map<Integer,List<TradeDetailDO>> tradeMap = fatherList(certNo,updateTime);
+			for (int month : overDueMouth.values()) {
+				//指标结果集
+				List<TradeDetailDO> list = tradeMap.get(month);
+				overDueMouth(list, odi, month, returnCodeDic);
+			}
+			logger.info("odi:{}", JSON.toJSONString(odi));
+	}
 //	public void deal(String updateTime, String flag) {
 //		Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
 //		List<String> taskList = getTaskList(updateTime, flag);
@@ -346,7 +361,7 @@ public class TaskServer {
 		for (TradeDetailDO o : list) {
 			String merId = o.getSOURCE_MERNO();//银行卡
 			//非指定机构不参与逾期统计
-			if(!orgTypeList.contains(o.getMER_TYPE()))continue;
+			if(!orgTypeList.contains(o.getMER_TYPE().toString()))continue;
 			if(!map.containsKey(merId)){
 				records = new ArrayList<TradeDetailDO>();	
 				records.add(o);
@@ -578,6 +593,7 @@ public class TaskServer {
         Timestamp overDueBeginDate = null ;
         //定义一个用户的银行卡在不同机构下拥有的消费记录集合
         Map<String,List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
+//        logger.info("mouth:{},orgType:{},map:{}", 0,orgType,JSON.toJSONString(map));
         //计算逾期
         for (Map.Entry<String,List<TradeDetailDO>> entry : map.entrySet()) {
             List<TradeDetailDO> cardNolist = entry.getValue();
@@ -599,12 +615,13 @@ public class TaskServer {
                     //逾期一天以上
                     if(overDueBeginDayTemp > initProperties.getOverDueDayDic().get("1d")){
                         overDueOneDayTimes = overDueOneDayTimes +1;
+                        overDueBeginDate = null;
                     }
                 }
-                //还原标记第一次划扣失败时间
-                if(!StringUtils.isEmpty(overDueBeginDate)){
-                    overDueBeginDate = null;
-                }
+//                //还原标记第一次划扣失败时间
+//                if(!StringUtils.isEmpty(overDueBeginDate)){
+//                    overDueBeginDate = null;
+//                }
             }
         }
         return overDueOneDayTimes;

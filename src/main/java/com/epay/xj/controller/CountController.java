@@ -23,6 +23,7 @@ public class CountController {
 			long beginTime = System.nanoTime();
 			logger.info("开始时间：{}", beginTime);
 			taskServer.deal1(updateTime, null);
+//			taskServer.onePerson("20170530100017373", "20180101");
 			String useTime = String.valueOf((System.nanoTime() - beginTime)/Math.pow(10, 9));
 			logger.info("useTime:{}秒",useTime);
 			return "success";

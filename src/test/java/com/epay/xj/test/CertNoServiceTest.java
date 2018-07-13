@@ -1,6 +1,7 @@
 package com.epay.xj.test;
 
 
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,7 @@ public class CertNoServiceTest {
     Logger logger = LoggerFactory.getLogger(getClass());
 
     
-//    @Test
+    @Test
     public void dealOverDue(){
     	long beginTime = System.nanoTime();
     	taskServer.deal1("20180101", null);

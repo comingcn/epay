@@ -28,6 +28,7 @@ import com.epay.xj.domain.OverDueIndex;
 import com.epay.xj.domain.TradeDetailDO;
 import com.epay.xj.properties.InitProperties;
 import com.epay.xj.utils.DateUtils;
+import com.epay.xj.utils.MathUtil;
 
 @Service
 @Transactional
@@ -218,6 +219,7 @@ public class TaskServer {
 
 	private void overDueMouth(List<TradeDetailDO> list, OverDueIndex odi, int month,
 			Map<String, String[]> returnCodeDic) {
+	    
 		if (month == 3) {
 			/******************************* 逾期一天以上次数 ***************************************/
 //			indexMap.put("YQ013", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
@@ -249,34 +251,20 @@ public class TaskServer {
 			odi.setYQ031(overDueTotalMoneySum(list, returnCodeDic, "30d"));
 			
 			/******************************* 平均逾期次数 ***************************************/
-            BigDecimal dkOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "dk", returnCodeDic));
-            BigDecimal xjOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "xj", returnCodeDic));
-            BigDecimal yhOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "yh", returnCodeDic));
-            BigDecimal xdOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "xd", returnCodeDic));
-            //一个人所有类型机构的逾期机构数
+		     int dkOverDueOrgAmount = overDueOrgCount(list, "dk", returnCodeDic);
+             int xjOverDueOrgAmount = overDueOrgCount(list, "xj", returnCodeDic);
+             int yhOverDueOrgAmount = overDueOrgCount(list, "yh", returnCodeDic);
+             int xdOverDueOrgAmount = overDueOrgCount(list, "xd", returnCodeDic);
             
-            BigDecimal overDueOrgAmount = dkOverDueOrgAmount.add(xjOverDueOrgAmount).add(dkOverDueOrgAmount)
-            		.add(yhOverDueOrgAmount).add(xdOverDueOrgAmount);
-            
-            if(overDueOrgAmount.intValue()==0){
-//              indexMap.put("YQ022", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
-                odi.setYQ022(overDueOrgAmount);
-//                indexMap.put("YQ023", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
-                odi.setYQ023(overDueOrgAmount);
-//                indexMap.put("YQ024", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
-                odi.setYQ024(overDueOrgAmount);
-//                indexMap.put("YQ025", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
-                odi.setYQ025(overDueOrgAmount);
-            }else{
-//              indexMap.put("YQ022", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
-                odi.setYQ022(dkOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
-//                indexMap.put("YQ023", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
-                odi.setYQ023(xjOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
-//                indexMap.put("YQ024", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
-                odi.setYQ024(yhOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
-//                indexMap.put("YQ025", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
-                odi.setYQ025(xdOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
-            }
+//             indexMap.put("YQ022", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), dkOverDueOrgAmount));
+             odi.setYQ022(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), dkOverDueOrgAmount)));
+//             indexMap.put("YQ023", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), xjOverDueOrgAmount));
+             odi.setYQ023(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount)));
+//             indexMap.put("YQ024", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), yhOverDueOrgAmount));
+             odi.setYQ024(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount)));
+//             indexMap.put("YQ025", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), xdOverDueOrgAmount));
+             odi.setYQ025(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount)));
+             
 		} else if (month == 6) {
 			/******************************* 逾期一天以上次数 ***************************************/
 //			indexMap.put("YQ001", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
@@ -309,32 +297,19 @@ public class TaskServer {
 			odi.setYQ028(overDueTotalMoneySum(list, returnCodeDic, "30d"));
 			
 			/******************************* 平均逾期次数 ***************************************/
-			BigDecimal dkOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "dk", returnCodeDic));
-			BigDecimal xjOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "xj", returnCodeDic));
-			BigDecimal yhOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "yh", returnCodeDic));
-			BigDecimal xdOverDueOrgAmount = new BigDecimal(overDueOrgCount(list, "xd", returnCodeDic));
-            //一个人所有类型机构的逾期机构数
-			 BigDecimal overDueOrgAmount = dkOverDueOrgAmount.add(xjOverDueOrgAmount).add(dkOverDueOrgAmount)
-	            		.add(yhOverDueOrgAmount).add(xdOverDueOrgAmount);
-	            if(overDueOrgAmount.intValue()==0){
-//	              indexMap.put("YQ005", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
-	                odi.setYQ005(overDueOrgAmount);
-//	                indexMap.put("YQ006", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
-	                odi.setYQ006(overDueOrgAmount);
-//	                indexMap.put("YQ007", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
-	                odi.setYQ007(overDueOrgAmount);
-//	                indexMap.put("YQ008", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
-	                odi.setYQ008(overDueOrgAmount);
-	            }else{
-//	              indexMap.put("YQ005", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), overDueOrgAmount));
-	                odi.setYQ005(dkOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
-//	                indexMap.put("YQ006", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), overDueOrgAmount));
-	                odi.setYQ006(xjOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
-//	                indexMap.put("YQ007", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), overDueOrgAmount));
-	                odi.setYQ007(yhOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
-//	                indexMap.put("YQ008", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), overDueOrgAmount));
-	                odi.setYQ008(xdOverDueOrgAmount.divide(overDueOrgAmount,2,BigDecimal.ROUND_HALF_UP));
-	            }
+	        int dkOverDueOrgAmount = overDueOrgCount(list, "dk", returnCodeDic);
+            int xjOverDueOrgAmount = overDueOrgCount(list, "xj", returnCodeDic);
+            int yhOverDueOrgAmount = overDueOrgCount(list, "yh", returnCodeDic);
+            int xdOverDueOrgAmount = overDueOrgCount(list, "xd", returnCodeDic);
+            
+//            indexMap.put("YQ005", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), dkOverDueOrgAmount));
+            odi.setYQ005(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), dkOverDueOrgAmount)));
+//            indexMap.put("YQ006", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount));
+            odi.setYQ006(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount)));
+//            indexMap.put("YQ007", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount));
+            odi.setYQ007(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount)));
+//            indexMap.put("YQ008", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount));
+            odi.setYQ008(new BigDecimal(MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount)));
             
 		} else if (month == 12) {
 			/******************************* 逾期一天以上次数 ***************************************/

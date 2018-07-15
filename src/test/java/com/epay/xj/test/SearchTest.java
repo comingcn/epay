@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -73,6 +74,7 @@ public class SearchTest {
 	}
 	public static void main(String[] args) throws Exception, JsonMappingException, IOException {
 		List<A> lst = getData();
+		System.out.println(JSON.toJSONString(lst));
 //		StringWriter str=new StringWriter();
 //		ObjectMapper om = new ObjectMapper();
 //		om.writeValue(str, lst);

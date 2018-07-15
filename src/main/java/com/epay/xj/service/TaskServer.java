@@ -132,6 +132,7 @@ public class TaskServer {
            				List<TradeDetailDO> list = tradeMap.get(month);
            				overDueMouth(list, odi, month, returnCodeDic);
            			}
+//           			logger.info("odi:{}", JSON.toJSONString(odi));
            			lst.add(odi);
            		}
                    return lst;
@@ -149,8 +150,9 @@ public class TaskServer {
 				//遍历所有人list
 				
 				List<OverDueIndex> lst = future.get();
+				logger.info("-------------------------------lst.size:{}", lst.size());
 //				sb.append("size:").append(lst.size()).append(",");
-				batchInsert(lst);
+//				batchInsert(lst);
 //				for (OverDueIndex overDueIndex : lst) {
 //					logger.info("certNo:{},index:{}", overDueIndex.getCertNo(),JSON.toJSONString(overDueIndex));
 //				}
@@ -225,7 +227,7 @@ public class TaskServer {
 	private void overDueMouth(List<TradeDetailDO> list, OverDueIndex odi, int month,
 			Map<String, String[]> returnCodeDic) {
 	    
-		if (month == 3) {
+		if (month == 3) { 
 			/******************************* 逾期一天以上次数 ***************************************/
 //			indexMap.put("YQ013", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
 			odi.setYQ013(loanOrgOverDueOneDay(list, "dk", returnCodeDic));

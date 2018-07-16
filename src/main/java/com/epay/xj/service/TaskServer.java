@@ -1044,6 +1044,7 @@ public class TaskServer {
 		return null;
 	}
 	
+	
 	/**
 	 * 放款类变量。最近(最早)一次。时间指标.最近一次在贷款机构放款的日期
 	 * @param list

@@ -203,58 +203,27 @@ public class TaskServer {
 			}
 			logger.info("odi:{}", JSON.toJSONString(odi));
 	}
-//	public void deal(String updateTime, String flag) {
-//		Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
-//		List<String> taskList = getTaskList(updateTime, flag);
-//		for (int i = 0; i < taskList.size(); i++) {
-//			long sysBeginTime = System.nanoTime();
-//			for (int month : overDueMouth.values()) {
-//				String beginTime = DateUtils.getDateOfXMonthsAgo(updateTime, month);
-//				Map<String, String> indexMap = new HashMap<String, String>();
-//				Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
-//				List<TradeDetailDO> list = getTradeDetail(taskList.get(i), beginTime, updateTime);
-//				overDueMouth(list, indexMap, month, returnCodeDic);
-//				for(Map.Entry<String,String> entry : indexMap.entrySet()){
-//					System.out.println("p:"+entry.getKey()+",v:"+entry.getValue());
-//				}
-//			}
-//			String useTime = String.valueOf((System.nanoTime() - sysBeginTime)/Math.pow(10, 9));
-//			logger.info("useTime:{}秒",useTime);
-//			// 天数统计
-//		}
-//	}
+
 
 	private void overDueMouth(List<TradeDetailDO> list, OverDueIndex odi, int month,
 			Map<String, String[]> returnCodeDic) {
 	    
 		if (month == 3) { 
 			/******************************* 逾期一天以上次数 ***************************************/
-//			indexMap.put("YQ013", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
 			odi.setYQ013(loanOrgOverDueOneDay(list, "dk", returnCodeDic));
-//			indexMap.put("YQ014", loanOrgOverDueOneDay(list, "xj", returnCodeDic));
 			odi.setYQ014(loanOrgOverDueOneDay(list, "xj", returnCodeDic));
-//			indexMap.put("YQ015", loanOrgOverDueOneDay(list, "yh", returnCodeDic));
 			odi.setYQ015(loanOrgOverDueOneDay(list, "yh", returnCodeDic));
-//			indexMap.put("YQ016", loanOrgOverDueOneDay(list, "xd", returnCodeDic));
 			odi.setYQ016(loanOrgOverDueOneDay(list, "xd", returnCodeDic));
 			/******************************* 逾期机构数 ***************************************/
-//			indexMap.put("YQ017", overDueOrgCount(list, "dk", returnCodeDic));
 			odi.setYQ017(overDueOrgCount(list, "dk", returnCodeDic));
-//			indexMap.put("YQ018", overDueOrgCount(list, "xj", returnCodeDic));
 			odi.setYQ018(overDueOrgCount(list, "xj", returnCodeDic));
-//			indexMap.put("YQ019", overDueOrgCount(list, "yh", returnCodeDic));
 			odi.setYQ019(overDueOrgCount(list, "yh", returnCodeDic));
-//			indexMap.put("YQ020", overDueOrgCount(list, "xd", returnCodeDic));
 			odi.setYQ020(overDueOrgCount(list, "xd", returnCodeDic));
 			/******************************* 逾期天数总和 ***************************************/
-//			indexMap.put("YQ027", overDueDaysSum(list,"dk", returnCodeDic));
 			odi.setYQ027(overDueDaysSum(list,"dk", returnCodeDic));
 			/******************************* 逾期金额总和 ***************************************/
-//			indexMap.put("YQ033", overDueTotalMoneySum(list, returnCodeDic, "1d"));
 			odi.setYQ033(overDueTotalMoneySum(list, returnCodeDic, "1d"));
-//			indexMap.put("YQ032", overDueTotalMoneySum(list, returnCodeDic, "7d"));
 			odi.setYQ032(overDueTotalMoneySum(list, returnCodeDic, "7d"));
-//			indexMap.put("YQ031", overDueTotalMoneySum(list, returnCodeDic, "30d"));
 			odi.setYQ031(overDueTotalMoneySum(list, returnCodeDic, "30d"));
 			
 			/******************************* 平均逾期次数 ***************************************/
@@ -263,44 +232,29 @@ public class TaskServer {
              int yhOverDueOrgAmount = overDueOrgCount(list, "yh", returnCodeDic);
              int xdOverDueOrgAmount = overDueOrgCount(list, "xd", returnCodeDic);
             
-//             indexMap.put("YQ022", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), dkOverDueOrgAmount));
              odi.setYQ022(MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), dkOverDueOrgAmount));
-//             indexMap.put("YQ023", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), xjOverDueOrgAmount));
              odi.setYQ023(MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount));
-//             indexMap.put("YQ024", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), yhOverDueOrgAmount));
              odi.setYQ024(MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount));
-//             indexMap.put("YQ025", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), xdOverDueOrgAmount));
              odi.setYQ025(MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount));
              
 		} else if (month == 6) {
 			/******************************* 逾期一天以上次数 ***************************************/
-//			indexMap.put("YQ001", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
 			odi.setYQ001(loanOrgOverDueOneDay(list, "dk", returnCodeDic));
-//			indexMap.put("YQ002", loanOrgOverDueOneDay(list, "xj", returnCodeDic));
 			odi.setYQ002(loanOrgOverDueOneDay(list, "xj", returnCodeDic));
-//			indexMap.put("YQ003", loanOrgOverDueOneDay(list, "yh", returnCodeDic));
 			odi.setYQ003(loanOrgOverDueOneDay(list, "yh", returnCodeDic));
-//			indexMap.put("YQ004", loanOrgOverDueOneDay(list, "xd", returnCodeDic));
 			odi.setYQ004(loanOrgOverDueOneDay(list, "xd", returnCodeDic));
 			/******************************* 逾期机构数 ***************************************/
-//			indexMap.put("YQ009", overDueOrgCount(list, "dk", returnCodeDic));
 			odi.setYQ009(overDueOrgCount(list, "dk", returnCodeDic));
-//			indexMap.put("YQ010", overDueOrgCount(list, "xj", returnCodeDic));
 			odi.setYQ010(overDueOrgCount(list, "xj", returnCodeDic));
-//			indexMap.put("YQ011", overDueOrgCount(list, "yh", returnCodeDic));
 			odi.setYQ011(overDueOrgCount(list, "yh", returnCodeDic));
 
 			/******************************* 逾期天数总和 ***************************************/
 
-//			indexMap.put("YQ026", overDueDaysSum(list,"dk", returnCodeDic));
 			odi.setYQ026(overDueDaysSum(list,"dk", returnCodeDic));
 
 			/******************************* 逾期金额总和 ***************************************/
-//			indexMap.put("YQ030", overDueTotalMoneySum(list, returnCodeDic, "1d"));
 			odi.setYQ030(overDueTotalMoneySum(list, returnCodeDic, "1d"));
-//			indexMap.put("YQ029", overDueTotalMoneySum(list, returnCodeDic, "7d"));
 			odi.setYQ029(overDueTotalMoneySum(list, returnCodeDic, "7d"));
-//			indexMap.put("YQ028", overDueTotalMoneySum(list, returnCodeDic, "30d"));
 			odi.setYQ028(overDueTotalMoneySum(list, returnCodeDic, "30d"));
 			
 			/******************************* 平均逾期次数 ***************************************/
@@ -309,44 +263,28 @@ public class TaskServer {
             int yhOverDueOrgAmount = overDueOrgCount(list, "yh", returnCodeDic);
             int xdOverDueOrgAmount = overDueOrgCount(list, "xd", returnCodeDic);
             
-//            indexMap.put("YQ005", MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), dkOverDueOrgAmount));
             odi.setYQ005(MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), dkOverDueOrgAmount));
-//            indexMap.put("YQ006", MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount));
             odi.setYQ006(MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount));
-//            indexMap.put("YQ007", MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount));
             odi.setYQ007(MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount));
-//            indexMap.put("YQ008", MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount));
             odi.setYQ008(MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount));
             
 		} else if (month == 12) {
 			/******************************* 逾期一天以上次数 ***************************************/
-//			indexMap.put("YQ038", loanOrgOverDueOneDay(list, "dk", returnCodeDic));
 			odi.setYQ038(loanOrgOverDueOneDay(list, "dk", returnCodeDic));
-//			indexMap.put("YQ039", loanOrgOverDueOneDay(list, "xj", returnCodeDic));
 			odi.setYQ039(loanOrgOverDueOneDay(list, "xj", returnCodeDic));
-//			indexMap.put("YQ040", loanOrgOverDueOneDay(list, "yh", returnCodeDic));
 			odi.setYQ040(loanOrgOverDueOneDay(list, "yh", returnCodeDic));
-//			indexMap.put("YQ041", loanOrgOverDueOneDay(list, "xd", returnCodeDic));
 			odi.setYQ041(loanOrgOverDueOneDay(list, "xd", returnCodeDic));
 			/******************************* 逾期机构数 ***************************************/
-//			indexMap.put("YQ034", overDueOrgCount(list, "dk", returnCodeDic));
 			odi.setYQ034(overDueOrgCount(list, "dk", returnCodeDic));
-//			indexMap.put("YQ035", overDueOrgCount(list, "yh", returnCodeDic));
 			odi.setYQ035(overDueOrgCount(list, "yh", returnCodeDic));
-//			indexMap.put("YQ036", overDueOrgCount(list, "yh", returnCodeDic));
 			odi.setYQ036(overDueOrgCount(list, "xj", returnCodeDic));
-//			indexMap.put("YQ037", overDueOrgCount(list, "xd", returnCodeDic));
 			odi.setYQ037(overDueOrgCount(list, "xd", returnCodeDic));
 			/*******************************
 			 * 12个月 最大逾期次数
 			 ***************************************/
-//			indexMap.put("YQ042", everyOrgOverDueMaxTimes(list, "dk", returnCodeDic));
 			odi.setYQ042(everyOrgOverDueMaxTimes(list, "dk", returnCodeDic));
-//			indexMap.put("YQ043", everyOrgOverDueMaxTimes(list, "xj", returnCodeDic));
 			odi.setYQ043(everyOrgOverDueMaxTimes(list, "xj", returnCodeDic));
-//			indexMap.put("YQ044", everyOrgOverDueMaxTimes(list, "yh", returnCodeDic));
 			odi.setYQ044(everyOrgOverDueMaxTimes(list, "yh", returnCodeDic));
-//			indexMap.put("YQ045", everyOrgOverDueMaxTimes(list, "xd", returnCodeDic));
 			odi.setYQ045(everyOrgOverDueMaxTimes(list, "xd", returnCodeDic));
 		}
 	}

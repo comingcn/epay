@@ -81,8 +81,8 @@ public class SearchTest {
 //		System.out.println(str);
 //		Map<String,Object> point1 = new HashMap<String,Object>();
 //		search(lst, point1);
-//		Point point = new Point();
-//		search(lst, point);
+		Point point = new Point();
+		search(lst, point);
 //		StringWriter str1=new StringWriter();
 //		ObjectMapper om1 = new ObjectMapper();
 //		om1.writeValue(str1, point);
@@ -98,6 +98,7 @@ public class SearchTest {
 	
 	
 	public static void  search(List<A> lst,Point point){
+		//是否找到成功标识
 		for (int i=0;i<lst.size();i++) {
 			A a = lst.get(i);
 			if(!a.getCode().equals("0")){
@@ -107,9 +108,10 @@ public class SearchTest {
 				}
 			}else{
 				//成功情况指针下探，就说明没有找到第一条逾期的开始记录，
-				if(point.getCurrent()==null)continue;
+				if(point.getCurrent()==null || point.getCurrent().getMoney()==a.getMoney())continue;
 				int tms = point.getTimes();
 					point.setTimes(++tms);
+					System.out.println(point.getCurrent().getId());
 				lst.remove(i);
 				point.setCurrent(null);
 				search(lst, point);

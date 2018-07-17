@@ -36,13 +36,39 @@ public class MathUtil {
         BigDecimal value = new BigDecimal(result).setScale(2,BigDecimal.ROUND_HALF_UP);
         return value;
     }
+    
+    /**
+     * @Description: 除(保留两位小数,四舍五入)
+     * @param number1
+     * @param number2
+     * @return
+     * @author LZG
+     * @date 2018年07月10日
+     */
+    public static BigDecimal divide(BigDecimal number1, BigDecimal number2) {
+        // 一家逾期机构都没有,说明这个人没有逾期,平均逾期自然是0
+        if (number2.equals(BigDecimal.ZERO)) 
+            return new BigDecimal("0").setScale(0,BigDecimal.ROUND_HALF_UP);
+
+        BigDecimal result = number1.divide(number2);
+
+        result = result.setScale(2, BigDecimal.ROUND_HALF_UP);
+        return result;
+    }
 
     // 测试
     public static void main(String[] args) {
-        System.out.println(MathUtil.divide(10, 0));
-        System.out.println(MathUtil.divide(9, 8));
-        System.out.println(MathUtil.divide(0, 8));
-        System.out.println(MathUtil.divide(1, 8));
+//        System.out.println(MathUtil.divide(10, 0));
+//        System.out.println(MathUtil.divide(9, 8));
+//        System.out.println(MathUtil.divide(0, 8));
+//        System.out.println(MathUtil.divide(1, 8));
+        
+        BigDecimal number1 = new BigDecimal("10");
+        BigDecimal number2 = new BigDecimal("0");
+        BigDecimal number3 = new BigDecimal("8");
+        
+        System.out.println(MathUtil.divide(number1, number2));
+        System.out.println(MathUtil.divide(number1, number3));
       
     }
 

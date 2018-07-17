@@ -1464,5 +1464,13 @@ public class OverDueIndex {
 		SX012 = sX012;
 	}
 	
+	/**
+	 * @see java.lang.Object#toString() 
+	 * @return 
+	 */
+	@Override public String toString() {
+	    // TODO Auto-generated method stub
+	    return super.toString();
+	}
 	
 }

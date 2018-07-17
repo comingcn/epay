@@ -22,6 +22,9 @@ initProperties:
     12m: 12
     6m: 6
     3m: 3
+    2m: 2
+    1m: 1
+    15d: 15
   #逾期天配置
   #最近和最早一次在程序里处理
   overDueDayDic: 

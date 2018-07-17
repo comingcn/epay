@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.alibaba.fastjson.JSON;
+import com.epay.xj.domain.BindCardLog;
 import com.epay.xj.domain.OverDueIndex;
 import com.epay.xj.domain.TradeDetailDO;
 import com.epay.xj.properties.InitProperties;
@@ -66,6 +68,25 @@ public class TaskServer {
 	}
 
 	/**
+	 * 排除特定月份不执行查询
+	 * 
+	 * @param month
+	 * @return
+	 */
+	public boolean exclude(int month) {
+		if (month == 1) {// 1m: 1 排除一月份
+			return true;
+		}
+		if (month == 2) {// 2m: 2 排除二月份
+			return true;
+		}
+		if (month == 15) {// 15d: 15 排除十五天
+			return true;
+		}
+		return false;
+	}
+
+	/**
 	 * 获取certNo下的不同月份下的所有
 	 * 
 	 * @param certNo
@@ -83,6 +104,8 @@ public class TaskServer {
 			Collections.sort(tradeDetailList);
 			Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
 			for (int month : overDueMouth.values()) {
+				if (exclude(month))
+					continue;// 排除15天，两个月，
 				tradeMap.put(month, getListByMonth(tradeDetailList, month, updateTime));
 			}
 		} catch (Exception e) {
@@ -90,6 +113,50 @@ public class TaskServer {
 			e.printStackTrace();
 		}
 		return tradeMap;
+	}
+
+	/**
+	 * @param certNo
+	 * @param updateTime
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public Map<Integer, List<BindCardLog>> getBindCardLog(String certNo, String updateTime) {
+		String sql = "select * from CP_ODS.P1055_UMP_BIND_LOG_PARA where CERT_NO='" + certNo + "'";
+		List<BindCardLog> tradeDetailList = entityManager.createNativeQuery(sql, BindCardLog.class).getResultList();
+		Map<Integer, List<BindCardLog>> tradeMap = new HashMap<Integer, List<BindCardLog>>();
+		Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
+		for (int month : overDueMouth.values()) {
+			tradeMap.put(month, getBindCardLogListByMonthOrDays(tradeDetailList, month, updateTime));
+		}
+		return tradeMap;
+	}
+
+	/**
+	 * 绑卡类日志的按月统计
+	 * 
+	 * @param tradeDetailList
+	 * @param month
+	 * @param updateTime
+	 * @return
+	 */
+	private List<BindCardLog> getBindCardLogListByMonthOrDays(List<BindCardLog> tradeDetailList, int month,
+			String updateTime) {
+		List<BindCardLog> list = new ArrayList<BindCardLog>();
+		Timestamp end = new Timestamp(DateUtils.yyyyMMddToDate(updateTime).getTime());
+		Timestamp begin = null;
+		if (month == 15) {// 按天计算日期
+			begin = DateUtils.getDateOfXDaysAgo(end, month);
+		} else {
+			begin = DateUtils.getDateOfXMonthsAgo(end, month);
+		}
+		for (BindCardLog o : tradeDetailList) {
+			Timestamp current = new Timestamp(DateUtils.yyyyMMddToDate(o.getTXN_DATE()).getTime());
+			if (DateUtils.judge(begin, end, current)) {
+				list.add(o);
+			}
+		}
+		return list;
 	}
 
 	public void sliceTask(List<String> taskList, String updateTime) throws InterruptedException {
@@ -135,8 +202,17 @@ public class TaskServer {
 						Map<Integer, List<TradeDetailDO>> tradeMap = fatherList(certNo, udpateTimes);
 						for (int month : overDueMouth.values()) {
 							// 指标结果集
+							if (exclude(month))
+								continue;// 排除15天，两个月，一个月
 							List<TradeDetailDO> list = tradeMap.get(month);
 							overDueMouth(list, odi, month, returnCodeDic);
+						}
+						// 客户申请行为统计
+						Map<Integer, List<BindCardLog>> bindCardLogMap = getBindCardLog(certNo, udpateTimes);
+						for (int month : overDueMouth.values()) {
+							// 指标结果集
+							List<BindCardLog> list = bindCardLogMap.get(month);
+							bindCardMouth(list, odi, month, returnCodeDic,udpateTimes);
 						}
 						// logger.info("odi:{}", JSON.toJSONString(odi));
 						lst.add(odi);
@@ -172,6 +248,237 @@ public class TaskServer {
 		logger.info("sb:{},写入记录useTime:{}秒", null, useTime);
 		// 关闭线程池
 		exec.shutdown();
+	}
+
+	/**
+	 * 获取绑卡日志集合，以商户id为主键的map
+	 * 
+	 * @param list
+	 * @param orgType
+	 *            目前只要贷款和银行类机构，如果机构为空则是全部
+	 * @return
+	 */
+	public Map<String, List<BindCardLog>> bindCardMerMap(List<BindCardLog> list, String orgType) {
+		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();// 商户类型归属分类字典
+		Map<String, List<BindCardLog>> map = new HashMap<String, List<BindCardLog>>();
+		for (BindCardLog o : list) {
+			String merNo = o.getAPP_SYS_ID();
+			if (null != orgType) {
+				List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));// 具体机构类
+				if (orgTypeList.contains(String.valueOf(o.getMER_TYPE()))) {
+					if (map.containsKey(merNo)) {
+						map.get(merNo).add(o);
+					} else {
+						List<BindCardLog> bclLst = new ArrayList<BindCardLog>();
+						bclLst.add(o);
+						map.put(merNo, bclLst);
+					}
+				}
+			} else {
+				if (map.containsKey(merNo)) {
+					map.get(merNo).add(o);
+				} else {
+					List<BindCardLog> bclLst = new ArrayList<BindCardLog>();
+					bclLst.add(o);
+					map.put(merNo, bclLst);
+				}
+			}
+		}
+		return map;
+	}
+
+	/**
+	 * 客户行为统计
+	 * 
+	 * @param list
+	 * @param odi
+	 * @param month
+	 * @param returnCodeDic
+	 */
+	private void bindCardMouth(List<BindCardLog> list, OverDueIndex odi, int month,
+			Map<String, String[]> returnCodeDic,String updateTime) {
+		/* 15天 */
+		if (month == 15) {
+			odi.setSQ036(bindCardMerMap(list, null).size());// 申请认证机构数
+			odi.setSQ037(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
+			odi.setSQ037(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
+			odi.setSQ039(list.size());// 申请记录数
+		}
+		/* 1个月 */
+		if (month == 1) {
+			odi.setSQ031(bindCardMerMap(list, null).size());// 申请认证机构数
+			odi.setSQ032(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
+			odi.setSQ033(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
+			odi.setSQ034(list.size());// 申请记录数
+			odi.setSQ035(averageBindCardRecord(list, null, "0", "0000"));// 卡均申请记录数:每张借记卡申请认证成功的平均记录数
+		}
+		/* 2个月 */
+		if (month == 2) {
+			odi.setSQ027(bindCardMerMap(list, null).size());// 申请认证机构数
+			odi.setSQ028(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
+			odi.setSQ029(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
+			odi.setSQ030(list.size());// 申请记录数
+		}
+		/* 3个月 */
+		if (month == 3) {
+			odi.setSQ019(bindCardMerMap(list, null).size());// 申请认证的不同机构数
+			odi.setSQ020(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
+			odi.setSQ021(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
+			odi.setSQ022(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
+			odi.setSQ023(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ022()));// 平均每张借记卡申请记录数
+			odi.setSQ024(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ022()));// 平均每张贷记卡申请记录数
+			odi.setSQ025(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ022()));// 平均每张卡在贷款类机构申请认证的记录数
+			odi.setSQ026(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ022()));// 平均每张卡在贷款类机构申请认证的记录数
+		}
+		/* 6个月 */
+		if (month == 6) {
+			odi.setSQ009(bindCardMerMap(list, null).size());// 申请认证的不同机构数
+			odi.setSQ010(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
+			odi.setSQ011(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
+			odi.setSQ012(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
+			odi.setSQ013(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ012()));// 平均每张借记卡申请记录数
+			odi.setSQ014(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ012()));// 平均每张贷记卡申请记录数
+			odi.setSQ015(getBindCardMinRecordsByDcType(list, "0","max"));// 每张借记卡申请最小记录数
+			odi.setSQ016(getBindCardMinRecordsByDcType(list, "1","min"));// 每张贷记卡申请最小记录数
+			odi.setSQ017(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ012()));// 平均每张卡在贷款类机构申请认证的记录数
+			odi.setSQ018(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ012()));// 平均每张卡在贷款类机构申请认证的记录数
+		}
+		/* 12个月 */
+		if (month == 12) {
+			odi.setSQ001(bindCardMerMap(list, null).size());// 申请认证的不同机构数
+			odi.setSQ002(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
+			odi.setSQ003(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
+			odi.setSQ004(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
+			odi.setSQ005(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ004()));// 平均每张借记卡申请记录数
+			odi.setSQ006(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ004()));// 平均每张贷记卡申请记录数
+			odi.setSQ007(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ004()));// 平均每张卡在贷款类机构申请认证的记录数
+			odi.setSQ008(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ004()));// 平均每张卡在银行类机构申请认证的记录数
+			/*	时间指标.最近一次	*/
+			
+			/*	时间指标.最早一次	*/
+		}
+	}
+
+	/**
+	 * 每张借记卡申请最小记录数 dcType:借贷类型(0：借记卡，1：贷记卡)
+	 * @param list
+	 * @param dcType
+	 * @param flag max/min
+	 * @return
+	 */
+	private int getBindCardMinRecordsByDcType(List<BindCardLog> list, String dcType,String flag) {
+		List<Integer> countList = new ArrayList<Integer>();
+		Collection<List<BindCardLog>> mapList = bindCardNoMap(list, dcType).values();
+		for (List<BindCardLog> o : mapList) {
+			countList.add(o.size());
+		}
+		if(flag.equals("max")){
+			return Collections.max(countList);
+		}else if(flag.equals("min")){
+			return Collections.min(countList);
+		}
+		return 0;
+	}
+
+	/**
+	 * 获取以银行卡号为主键的所有记录
+	 * @param list
+	 * @param dcType
+	 * @return
+	 */
+	private Map<String,List<BindCardLog>> bindCardNoMap(List<BindCardLog> list, String dcType) {
+		Map<String,List<BindCardLog>> map = new HashMap<String,List<BindCardLog>>();
+		for (BindCardLog o : list) {
+			String bankNo = o.getENC();//银行卡号
+			if(dcType==null){
+				if(map.containsKey(bankNo)){
+					map.get(bankNo).add(o);
+				}else{
+					List<BindCardLog> bclLst = new ArrayList<BindCardLog>();
+					bclLst.add(o);
+					map.put(bankNo, bclLst);
+				}
+			}else if(dcType.equals(o.getDC_TYPE())){
+				if(map.containsKey(bankNo)){
+					map.get(bankNo).add(o);
+				}else{
+					List<BindCardLog> bclLst = new ArrayList<BindCardLog>();
+					bclLst.add(o);
+					map.put(bankNo, bclLst);
+				}
+			}
+		}
+		return map;
+	}
+
+	/**
+	 * 
+	 * @param list
+	 * @param orgType
+	 *            商户类型
+	 * @param dcType
+	 *            借贷类型(0：借记卡，1：贷记卡)
+	 * @param success
+	 *            认证状态
+	 * @return
+	 */
+	private BigDecimal averageBindCardRecord(List<BindCardLog> list, String orgType, String dcType, String success) {
+		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();// 商户类型归属分类字典
+		int totalRecords = 0;
+		int successRecords = 0;
+		for (BindCardLog o : list) {
+			if (null == orgType) {// 所有机构
+				// 每张借记卡申请认证成功的平均记录数
+				if (null != dcType) {
+					if (dcType.equals(o.getDC_TYPE())) {// 借贷类型
+						totalRecords++;
+						if (null != success) {// 认证状态
+							if (success.equals(o.getVALID_STAT())) {// 认证成功
+								successRecords++;
+							}
+						}else{//认证所有状态
+							successRecords++;
+						}
+					}
+				} else {// 指定机构
+
+				}
+			}
+		}
+		if (totalRecords == 0) {
+			return new BigDecimal(0.00);
+		} else {
+
+		}
+		return MathUtil.divide(totalRecords, successRecords);
+	}
+	
+	/**
+	 * 获取dcType卡记录数
+	 * 平均每张借记卡申请记录数 dcType:借贷类型(0：借记卡，1：贷记卡)
+	 * @param list
+	 * @param orgType
+	 * @param dcType:
+	 * @return
+	 */
+	public int getBindCardByDcType(List<BindCardLog> list, String orgType,String dcType){
+		int i = 0;
+		for (BindCardLog o : list) {
+			if(null == orgType){
+				if(null!=dcType){
+					if(o.getDC_TYPE().equals(dcType)){
+						i++;
+					}
+				}
+			}else{//所有的机构
+				Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();// 商户类型归属分类字典
+				List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));// 具体机构类
+				if(orgTypeList.contains(String.valueOf(o.getMER_TYPE()))){
+					i++;
+				}
+			}
+		}
+		return i;
 	}
 
 	public List<TradeDetailDO> getListByMonth(List<TradeDetailDO> fatherList, int month, String udpateTimes) {
@@ -242,13 +549,13 @@ public class TaskServer {
 			odi.setYQ023(MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount));
 			odi.setYQ024(MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount));
 			odi.setYQ025(MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount));
-			
+
 			/******************************* 授信类变量 ***************************************/
 			odi.setSX009(totalCreditLine(list, "dk", returnCodeDic));
 			odi.setSX010(totalCreditLine(list, "yh", returnCodeDic));
 			odi.setSX011(maxCreditLine(list, "xd", returnCodeDic));
 			odi.setSX012(maxCreditLine(list, "xj", returnCodeDic));
-			
+
 		} else if (month == 6) {
 			/******************************* 逾期一天以上次数 ***************************************/
 			odi.setYQ001(loanOrgOverDueOneDay(list, "dk", returnCodeDic));
@@ -279,15 +586,15 @@ public class TaskServer {
 			odi.setYQ006(MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount));
 			odi.setYQ007(MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount));
 			odi.setYQ008(MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount));
-			
+
 			/******************************* 放款类变量 ***************************************/
-			odi.setFK008(loanOrgLoanSuccessTimes(list, "dk", returnCodeDic));//成功放款的记录数
-			odi.setFK009(loanOrgLoanSuccessOrg(list, "dk", returnCodeDic));//成功放款的不同机构数
-			odi.setFK010(loanOrgLoanSumMoney(list, "yh", returnCodeDic));//在银行类机构放款的总金额
-			odi.setFK011(loanOrgLoanSumMoney(list, "xj", returnCodeDic));//在消费金融类机构放款的总金额
-			odi.setFK012(loanOrgLoanSumMoney(list, "xd", returnCodeDic));//在小额贷款类机构放款的总金额
-			odi.setFK013(loanOrgLoanSumMoney(list, "dk", returnCodeDic));//在贷款类机构放款的总金额
-			
+			odi.setFK008(loanOrgLoanSuccessTimes(list, "dk", returnCodeDic));// 成功放款的记录数
+			odi.setFK009(loanOrgLoanSuccessOrg(list, "dk", returnCodeDic));// 成功放款的不同机构数
+			odi.setFK010(loanOrgLoanSumMoney(list, "yh", returnCodeDic));// 在银行类机构放款的总金额
+			odi.setFK011(loanOrgLoanSumMoney(list, "xj", returnCodeDic));// 在消费金融类机构放款的总金额
+			odi.setFK012(loanOrgLoanSumMoney(list, "xd", returnCodeDic));// 在小额贷款类机构放款的总金额
+			odi.setFK013(loanOrgLoanSumMoney(list, "dk", returnCodeDic));// 在贷款类机构放款的总金额
+
 			/******************************* 授信类变量 ***************************************/
 			odi.setSX005(totalCreditLine(list, "dk", returnCodeDic));
 			odi.setSX006(totalCreditLine(list, "yh", returnCodeDic));
@@ -312,28 +619,28 @@ public class TaskServer {
 			odi.setYQ043(everyOrgOverDueMaxTimes(list, "xj", returnCodeDic));
 			odi.setYQ044(everyOrgOverDueMaxTimes(list, "yh", returnCodeDic));
 			odi.setYQ045(everyOrgOverDueMaxTimes(list, "xd", returnCodeDic));
-			
+
 			/******************************* 放款类变量 ***************************************/
-			odi.setFK001(loanOrgLoanSuccessTimes(list, "dk", returnCodeDic));//成功放款的记录数
-			odi.setFK002(loanOrgLoanSuccessOrg(list, "dk", returnCodeDic));//成功放款的不同机构数
-			odi.setFK003(odi.getFK003());//fk002 和 fk003 是一样的；
-			odi.setFK004(loanOrgLoanSumMoney(list, "yh", returnCodeDic));//在银行类机构放款的总金额
-			odi.setFK005(loanOrgLoanSumMoney(list, "xj", returnCodeDic));//在消费金融类机构放款的总金额
-			odi.setFK006(loanOrgLoanSumMoney(list, "xd", returnCodeDic));//在小额贷款类机构放款的总金额
-			odi.setFK007(loanOrgLoanSumMoney(list, "dk", returnCodeDic));//在贷款类机构放款的总金额
-			/*	最近一次	*/
+			odi.setFK001(loanOrgLoanSuccessTimes(list, "dk", returnCodeDic));// 成功放款的记录数
+			odi.setFK002(loanOrgLoanSuccessOrg(list, "dk", returnCodeDic));// 成功放款的不同机构数
+			odi.setFK003(odi.getFK003());// fk002 和 fk003 是一样的；
+			odi.setFK004(loanOrgLoanSumMoney(list, "yh", returnCodeDic));// 在银行类机构放款的总金额
+			odi.setFK005(loanOrgLoanSumMoney(list, "xj", returnCodeDic));// 在消费金融类机构放款的总金额
+			odi.setFK006(loanOrgLoanSumMoney(list, "xd", returnCodeDic));// 在小额贷款类机构放款的总金额
+			odi.setFK007(loanOrgLoanSumMoney(list, "dk", returnCodeDic));// 在贷款类机构放款的总金额
+			/* 最近一次 */
 			odi.setFK014(loanOrgRecentLoanDate(list, "dk", returnCodeDic, "2"));
-			if(odi.getFK014()!=null){
+			if (odi.getFK014() != null) {
 				Date dateBegin = DateUtils.yyyyMMddToDate(odi.getFK014());
 				odi.setFK015(DateUtils.getIntervalDayAmount(dateBegin, new Date()));
 			}
-			/*	最早一次	*/
+			/* 最早一次 */
 			odi.setFK016(loanOrgRecentLoanDate(list, "dk", returnCodeDic, "1"));
-			if(odi.getFK016()!=null){
+			if (odi.getFK016() != null) {
 				Date dateBegin = DateUtils.yyyyMMddToDate(odi.getFK016());
 				odi.setFK015(DateUtils.getIntervalDayAmount(dateBegin, new Date()));
 			}
-			
+
 			/******************************* 授信类变量 ***************************************/
 			odi.setSX001(maxCreditLine(list, "dk", returnCodeDic));
 			odi.setSX002(maxCreditLine(list, "yh", returnCodeDic));
@@ -1001,8 +1308,7 @@ public class TaskServer {
 		// 近x个月成功放款的记录数
 		for (TradeDetailDO o : list) {
 			// 放款成功
-			if (orgTypeList.contains(o.getMER_TYPE().toString()) 
-					&& o.getSF_TYPE().toString().equals("F") 
+			if (orgTypeList.contains(o.getMER_TYPE().toString()) && o.getSF_TYPE().toString().equals("F")
 					&& success.contains(o.getRETURN_CODE())) {
 				records++;
 			}
@@ -1049,10 +1355,11 @@ public class TaskServer {
 	 *            dk
 	 * @param returnCodeDic
 	 */
-	public BigDecimal loanOrgLoanSumMoney(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
+	public BigDecimal loanOrgLoanSumMoney(List<TradeDetailDO> list, String orgType,
+			Map<String, String[]> returnCodeDic) {
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();// 商户类型归属分类字典
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));// 具体机构类
-//		List<String> success = Arrays.asList(returnCodeDic.get("success"));
+		// List<String> success = Arrays.asList(returnCodeDic.get("success"));
 		// 逾期天数值
 		BigDecimal records = new BigDecimal(0);
 		// 近x个月成功放款的记录数
@@ -1064,97 +1371,103 @@ public class TaskServer {
 				}
 			}
 		}
-		if(records.intValue()!=0){
+		if (records.intValue() != 0) {
 			records.setScale(2, BigDecimal.ROUND_UP);
 		}
 		return records;
 	}
-	
+
 	/**
 	 * 获取最近放款最近的记录
+	 * 
 	 * @param list
 	 * @param orgTypeList
-	 * @param flg:最早:1 最近:2
+	 * @param flg:最早:1
+	 *            最近:2
 	 * @return
 	 */
-	public TradeDetailDO recentOrFirstLoanRecord(List<TradeDetailDO> list ,List<String> orgTypeList,String flg){
+	public TradeDetailDO recentOrFirstLoanRecord(List<TradeDetailDO> list, List<String> orgTypeList, String flg) {
 		List<TradeDetailDO> lst = new ArrayList<TradeDetailDO>();
 		for (TradeDetailDO o : list) {
 			if (orgTypeList.contains(o.getMER_TYPE())) {
 				lst.add(o);
 			}
 		}
-		if(lst.size()!=0){
-			if(flg.equals("1")){
+		if (lst.size() != 0) {
+			if (flg.equals("1")) {
 				return lst.get(0);
-			}else if(flg.equals("2")){
-				return lst.get(lst.size()-1);
+			} else if (flg.equals("2")) {
+				return lst.get(lst.size() - 1);
 			}
 		}
 		return null;
 	}
-	
-	
+
 	/**
 	 * 放款类变量。最近(最早)一次。时间指标.最近一次在贷款机构放款的日期 flg:最早:1 最近:2
+	 * 
 	 * @param list
 	 * @param indexMap
 	 * @param orgType:
 	 * @param returnCodeDic
-	 * @param flg:最早:1 最近:2
+	 * @param flg:最早:1
+	 *            最近:2
 	 */
-	public String loanOrgRecentLoanDate(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic,String flg) {
+	public String loanOrgRecentLoanDate(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic,
+			String flg) {
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();// 商户类型归属分类字典
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));// 具体机构类
-//		List<String> success = Arrays.asList(returnCodeDic.get("success"));
+		// List<String> success = Arrays.asList(returnCodeDic.get("success"));
 		// 逾期天数值
 		String records = null;
 		// 近x个月成功放款的记录数
 		TradeDetailDO o = recentOrFirstLoanRecord(list, orgTypeList, flg);
-		if(null!=o){
+		if (null != o) {
 			Date date = new Date();
 			date.setTime(o.getCREATE_TIME().getTime());
 			records = DateUtils.yyyyMMddToString(date);
 		}
 		return records;
 	}
-	
+
 	/**
 	 * 授信类变量.最大额度
+	 * 
 	 * @param list
 	 * @param orgType
 	 * @param returnCodeDic
 	 * @return
 	 */
-	public BigDecimal maxCreditLine(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic){
+	public BigDecimal maxCreditLine(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();// 商户类型归属分类字典
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));// 具体机构类
 		List<BigDecimal> maxLst = new ArrayList<BigDecimal>();
 		for (TradeDetailDO o : list) {
-			if(orgTypeList.contains(o.getMER_TYPE().toString()) && o.getSF_TYPE().toString().equals("S")){
+			if (orgTypeList.contains(o.getMER_TYPE().toString()) && o.getSF_TYPE().toString().equals("S")) {
 				maxLst.add(o.getAMOUNT());
 			}
 		}
 		return Collections.max(maxLst);
 	}
-	
+
 	/**
 	 * 授信类变量.总额度
+	 * 
 	 * @param list
 	 * @param orgType
 	 * @param returnCodeDic
 	 * @return
 	 */
-	public BigDecimal totalCreditLine(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic){
+	public BigDecimal totalCreditLine(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();// 商户类型归属分类字典
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));// 具体机构类
 		BigDecimal total = new BigDecimal(0);
 		for (TradeDetailDO o : list) {
-			if(orgTypeList.contains(o.getMER_TYPE().toString()) && o.getSF_TYPE().toString().equals("S")){
+			if (orgTypeList.contains(o.getMER_TYPE().toString()) && o.getSF_TYPE().toString().equals("S")) {
 				total.add(o.getAMOUNT());
 			}
 		}
-		if(total.intValue()!=0){
+		if (total.intValue() != 0) {
 			total.setScale(2, BigDecimal.ROUND_UP);
 		}
 		return total;

@@ -166,7 +166,6 @@ public class DateUtils {
         c.setTime(currentDate);
         // 在日历的月份上减去N个月
         c.add(Calendar.MONTH, -monthAmount);
-        
         return DateUtils.yyyyMMddToString(c.getTime());
     }
     
@@ -182,6 +181,23 @@ public class DateUtils {
         c.add(Calendar.MONTH, -monthAmount);
         return new Timestamp(c.getTimeInMillis());
     }
+    
+    /**
+     * 获取当前天数
+     * @param date
+     * @param days
+     */
+    public static synchronized Timestamp getDateOfXDaysAgo(Timestamp date, int days) {
+        // 获得一个日历的实例
+        Calendar c = Calendar.getInstance();
+        // 设置日历时间
+        c.setTime(date);
+        // 在日历的月份上减去N个月
+        c.add(Calendar.DAY_OF_MONTH, -days);
+        return new Timestamp(c.getTimeInMillis());
+    }
+    
+    
     
     /**
      * @Description: 获取现在时间str

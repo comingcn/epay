@@ -8,8 +8,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -556,6 +558,23 @@ public class TaskServer {
 			odi.setSX011(maxCreditLine(list, "xd", returnCodeDic));
 			odi.setSX012(maxCreditLine(list, "xj", returnCodeDic));
 
+		     /******************************* 风险类变量 *****************************/
+            int dkAcctfAmount = acctfCount(list, "dk", returnCodeDic);
+            int xjAcctfAmount = acctfCount(list, "xj", returnCodeDic);
+            int yhAcctfAmount = acctfCount(list, "yh", returnCodeDic);
+            int xdAcctfAmount = acctfCount(list, "xd", returnCodeDic);
+            
+            odi.setFX017(dkAcctfAmount);
+            odi.setFX018(xjAcctfAmount);
+            odi.setFX019(yhAcctfAmount);
+            odi.setFX020(xdAcctfAmount);
+            odi.setFX021(dkAcctfAmount + xjAcctfAmount + yhAcctfAmount + xdAcctfAmount);
+            
+            odi.setFX022(acctfProportion(list, returnCodeDic));
+            odi.setFX023(acctfMoneyProportion(list, returnCodeDic));
+            odi.setFX024(otlmtMoneyProportion(list, returnCodeDic));
+            odi.setFX025(otlmtProportion(list, returnCodeDic));
+			
 		} else if (month == 6) {
 			/******************************* 逾期一天以上次数 ***************************************/
 			odi.setYQ001(loanOrgOverDueOneDay(list, "dk", returnCodeDic));
@@ -600,6 +619,31 @@ public class TaskServer {
 			odi.setSX006(totalCreditLine(list, "yh", returnCodeDic));
 			odi.setSX007(maxCreditLine(list, "xd", returnCodeDic));
 			odi.setSX004(maxCreditLine(list, "xj", returnCodeDic));
+			
+			/******************************* 风险类变量 *****************************/
+            int dkAcctfAmount = acctfCount(list, "dk", returnCodeDic);
+            int xjAcctfAmount = acctfCount(list, "xj", returnCodeDic);
+            int yhAcctfAmount = acctfCount(list, "yh", returnCodeDic);
+            int xdAcctfAmount = acctfCount(list, "xd", returnCodeDic);
+            
+            odi.setFX008(dkAcctfAmount);
+            odi.setFX009(xjAcctfAmount);
+            odi.setFX010(yhAcctfAmount);
+            odi.setFX011(xdAcctfAmount);
+            odi.setFX012(dkAcctfAmount + xjAcctfAmount + yhAcctfAmount + xdAcctfAmount);
+            
+            odi.setFX013(acctfProportion(list, returnCodeDic));
+            odi.setFX014(acctfMoneyProportion(list, returnCodeDic));
+            odi.setFX015(otlmtMoneyProportion(list, returnCodeDic));
+            odi.setFX016(otlmtProportion(list, returnCodeDic));
+            
+            /******************************* 放款类变量 ***************************************/
+            odi.setFK008(fkSuccessCount(list, returnCodeDic));
+            odi.setFK009(fkSuccessOrgCount(list, returnCodeDic));
+            odi.setFK010(fkSuccessMoneyCount(list, "yh", returnCodeDic));
+            odi.setFK011(fkSuccessMoneyCount(list, "xj", returnCodeDic));
+            odi.setFK012(fkSuccessMoneyCount(list, "xd", returnCodeDic));
+            odi.setFK013(fkSuccessMoneyCount(list, "dk", returnCodeDic));
 
 		} else if (month == 12) {
 			/******************************* 逾期一天以上次数 ***************************************/
@@ -646,6 +690,21 @@ public class TaskServer {
 			odi.setSX002(maxCreditLine(list, "yh", returnCodeDic));
 			odi.setSX003(maxCreditLine(list, "xd", returnCodeDic));
 			odi.setSX004(maxCreditLine(list, "xj", returnCodeDic));
+			
+			/******************************* 风险类变量 ***************************************/
+            int dkAcctfAmount = acctfCount(list, "dk", returnCodeDic);
+            int xjAcctfAmount = acctfCount(list, "xj", returnCodeDic);
+            int yhAcctfAmount = acctfCount(list, "yh", returnCodeDic);
+            int xdAcctfAmount = acctfCount(list, "xd", returnCodeDic);
+
+            odi.setFX001(dkAcctfAmount);
+            odi.setFX002(xjAcctfAmount);
+            odi.setFX003(yhAcctfAmount);
+            odi.setFX004(xdAcctfAmount);
+            odi.setFX005(dkAcctfAmount + xjAcctfAmount + yhAcctfAmount + xdAcctfAmount);
+            
+            odi.setFX006(acctfProportion(list, returnCodeDic));
+            odi.setFX007(acctfMoneyProportion(list, returnCodeDic));
 		}
 	}
 
@@ -1472,4 +1531,311 @@ public class TaskServer {
 		}
 		return total;
 	}
+	
+	/**
+     * @Description: 风险类变量。因账户原因还款失败的次数。
+     * @param list
+     * @param string
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月17日
+     */
+    private int acctfCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
+        
+        // 商户类型归属分类字典
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        // 具体机构类
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
+        // 帐户问题还款失败的返回码
+        List<String> acctfList = Arrays.asList(returnCodeDic.get("acctf"));
+        
+        List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
+        
+        for(TradeDetailDO o : list) {
+            if (orgTypeList.contains(o.getMER_TYPE().toString())) {
+                merTypeTradeDetailDOList.add(o);
+            }
+        }
+        
+        int acctfCountResult = 0;
+        for (TradeDetailDO o : merTypeTradeDetailDOList) { 
+            if(acctfList.contains(o.getRETURN_CODE())) {
+                acctfCountResult++;
+            }
+        }
+        
+        return acctfCountResult;
+    }
+    
+    /**
+     * @Description: 风险类变量。因账户原因还款失败的记录数占比。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月17日
+     */
+    private BigDecimal acctfProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        
+        // 帐户问题还款失败的返回码
+        List<String> acctfList = Arrays.asList(returnCodeDic.get("acctf"));
+        
+        int oltmtAmount = 0;
+        for (TradeDetailDO o : list) { 
+            if(acctfList.contains(o.getRETURN_CODE())) {
+                oltmtAmount++;
+            }
+        }
+        
+        return MathUtil.divide(oltmtAmount, acctfList.size());
+    }
+    
+    /**
+     * @Description: 风险类变量。因账户原因还款失败的金额占比。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月17日
+     */
+    private BigDecimal acctfMoneyProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        
+        // 帐户问题还款失败的返回码
+        List<String> acctfList = Arrays.asList(returnCodeDic.get("acctf"));
+        
+        BigDecimal sumMoney = new BigDecimal("0"); 
+        BigDecimal acctfMoney = new BigDecimal("0"); 
+        
+        for (TradeDetailDO o : list) { 
+            sumMoney = sumMoney.add(o.getAMOUNT());
+            if(acctfList.contains(o.getRETURN_CODE())) {
+                acctfMoney = acctfMoney.add(o.getAMOUNT());
+            }
+        }
+        
+        return MathUtil.divide(acctfMoney, sumMoney);
+    }
+    
+    /**
+     * @Description: 风险类变量。超出限额还款失败的金额占比。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月17日
+     */
+    private BigDecimal otlmtMoneyProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        
+        // 超出限额还款失败的返回码
+        List<String> otlmtList = Arrays.asList(returnCodeDic.get("otlmt"));
+        
+        BigDecimal sumMoney = new BigDecimal("0"); 
+        BigDecimal otlmtMoney = new BigDecimal("0"); 
+        
+        for (TradeDetailDO o : list) { 
+            sumMoney = sumMoney.add(o.getAMOUNT());
+            if(otlmtList.contains(o.getRETURN_CODE())) {
+                otlmtMoney = otlmtMoney.add(o.getAMOUNT());
+            }
+        }
+        
+        return MathUtil.divide(otlmtMoney, sumMoney);
+    }
+    
+    /**
+     * @Description: 风险类变量。超出限额还款失败的记录数占比。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月17日
+     */
+    private BigDecimal otlmtProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+       
+        // 帐户问题还款失败的返回码
+        List<String> otlmtList = Arrays.asList(returnCodeDic.get("otlmt"));
+        
+        int oltmtAmount = 0;
+        for (TradeDetailDO o : list) { 
+            if(otlmtList.contains(o.getRETURN_CODE())) {
+                oltmtAmount++;
+            }
+        }
+        
+        return MathUtil.divide(oltmtAmount, otlmtList.size());
+    }
+    
+    /**
+     * @Description: 放款类变量。放款成功次数。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月17日
+     */
+    private int fkSuccessCount(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+       
+        List<String> successList = Arrays.asList(returnCodeDic.get("success"));
+        
+        int fkSuccessCountResult = 0;
+        for(TradeDetailDO o : list) {
+            if('F' == o.getSF_TYPE()) {
+                if(successList.contains(o.getRETURN_CODE())) {
+                    fkSuccessCountResult++;
+                }
+            }
+        }
+        return fkSuccessCountResult;
+    }
+    
+    /**
+     * @Description: 放款类变量。放款成功的总机构数。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月17日
+     */
+    private int fkSuccessOrgCount(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        
+        List<String> successList = Arrays.asList(returnCodeDic.get("success"));
+        
+        Set<String> fkSuccessOrgCountSet = new HashSet<String>();
+        for(TradeDetailDO o : list) {
+            if('F' == o.getSF_TYPE()) {
+                if(successList.contains(o.getRETURN_CODE())) {
+                    fkSuccessOrgCountSet.add(o.getSOURCE_MERNO());
+                }
+            }
+        }
+        return fkSuccessOrgCountSet.size();
+    }
+    
+    /**
+     * @Description: 放款类变量。不同机构放款成功的机构数。
+     * @param list
+     * @param string
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月17日
+     */
+    private int fksuccessOrgCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
+        
+        List<String> successList = Arrays.asList(returnCodeDic.get("success"));
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
+        
+        //根据机构类别筛选数据
+        List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
+        
+        for(TradeDetailDO o : list) {
+            if (orgTypeList.contains(o.getMER_TYPE().toString())) {
+                merTypeTradeDetailDOList.add(o);
+            }
+        }
+        
+        Set<String> fkSuccessOrgCountSet = new HashSet<String>();
+        for(TradeDetailDO o : merTypeTradeDetailDOList) {
+            if('F' == o.getSF_TYPE()) {
+                if(successList.contains(o.getRETURN_CODE())) {
+                    fkSuccessOrgCountSet.add(o.getSOURCE_MERNO());
+                }
+            }
+        }
+        return fkSuccessOrgCountSet.size();
+    }
+    
+    /**
+     * @Description: 放款类变量。放款总金额。
+     * @param list
+     * @param string
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月17日
+     */
+    private BigDecimal fkSuccessMoneyCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
+        
+        List<String> successList = Arrays.asList(returnCodeDic.get("success"));
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
+        
+        //根据机构类别筛选数据
+        List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
+        for(TradeDetailDO o : list) {
+            if (orgTypeList.contains(o.getMER_TYPE().toString())) {
+                merTypeTradeDetailDOList.add(o);
+            }
+        }
+        
+        BigDecimal fkSuccessMoney = new BigDecimal("0");
+        for(TradeDetailDO o : merTypeTradeDetailDOList) {
+            if('F' == o.getSF_TYPE()) {
+                if(successList.contains(o.getRETURN_CODE())) {
+                    fkSuccessMoney.add(o.getAMOUNT());
+                }
+            }
+        }
+        
+        return fkSuccessMoney.setScale(2, BigDecimal.ROUND_HALF_UP);
+    }
+    
+    /**
+     * @Description: 放款类变量。最近一次。
+     * @param list
+     * @param returnCodeDic
+     * @return Map<String, String> key:fkDate ||fkDays
+     * @author LZG
+     * @date 2018年07月17日
+     */
+    private Map<String, Object> fkLastestTimeCount(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        List<String> successList = Arrays.asList(returnCodeDic.get("success"));
+        
+        int listSize = list.size();
+        for(int i = listSize - 1; i >= 0; i--) {
+            TradeDetailDO o = list.get(i);
+            if('F' == o.getSF_TYPE()) {
+                if(successList.contains(o.getRETURN_CODE())) {
+                    resultMap.put("fkDate", DateUtils.yyyyMMddToString(o.getCREATE_TIME()));
+                    //第2个参数是今天
+                    int fkDays = DateUtils.getIntervalDayAmount(o.getCREATE_TIME(), o.getCREATE_TIME());
+                    resultMap.put("fkDays", fkDays);
+                }
+            }
+        }
+        
+        return resultMap;
+    }
+    
+    /**
+     * @Description: 放款类变量。最近一次。
+     * @param list
+     * @param returnCodeDic
+     * @return Map<String, String> key:fkDate ||fkDays
+     * @author LZG
+     * @date 2018年07月17日
+     */
+    private Map<String, Object> fkEarliestTimeCount(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        List<String> successList = Arrays.asList(returnCodeDic.get("success"));
+        
+        for(TradeDetailDO o : list) {
+            if('F' == o.getSF_TYPE()) {
+                if(successList.contains(o.getRETURN_CODE())) {
+                    resultMap.put("fkDate", DateUtils.yyyyMMddToString(o.getCREATE_TIME()));
+                    //第2个参数是今天
+                    int fkDays = DateUtils.getIntervalDayAmount(o.getCREATE_TIME(), o.getCREATE_TIME());
+                    resultMap.put("fkDays", fkDays);
+                }
+            }
+        }
+        
+        return resultMap;
+    }
+    
 }

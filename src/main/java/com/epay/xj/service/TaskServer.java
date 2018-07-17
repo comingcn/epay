@@ -72,6 +72,7 @@ public class TaskServer {
 	 * @param updateTime
 	 * @return
 	 */
+	@SuppressWarnings("unchecked")
 	public Map<Integer, List<TradeDetailDO>> fatherList(String certNo, String updateTime) {
 		// List<TradeDetailDO> tradeDetailList = new ArrayList<TradeDetailDO>();
 		Map<Integer, List<TradeDetailDO>> tradeMap = new HashMap<Integer, List<TradeDetailDO>>();
@@ -241,7 +242,13 @@ public class TaskServer {
 			odi.setYQ023(MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount));
 			odi.setYQ024(MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount));
 			odi.setYQ025(MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount));
-
+			
+			/******************************* 授信类变量 ***************************************/
+			odi.setSX009(totalCreditLine(list, "dk", returnCodeDic));
+			odi.setSX010(totalCreditLine(list, "yh", returnCodeDic));
+			odi.setSX011(maxCreditLine(list, "xd", returnCodeDic));
+			odi.setSX012(maxCreditLine(list, "xj", returnCodeDic));
+			
 		} else if (month == 6) {
 			/******************************* 逾期一天以上次数 ***************************************/
 			odi.setYQ001(loanOrgOverDueOneDay(list, "dk", returnCodeDic));
@@ -272,6 +279,20 @@ public class TaskServer {
 			odi.setYQ006(MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount));
 			odi.setYQ007(MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount));
 			odi.setYQ008(MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount));
+			
+			/******************************* 放款类变量 ***************************************/
+			odi.setFK008(loanOrgLoanSuccessTimes(list, "dk", returnCodeDic));//成功放款的记录数
+			odi.setFK009(loanOrgLoanSuccessOrg(list, "dk", returnCodeDic));//成功放款的不同机构数
+			odi.setFK010(loanOrgLoanSumMoney(list, "yh", returnCodeDic));//在银行类机构放款的总金额
+			odi.setFK011(loanOrgLoanSumMoney(list, "xj", returnCodeDic));//在消费金融类机构放款的总金额
+			odi.setFK012(loanOrgLoanSumMoney(list, "xd", returnCodeDic));//在小额贷款类机构放款的总金额
+			odi.setFK013(loanOrgLoanSumMoney(list, "dk", returnCodeDic));//在贷款类机构放款的总金额
+			
+			/******************************* 授信类变量 ***************************************/
+			odi.setSX005(totalCreditLine(list, "dk", returnCodeDic));
+			odi.setSX006(totalCreditLine(list, "yh", returnCodeDic));
+			odi.setSX007(maxCreditLine(list, "xd", returnCodeDic));
+			odi.setSX004(maxCreditLine(list, "xj", returnCodeDic));
 
 		} else if (month == 12) {
 			/******************************* 逾期一天以上次数 ***************************************/
@@ -291,6 +312,33 @@ public class TaskServer {
 			odi.setYQ043(everyOrgOverDueMaxTimes(list, "xj", returnCodeDic));
 			odi.setYQ044(everyOrgOverDueMaxTimes(list, "yh", returnCodeDic));
 			odi.setYQ045(everyOrgOverDueMaxTimes(list, "xd", returnCodeDic));
+			
+			/******************************* 放款类变量 ***************************************/
+			odi.setFK001(loanOrgLoanSuccessTimes(list, "dk", returnCodeDic));//成功放款的记录数
+			odi.setFK002(loanOrgLoanSuccessOrg(list, "dk", returnCodeDic));//成功放款的不同机构数
+			odi.setFK003(odi.getFK003());//fk002 和 fk003 是一样的；
+			odi.setFK004(loanOrgLoanSumMoney(list, "yh", returnCodeDic));//在银行类机构放款的总金额
+			odi.setFK005(loanOrgLoanSumMoney(list, "xj", returnCodeDic));//在消费金融类机构放款的总金额
+			odi.setFK006(loanOrgLoanSumMoney(list, "xd", returnCodeDic));//在小额贷款类机构放款的总金额
+			odi.setFK007(loanOrgLoanSumMoney(list, "dk", returnCodeDic));//在贷款类机构放款的总金额
+			/*	最近一次	*/
+			odi.setFK014(loanOrgRecentLoanDate(list, "dk", returnCodeDic, "2"));
+			if(odi.getFK014()!=null){
+				Date dateBegin = DateUtils.yyyyMMddToDate(odi.getFK014());
+				odi.setFK015(DateUtils.getIntervalDayAmount(dateBegin, new Date()));
+			}
+			/*	最早一次	*/
+			odi.setFK016(loanOrgRecentLoanDate(list, "dk", returnCodeDic, "1"));
+			if(odi.getFK016()!=null){
+				Date dateBegin = DateUtils.yyyyMMddToDate(odi.getFK016());
+				odi.setFK015(DateUtils.getIntervalDayAmount(dateBegin, new Date()));
+			}
+			
+			/******************************* 授信类变量 ***************************************/
+			odi.setSX001(maxCreditLine(list, "dk", returnCodeDic));
+			odi.setSX002(maxCreditLine(list, "yh", returnCodeDic));
+			odi.setSX003(maxCreditLine(list, "xd", returnCodeDic));
+			odi.setSX004(maxCreditLine(list, "xj", returnCodeDic));
 		}
 	}
 
@@ -948,14 +996,14 @@ public class TaskServer {
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();// 商户类型归属分类字典
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));// 具体机构类
 		List<String> success = Arrays.asList(returnCodeDic.get("success"));
-		// 逾期天数值
+		// 放款的记录数
 		int records = 0;
-		// 逾期日期值
-		Timestamp overDueBeginDate = null;
 		// 近x个月成功放款的记录数
 		for (TradeDetailDO o : list) {
 			// 放款成功
-			if (o.getSF_TYPE().toString().equals("F") && success.contains(o.getRETURN_CODE())) {
+			if (orgTypeList.contains(o.getMER_TYPE().toString()) 
+					&& o.getSF_TYPE().toString().equals("F") 
+					&& success.contains(o.getRETURN_CODE())) {
 				records++;
 			}
 		}
@@ -1016,7 +1064,9 @@ public class TaskServer {
 				}
 			}
 		}
-		records.setScale(2, BigDecimal.ROUND_UP);
+		if(records.intValue()!=0){
+			records.setScale(2, BigDecimal.ROUND_UP);
+		}
 		return records;
 	}
 	
@@ -1046,7 +1096,7 @@ public class TaskServer {
 	
 	
 	/**
-	 * 放款类变量。最近(最早)一次。时间指标.最近一次在贷款机构放款的日期
+	 * 放款类变量。最近(最早)一次。时间指标.最近一次在贷款机构放款的日期 flg:最早:1 最近:2
 	 * @param list
 	 * @param indexMap
 	 * @param orgType:
@@ -1067,5 +1117,46 @@ public class TaskServer {
 			records = DateUtils.yyyyMMddToString(date);
 		}
 		return records;
+	}
+	
+	/**
+	 * 授信类变量.最大额度
+	 * @param list
+	 * @param orgType
+	 * @param returnCodeDic
+	 * @return
+	 */
+	public BigDecimal maxCreditLine(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic){
+		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();// 商户类型归属分类字典
+		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));// 具体机构类
+		List<BigDecimal> maxLst = new ArrayList<BigDecimal>();
+		for (TradeDetailDO o : list) {
+			if(orgTypeList.contains(o.getMER_TYPE().toString()) && o.getSF_TYPE().toString().equals("S")){
+				maxLst.add(o.getAMOUNT());
+			}
+		}
+		return Collections.max(maxLst);
+	}
+	
+	/**
+	 * 授信类变量.总额度
+	 * @param list
+	 * @param orgType
+	 * @param returnCodeDic
+	 * @return
+	 */
+	public BigDecimal totalCreditLine(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic){
+		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();// 商户类型归属分类字典
+		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));// 具体机构类
+		BigDecimal total = new BigDecimal(0);
+		for (TradeDetailDO o : list) {
+			if(orgTypeList.contains(o.getMER_TYPE().toString()) && o.getSF_TYPE().toString().equals("S")){
+				total.add(o.getAMOUNT());
+			}
+		}
+		if(total.intValue()!=0){
+			total.setScale(2, BigDecimal.ROUND_UP);
+		}
+		return total;
 	}
 }

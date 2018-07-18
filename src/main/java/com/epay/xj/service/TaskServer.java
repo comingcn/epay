@@ -712,10 +712,10 @@ public class TaskServer {
 			int xdAcctfAmount = acctfCount(list, "xd", returnCodeDic);
             
             /******************************* 还款类变量 ***************************************/
-            odi.setHK054(repaymentSuccessCount(list, "yh", returnCodeDic));
-            odi.setHK055(repaymentSuccessCount(list, "xj", returnCodeDic));
-            odi.setHK056(repaymentSuccessCount(list, "xd", returnCodeDic));
-            odi.setHK057(repaymentSuccessCount(list, "dk", returnCodeDic));
+            odi.setHK054(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
+            odi.setHK055(repaymentSuccessMoneyCount(list, "xj", returnCodeDic));
+            odi.setHK056(repaymentSuccessMoneyCount(list, "xd", returnCodeDic));
+            odi.setHK057(repaymentSuccessMoneyCount(list, "dk", returnCodeDic));
 
 			odi.setFX008(dkAcctfAmount);
 			odi.setFX009(xjAcctfAmount);
@@ -736,6 +736,12 @@ public class TaskServer {
 			odi.setFK011(fkSuccessMoneyCount(list, "xj", returnCodeDic));
 			odi.setFK012(fkSuccessMoneyCount(list, "xd", returnCodeDic));
 			odi.setFK013(fkSuccessMoneyCount(list, "dk", returnCodeDic));
+			
+			/******************************* 还款类变量 ***************************************/
+            odi.setHK054(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
+            odi.setHK055(repaymentSuccessMoneyCount(list, "xj", returnCodeDic));
+            odi.setHK056(repaymentSuccessMoneyCount(list, "xd", returnCodeDic));
+            odi.setHK057(repaymentSuccessMoneyCount(list, "dk", returnCodeDic));
 
 		} else if (month == 12) {
 			/******************************* 逾期一天以上次数 ***************************************/
@@ -800,10 +806,10 @@ public class TaskServer {
 			odi.setFX007(acctfMoneyProportion(list, returnCodeDic));
             
             /******************************* 还款类变量 ***************************************/
-            odi.setHK050(repaymentSuccessCount(list, "yh", returnCodeDic));
-            odi.setHK051(repaymentSuccessCount(list, "xj", returnCodeDic));
-            odi.setHK052(repaymentSuccessCount(list, "xd", returnCodeDic));
-            odi.setHK053(repaymentSuccessCount(list, "dk", returnCodeDic));
+            odi.setHK050(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
+            odi.setHK051(repaymentSuccessMoneyCount(list, "xj", returnCodeDic));
+            odi.setHK052(repaymentSuccessMoneyCount(list, "xd", returnCodeDic));
+            odi.setHK053(repaymentSuccessMoneyCount(list, "dk", returnCodeDic));
 		}
 	}
 
@@ -1976,7 +1982,7 @@ public class TaskServer {
      * @author LZG
      * @date 2018年07月18日
      */
-    private BigDecimal repaymentSuccessCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
+    private BigDecimal repaymentSuccessMoneyCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
         
         List<String> successList = Arrays.asList(returnCodeDic.get("success"));
         

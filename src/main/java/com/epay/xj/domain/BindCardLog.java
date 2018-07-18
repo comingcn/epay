@@ -1,11 +1,13 @@
 package com.epay.xj.domain;
 
+import java.util.Comparator;
+
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
 @Entity
 //@Table(name="bind_card_log")//设置数据库中表名字
-public class BindCardLog {
+public class BindCardLog implements Comparable<BindCardLog>{
 
 	private String TXN_DATE;          //VARCHAR(8),	交易日期
 	@Id
@@ -63,5 +65,11 @@ public class BindCardLog {
 	}
 	public void setVALID_STAT(String vALID_STAT) {
 		VALID_STAT = vALID_STAT;
+	}
+
+	@Override
+	public int compareTo(BindCardLog o) {
+		// TODO Auto-generated method stub
+		return this.getTXN_DATE().compareTo(o.getTXN_DATE());
 	}
 }

@@ -207,7 +207,7 @@ public class OverDueIndex {
 	public int SQ003;	//12个月	机构数	近12个月申请的不同银行类机构数
 	public int SQ004;	//12个月	银行卡数	近12个月用户用于申请认证的银行卡数
 	public BigDecimal SQ005;	//12个月	申请记录数	近12个月平均每张借记卡申请记录数
-//	public BigDecimal SQ006;	//12个月	申请记录数	近12个月平均每张贷记卡申请记录数
+	public BigDecimal SQ006;	//12个月	申请记录数	近12个月平均每张贷记卡申请记录数
 	public BigDecimal SQ007;	//12个月	申请记录数	近12个月平均每张卡在贷款类机构申请的记录数
 	public BigDecimal SQ008;	//12个月	申请记录数	近12个月平均每张卡在银行类机构申请的记录数
 	public int SQ009;	//6个月	机构数	近6个月申请认证的不同机构数
@@ -215,9 +215,9 @@ public class OverDueIndex {
 	public int SQ011;	//6个月	机构数	近6个月申请认证的银行类机构数
 	public int SQ012;	//6个月	银行卡数	近6个月用户用于申请认证的银行卡数
 	public BigDecimal SQ013;	//6个月	申请记录数	近6个月平均每张借记卡申请记录数
-//	public BigDecimal SQ014;	//6个月	申请记录数	近6个月平均每张贷记卡申请记录数
+	public BigDecimal SQ014;	//6个月	申请记录数	近6个月平均每张贷记卡申请记录数
 	public int SQ015;	//6个月	申请记录数	近6个月每张借记卡申请最小记录数
-//	public int SQ016;	//6个月	申请记录数	近6个月每张贷记卡申请最小记录数
+	public int SQ016;	//6个月	申请记录数	近6个月每张贷记卡申请最小记录数
 	public BigDecimal SQ017;	//6个月	申请记录数	近6个月平均每张卡在贷款类机构申请的记录数
 	public BigDecimal SQ018;	//6个月	申请记录数	近6个月平均每张卡在银行类机构申请的记录数
 	public int SQ019;	//3个月	机构数	近3个月申请认证的不同机构数
@@ -225,7 +225,7 @@ public class OverDueIndex {
 	public int SQ021;	//3个月	机构数	近3个月申请的银行类机构数
 	public int SQ022;	//3个月	银行卡数	近3个月用户用于申请认证的银行卡数
 	public BigDecimal SQ023;	//3个月	申请记录数	近3个月平均每张借记卡申请记录数
-//	public BigDecimal SQ024;	//3个月	申请记录数	近3个月平均每张贷记卡申请记录数
+	public BigDecimal SQ024;	//3个月	申请记录数	近3个月平均每张贷记卡申请记录数
 	public BigDecimal SQ025;	//3个月	申请记录数	近3个月平均每张卡在贷款类机构申请的记录数
 	public BigDecimal SQ026;	//3个月	申请记录数	近3个月平均每张卡在银行类机构申请的记录数
 	public int SQ027;	//2个月	机构数	近2个月申请认证的不同机构数
@@ -249,7 +249,10 @@ public class OverDueIndex {
 	public int SQ045;	//最近一次	时间指标	最近一次使用借记卡认证申请距离现在的天数
 	public String SQ046;	//最早一次	时间指标	最早一次使用借记卡认证申请距离现在的时间
 	public int SQ047;	//最早一次	时间指标	最早一次使用借记卡认证申请距离现在的天数
-	
+	public BigDecimal SQ048;	//近12个月平均每张卡申请记录数
+	public BigDecimal SQ049;	//近6个月平均每张卡申请记录数
+	public int SQ050;	//近6个月每张借记卡申请最小记录数
+	public BigDecimal SQ051;	//近3个月平均每张卡申请记录数
 	/************************ 授信类变量 ***************************/
 	public BigDecimal SX001;	//12个月	最大额度	近12个月在贷款类机构授信的最大额度
 	public BigDecimal SX002;	//12个月	最大额度	近12个月在银行类机构授信的最大额度
@@ -1176,12 +1179,12 @@ public class OverDueIndex {
 	public void setSQ005(BigDecimal sQ005) {
 		SQ005 = sQ005;
 	}
-//	public BigDecimal getSQ006() {
-//		return SQ006;
-//	}
-//	public void setSQ006(BigDecimal sQ006) {
-//		SQ006 = sQ006;
-//	}
+	public BigDecimal getSQ006() {
+		return SQ006;
+	}
+	public void setSQ006(BigDecimal sQ006) {
+		SQ006 = sQ006;
+	}
 	public BigDecimal getSQ007() {
 		return SQ007;
 	}
@@ -1224,24 +1227,24 @@ public class OverDueIndex {
 	public void setSQ013(BigDecimal sQ013) {
 		SQ013 = sQ013;
 	}
-//	public BigDecimal getSQ014() {
-//		return SQ014;
-//	}
-//	public void setSQ014(BigDecimal sQ014) {
-//		SQ014 = sQ014;
-//	}
+	public BigDecimal getSQ014() {
+		return SQ014;
+	}
+	public void setSQ014(BigDecimal sQ014) {
+		SQ014 = sQ014;
+	}
 	public int getSQ015() {
 		return SQ015;
 	}
 	public void setSQ015(int sQ015) {
 		SQ015 = sQ015;
 	}
-//	public int getSQ016() {
-//		return SQ016;
-//	}
-//	public void setSQ016(int sQ016) {
-//		SQ016 = sQ016;
-//	}
+	public int getSQ016() {
+		return SQ016;
+	}
+	public void setSQ016(int sQ016) {
+		SQ016 = sQ016;
+	}
 	public BigDecimal getSQ017() {
 		return SQ017;
 	}
@@ -1284,12 +1287,12 @@ public class OverDueIndex {
 	public void setSQ023(BigDecimal sQ023) {
 		SQ023 = sQ023;
 	}
-//	public BigDecimal getSQ024() {
-//		return SQ024;
-//	}
-//	public void setSQ024(BigDecimal sQ024) {
-//		SQ024 = sQ024;
-//	}
+	public BigDecimal getSQ024() {
+		return SQ024;
+	}
+	public void setSQ024(BigDecimal sQ024) {
+		SQ024 = sQ024;
+	}
 	public BigDecimal getSQ025() {
 		return SQ025;
 	}
@@ -1727,5 +1730,29 @@ public class OverDueIndex {
 	}
 	public void setHK057(BigDecimal hK057) {
 		HK057 = hK057;
+	}
+	public BigDecimal getSQ048() {
+		return SQ048;
+	}
+	public void setSQ048(BigDecimal sQ048) {
+		SQ048 = sQ048;
+	}
+	public BigDecimal getSQ049() {
+		return SQ049;
+	}
+	public void setSQ049(BigDecimal sQ049) {
+		SQ049 = sQ049;
+	}
+	public int getSQ050() {
+		return SQ050;
+	}
+	public void setSQ050(int sQ050) {
+		SQ050 = sQ050;
+	}
+	public BigDecimal getSQ051() {
+		return SQ051;
+	}
+	public void setSQ051(BigDecimal sQ051) {
+		SQ051 = sQ051;
 	}
 }

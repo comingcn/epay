@@ -572,10 +572,36 @@ public class TaskServer {
 
 		if (month == 7) {// 七天
 			/******************************* 逾期一天以上次数 ***************************************/
+		    
+		    /******************************* 风险类变量 ***************************************/
+            odi.setFX026(yebzProportion(list, returnCodeDic));
+            
+            int xjYebzAmount = yebzCount(list, "xj", returnCodeDic);
+            int dkYebzAmount = yebzCount(list, "dk", returnCodeDic);
+            int yhYebzAmount = yebzCount(list, "yh", returnCodeDic);
+            int xdYebzAmount = yebzCount(list, "xd", returnCodeDic);
+            
+            odi.setFX027(xjYebzAmount);
+            odi.setFX028(dkYebzAmount);
+            odi.setFX029(yhYebzAmount);
+            odi.setFX030(xdYebzAmount);
 
 		} else if (month == 15) {// 十五天
 			/******************************* 逾期一天以上次数 ***************************************/
 
+		    /******************************* 风险类变量 ***************************************/
+            odi.setFX031(yebzProportion(list, returnCodeDic));
+            
+            int xjYebzAmount = yebzCount(list, "xj", returnCodeDic);
+            int dkYebzAmount = yebzCount(list, "dk", returnCodeDic);
+            int yhYebzAmount = yebzCount(list, "yh", returnCodeDic);
+            int xdYebzAmount = yebzCount(list, "xd", returnCodeDic);
+            
+            odi.setFX032(xjYebzAmount);
+            odi.setFX033(dkYebzAmount);
+            odi.setFX034(yhYebzAmount);
+            odi.setFX035(xdYebzAmount);
+		    
 		} else if (month == 1) {// 一个月
 			/******************************* 逾期一天以上次数 ***************************************/
 
@@ -1612,6 +1638,41 @@ public class TaskServer {
 
 		return acctfCountResult;
 	}
+	
+    /**
+     * @Description: 风险类变量。因余额不足还款失败的次数。
+     * @param list
+     * @param string
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月18日
+     */
+    private int yebzCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
+     // 商户类型归属分类字典
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        // 具体机构类
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
+        // 帐户问题还款失败的返回码
+        List<String> yebzList = Arrays.asList(returnCodeDic.get("yebz"));
+
+        List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
+
+        for (TradeDetailDO o : list) {
+            if (orgTypeList.contains(o.getMER_TYPE().toString())) {
+                merTypeTradeDetailDOList.add(o);
+            }
+        }
+
+        int yebzCountResult = 0;
+        for (TradeDetailDO o : merTypeTradeDetailDOList) {
+            if (yebzList.contains(o.getRETURN_CODE())) {
+                yebzCountResult++;
+            }
+        }
+
+        return yebzCountResult;
+    }
 
 	/**
 	 * @Description: 风险类变量。因账户原因还款失败的记录数占比。
@@ -1635,6 +1696,28 @@ public class TaskServer {
 
 		return MathUtil.divide(oltmtAmount, acctfList.size());
 	}
+	
+    /**
+     * @Description: 风险类变量。余额不足记录数占比。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月18日
+     */
+    private BigDecimal yebzProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        // 余额不足的返回码
+        List<String> yebzList = Arrays.asList(returnCodeDic.get("yebz"));
+
+        int yebzAmount = 0;
+        for (TradeDetailDO o : list) {
+            if (yebzList.contains(o.getRETURN_CODE())) {
+                yebzAmount++;
+            }
+        }
+
+        return MathUtil.divide(yebzAmount, yebzList.size());
+    }
 
 	/**
 	 * @Description: 风险类变量。因账户原因还款失败的金额占比。

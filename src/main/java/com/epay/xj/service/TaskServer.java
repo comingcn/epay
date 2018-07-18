@@ -332,7 +332,7 @@ public class TaskServer {
 			odi.setSQ021(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
 			odi.setSQ022(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
 			odi.setSQ023(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ022()));// 平均每张借记卡申请记录数
-			odi.setSQ024(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ022()));// 平均每张贷记卡申请记录数
+//			odi.setSQ024(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ022()));// 平均每张贷记卡申请记录数
 			odi.setSQ025(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ022()));// 平均每张卡在贷款类机构申请认证的记录数
 			odi.setSQ026(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ022()));// 平均每张卡在贷款类机构申请认证的记录数
 		}
@@ -343,9 +343,9 @@ public class TaskServer {
 			odi.setSQ011(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
 			odi.setSQ012(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
 			odi.setSQ013(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ012()));// 平均每张借记卡申请记录数
-			odi.setSQ014(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ012()));// 平均每张贷记卡申请记录数
+//			odi.setSQ014(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ012()));// 平均每张贷记卡申请记录数
 			odi.setSQ015(getBindCardMinRecordsByDcType(list, "0","max"));// 每张借记卡申请最小记录数
-			odi.setSQ016(getBindCardMinRecordsByDcType(list, "1","min"));// 每张贷记卡申请最小记录数
+//			odi.setSQ016(getBindCardMinRecordsByDcType(list, "1","min"));// 每张贷记卡申请最小记录数
 			odi.setSQ017(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ012()));// 平均每张卡在贷款类机构申请认证的记录数
 			odi.setSQ018(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ012()));// 平均每张卡在贷款类机构申请认证的记录数
 		}
@@ -356,7 +356,7 @@ public class TaskServer {
 			odi.setSQ003(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
 			odi.setSQ004(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
 			odi.setSQ005(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ004()));// 平均每张借记卡申请记录数
-			odi.setSQ006(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ004()));// 平均每张贷记卡申请记录数
+//			odi.setSQ006(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ004()));// 平均每张贷记卡申请记录数
 			odi.setSQ007(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ004()));// 平均每张卡在贷款类机构申请认证的记录数
 			odi.setSQ008(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ004()));// 平均每张卡在银行类机构申请认证的记录数
 			/*	时间指标.最近一次	*/
@@ -554,7 +554,7 @@ public class TaskServer {
 			odi.setYQ022(MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), dkOverDueOrgAmount));
 			odi.setYQ023(MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount));
 			odi.setYQ024(MathUtil.divide(avgOrgOverDueCount(list, "yh", returnCodeDic), yhOverDueOrgAmount));
-			odi.setYQ025(MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount));
+//			odi.setYQ025(MathUtil.divide(avgOrgOverDueCount(list, "xd", returnCodeDic), xdOverDueOrgAmount));
 
 			/******************************* 授信类变量 ***************************************/
 			odi.setSX009(totalCreditLine(list, "dk", returnCodeDic));
@@ -572,7 +572,7 @@ public class TaskServer {
             odi.setFX018(xjAcctfAmount);
             odi.setFX019(yhAcctfAmount);
             odi.setFX020(xdAcctfAmount);
-            odi.setFX021(dkAcctfAmount + xjAcctfAmount + yhAcctfAmount + xdAcctfAmount);
+//            odi.setFX021(dkAcctfAmount + xjAcctfAmount + yhAcctfAmount + xdAcctfAmount);
             
             odi.setFX022(acctfProportion(list, returnCodeDic));
             odi.setFX023(acctfMoneyProportion(list, returnCodeDic));
@@ -634,7 +634,7 @@ public class TaskServer {
             odi.setFX009(xjAcctfAmount);
             odi.setFX010(yhAcctfAmount);
             odi.setFX011(xdAcctfAmount);
-            odi.setFX012(dkAcctfAmount + xjAcctfAmount + yhAcctfAmount + xdAcctfAmount);
+//            odi.setFX012(dkAcctfAmount + xjAcctfAmount + yhAcctfAmount + xdAcctfAmount);
             
             odi.setFX013(acctfProportion(list, returnCodeDic));
             odi.setFX014(acctfMoneyProportion(list, returnCodeDic));
@@ -671,7 +671,7 @@ public class TaskServer {
 			/******************************* 放款类变量 ***************************************/
 			odi.setFK001(loanOrgLoanSuccessTimes(list, "dk", returnCodeDic));// 成功放款的记录数
 			odi.setFK002(loanOrgLoanSuccessOrg(list, "dk", returnCodeDic));// 成功放款的不同机构数
-			odi.setFK003(odi.getFK003());// fk002 和 fk003 是一样的；
+//			odi.setFK003(odi.getFK003());// fk002 和 fk003 是一样的；
 			odi.setFK004(loanOrgLoanSumMoney(list, "yh", returnCodeDic));// 在银行类机构放款的总金额
 			odi.setFK005(loanOrgLoanSumMoney(list, "xj", returnCodeDic));// 在消费金融类机构放款的总金额
 			odi.setFK006(loanOrgLoanSumMoney(list, "xd", returnCodeDic));// 在小额贷款类机构放款的总金额
@@ -705,7 +705,7 @@ public class TaskServer {
             odi.setFX002(xjAcctfAmount);
             odi.setFX003(yhAcctfAmount);
             odi.setFX004(xdAcctfAmount);
-            odi.setFX005(dkAcctfAmount + xjAcctfAmount + yhAcctfAmount + xdAcctfAmount);
+//            odi.setFX005(dkAcctfAmount + xjAcctfAmount + yhAcctfAmount + xdAcctfAmount);
             
             odi.setFX006(acctfProportion(list, returnCodeDic));
             odi.setFX007(acctfMoneyProportion(list, returnCodeDic));

@@ -70,25 +70,6 @@ public class TaskServer {
 	}
 
 	/**
-	 * 排除特定月份不执行查询
-	 * 
-	 * @param month
-	 * @return
-	 */
-	public boolean exclude(int month) {
-		if (month == 1) {// 1m: 1 排除一月份
-			return true;
-		}
-		if (month == 2) {// 2m: 2 排除二月份
-			return true;
-		}
-		if (month == 15) {// 15d: 15 排除十五天
-			return true;
-		}
-		return false;
-	}
-
-	/**
 	 * 获取certNo下的不同月份下的所有
 	 * 
 	 * @param certNo
@@ -106,8 +87,6 @@ public class TaskServer {
 			Collections.sort(tradeDetailList);
 			Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
 			for (int month : overDueMouth.values()) {
-				if (exclude(month))
-					continue;// 排除15天，两个月，
 				tradeMap.put(month, getListByMonth(tradeDetailList, month, updateTime));
 			}
 		} catch (Exception e) {
@@ -205,10 +184,10 @@ public class TaskServer {
 						Map<Integer, List<TradeDetailDO>> tradeMap = fatherList(certNo, udpateTimes);
 						for (int month : overDueMouth.values()) {
 							// 指标结果集
-							if (exclude(month))
-								continue;// 排除15天，两个月，一个月
 							List<TradeDetailDO> list = tradeMap.get(month);
-							overDueMouth(list, odi, month, returnCodeDic);
+							if(list.size()!=0){
+								overDueMouth(list, odi, month, returnCodeDic);
+							}
 						}
 						// 客户申请行为统计
 						Map<Integer, List<BindCardLog>> bindCardLogMap = getBindCardLog(certNo, udpateTimes);
@@ -219,8 +198,7 @@ public class TaskServer {
 								bindCardMouth(list, odi, month, returnCodeDic,udpateTimes);
 							}
 						}
-						
-						// logger.info("odi:{}", JSON.toJSONString(odi));
+						 logger.info("odi:{}", JSON.toJSONString(odi));
 						lst.add(odi);
 					}
 					return lst;
@@ -490,7 +468,12 @@ public class TaskServer {
 	public List<TradeDetailDO> getListByMonth(List<TradeDetailDO> fatherList, int month, String udpateTimes) {
 		List<TradeDetailDO> list = new ArrayList<TradeDetailDO>();
 		Timestamp end = new Timestamp(DateUtils.yyyyMMddToDate(udpateTimes).getTime());
-		Timestamp begin = DateUtils.getDateOfXMonthsAgo(end, month);
+		Timestamp begin = null;
+		if (month == 15 || month==7) {// 按天计算日期
+			begin = DateUtils.getDateOfXDaysAgo(end, month);
+		} else {
+			begin = DateUtils.getDateOfXMonthsAgo(end, month);
+		}
 		for (TradeDetailDO o : fatherList) {
 			if (DateUtils.judge(begin, end, o.getCREATE_TIME())) {
 				list.add(o);
@@ -527,7 +510,16 @@ public class TaskServer {
 	private void overDueMouth(List<TradeDetailDO> list, OverDueIndex odi, int month,
 			Map<String, String[]> returnCodeDic) {
 
-		if (month == 3) {
+		if(month == 7){//七天
+			/******************************* 逾期一天以上次数 ***************************************/
+			
+		}else if(month == 15){//十五天
+			/******************************* 逾期一天以上次数 ***************************************/
+			
+		}else if(month == 1){//一个月
+			/******************************* 逾期一天以上次数 ***************************************/
+			
+		}else if (month == 3) {
 			/******************************* 逾期一天以上次数 ***************************************/
 			odi.setYQ013(loanOrgOverDueOneDay(list, "dk", returnCodeDic));
 			odi.setYQ014(loanOrgOverDueOneDay(list, "xj", returnCodeDic));
@@ -549,7 +541,7 @@ public class TaskServer {
 			int dkOverDueOrgAmount = overDueOrgCount(list, "dk", returnCodeDic);
 			int xjOverDueOrgAmount = overDueOrgCount(list, "xj", returnCodeDic);
 			int yhOverDueOrgAmount = overDueOrgCount(list, "yh", returnCodeDic);
-			int xdOverDueOrgAmount = overDueOrgCount(list, "xd", returnCodeDic);
+//			int xdOverDueOrgAmount = overDueOrgCount(list, "xd", returnCodeDic);
 
 			odi.setYQ022(MathUtil.divide(avgOrgOverDueCount(list, "dk", returnCodeDic), dkOverDueOrgAmount));
 			odi.setYQ023(MathUtil.divide(avgOrgOverDueCount(list, "xj", returnCodeDic), xjOverDueOrgAmount));

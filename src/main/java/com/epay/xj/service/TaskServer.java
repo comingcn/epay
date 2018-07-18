@@ -684,6 +684,12 @@ public class TaskServer {
 			int xjAcctfAmount = acctfCount(list, "xj", returnCodeDic);
 			int yhAcctfAmount = acctfCount(list, "yh", returnCodeDic);
 			int xdAcctfAmount = acctfCount(list, "xd", returnCodeDic);
+            
+            /******************************* 还款类变量 ***************************************/
+            odi.setHK054(repaymentSuccessCount(list, "yh", returnCodeDic));
+            odi.setHK055(repaymentSuccessCount(list, "xj", returnCodeDic));
+            odi.setHK056(repaymentSuccessCount(list, "xd", returnCodeDic));
+            odi.setHK057(repaymentSuccessCount(list, "dk", returnCodeDic));
 
 			odi.setFX008(dkAcctfAmount);
 			odi.setFX009(xjAcctfAmount);
@@ -766,10 +772,16 @@ public class TaskServer {
 
 			odi.setFX006(acctfProportion(list, returnCodeDic));
 			odi.setFX007(acctfMoneyProportion(list, returnCodeDic));
+            
+            /******************************* 还款类变量 ***************************************/
+            odi.setHK050(repaymentSuccessCount(list, "yh", returnCodeDic));
+            odi.setHK051(repaymentSuccessCount(list, "xj", returnCodeDic));
+            odi.setHK052(repaymentSuccessCount(list, "xd", returnCodeDic));
+            odi.setHK053(repaymentSuccessCount(list, "dk", returnCodeDic));
 		}
 	}
 
-	/**
+    /**
 	 * 每个商户的所有记录
 	 * 
 	 * @param list
@@ -1876,4 +1888,37 @@ public class TaskServer {
 		return resultMap;
 	}
 
+    /**
+     * @Description: 还款类变量。在不同类型机构下的还款成功金额sum
+     * @param list
+     * @param string
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月18日
+     */
+    private BigDecimal repaymentSuccessCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
+        
+        List<String> successList = Arrays.asList(returnCodeDic.get("success"));
+        
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
+        
+        List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
+        for(TradeDetailDO o : list) {
+            if (orgTypeList.contains(o.getMER_TYPE().toString())) {
+                merTypeTradeDetailDOList.add(o);
+            }
+        }
+        
+        BigDecimal sumMoney = new BigDecimal("0"); 
+        for(TradeDetailDO o : merTypeTradeDetailDOList) {
+            if('S' == o.getSF_TYPE() && successList.contains(o.getRETURN_CODE())) {
+                sumMoney = sumMoney.add(o.getAMOUNT());
+            }
+        }
+        
+        return sumMoney;
+    }
+    
 }

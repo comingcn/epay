@@ -127,6 +127,7 @@ public class TaskServer {
 		String sql = "select * from CP_ODS.P1055_UMP_BIND_LOG_PARA where CERT_NO='" + certNo + "'";
 		List<BindCardLog> tradeDetailList = entityManager.createNativeQuery(sql, BindCardLog.class).getResultList();
 		Map<Integer, List<BindCardLog>> tradeMap = new HashMap<Integer, List<BindCardLog>>();
+		if(tradeDetailList.size()==0)return tradeMap;
 		Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
 		for (int month : overDueMouth.values()) {
 			tradeMap.put(month, getBindCardLogListByMonthOrDays(tradeDetailList, month, updateTime));
@@ -211,11 +212,14 @@ public class TaskServer {
 						}
 						// 客户申请行为统计
 						Map<Integer, List<BindCardLog>> bindCardLogMap = getBindCardLog(certNo, udpateTimes);
-						for (int month : overDueMouth.values()) {
-							// 指标结果集
-							List<BindCardLog> list = bindCardLogMap.get(month);
-							bindCardMouth(list, odi, month, returnCodeDic,udpateTimes);
+						if(bindCardLogMap.size()!=0){
+							for (int month : overDueMouth.values()) {
+								// 指标结果集
+								List<BindCardLog> list = bindCardLogMap.get(month);
+								bindCardMouth(list, odi, month, returnCodeDic,udpateTimes);
+							}
 						}
+						
 						// logger.info("odi:{}", JSON.toJSONString(odi));
 						lst.add(odi);
 					}
@@ -1506,6 +1510,9 @@ public class TaskServer {
 				maxLst.add(o.getAMOUNT());
 			}
 		}
+		if(maxLst.size()==0){
+			return new BigDecimal(0);
+		}
 		return Collections.max(maxLst);
 	}
 
@@ -1523,7 +1530,7 @@ public class TaskServer {
 		BigDecimal total = new BigDecimal(0);
 		for (TradeDetailDO o : list) {
 			if (orgTypeList.contains(o.getMER_TYPE().toString()) && o.getSF_TYPE().toString().equals("S")) {
-				total.add(o.getAMOUNT());
+				total = total.add(o.getAMOUNT());
 			}
 		}
 		if (total.intValue() != 0) {

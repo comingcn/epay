@@ -1,8 +1,9 @@
 package com.epay.xj.domain;
 
+import javax.persistence.Entity;
 import javax.persistence.Id;
 
-//@Entity
+@Entity
 //@Table(name="bind_card_log")//设置数据库中表名字
 public class BindCardLog {
 

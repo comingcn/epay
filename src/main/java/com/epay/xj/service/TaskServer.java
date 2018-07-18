@@ -286,7 +286,7 @@ public class TaskServer {
 		if (month == 15) {
 			odi.setSQ036(bindCardMerMap(list, null).size());// 申请认证机构数
 			odi.setSQ037(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
-			odi.setSQ037(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
+			odi.setSQ038(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
 			odi.setSQ039(list.size());// 申请记录数
 		}
 		/* 1个月 */
@@ -311,10 +311,10 @@ public class TaskServer {
 			odi.setSQ021(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
 			odi.setSQ022(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
 			odi.setSQ023(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ022()));// 平均每张借记卡申请记录数
-			// odi.setSQ024(MathUtil.divide(getBindCardByDcType(list, null,
-			// "1"), odi.getSQ022()));// 平均每张贷记卡申请记录数
+			odi.setSQ024(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ022()));// 平均每张贷记卡申请记录数
 			odi.setSQ025(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ022()));// 平均每张卡在贷款类机构申请认证的记录数
 			odi.setSQ026(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ022()));// 平均每张卡在贷款类机构申请认证的记录数
+			odi.setSQ051(MathUtil.divide(list.size(),odi.getSQ022()));//近3个月平均每张卡申请记录数
 		}
 		/* 6个月 */
 		if (month == 6) {
@@ -323,13 +323,13 @@ public class TaskServer {
 			odi.setSQ011(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
 			odi.setSQ012(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
 			odi.setSQ013(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ012()));// 平均每张借记卡申请记录数
-			// odi.setSQ014(MathUtil.divide(getBindCardByDcType(list, null,
-			// "1"), odi.getSQ012()));// 平均每张贷记卡申请记录数
+			odi.setSQ014(MathUtil.divide(getBindCardByDcType(list, null,"1"), odi.getSQ012()));// 平均每张贷记卡申请记录数
 			odi.setSQ015(getBindCardMinRecordsByDcType(list, "0", "max"));// 每张借记卡申请最小记录数
-			// odi.setSQ016(getBindCardMinRecordsByDcType(list, "1","min"));//
-			// 每张贷记卡申请最小记录数
+			odi.setSQ016(getBindCardMinRecordsByDcType(list, "1","min"));//每张贷记卡申请最小记录数
 			odi.setSQ017(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ012()));// 平均每张卡在贷款类机构申请认证的记录数
 			odi.setSQ018(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ012()));// 平均每张卡在贷款类机构申请认证的记录数
+			odi.setSQ049(MathUtil.divide(list.size(),odi.getSQ012()));//近6个月平均每张卡申请记录数
+			odi.setSQ050(getBindCardMinRecordsByDcType(list, null,"min"));//6个月_全量卡_单卡_申请次数_最小
 		}
 		/* 12个月 */
 		if (month == 12) {
@@ -338,14 +338,60 @@ public class TaskServer {
 			odi.setSQ003(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
 			odi.setSQ004(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
 			odi.setSQ005(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ004()));// 平均每张借记卡申请记录数
-			// odi.setSQ006(MathUtil.divide(getBindCardByDcType(list, null,
-			// "1"), odi.getSQ004()));// 平均每张贷记卡申请记录数
+			odi.setSQ006(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ004()));// 平均每张贷记卡申请记录数
 			odi.setSQ007(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ004()));// 平均每张卡在贷款类机构申请认证的记录数
 			odi.setSQ008(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ004()));// 平均每张卡在银行类机构申请认证的记录数
-			/* 时间指标.最近一次 */
-
-			/* 时间指标.最早一次 */
+			odi.setSQ048(MathUtil.divide(list.size(),odi.getSQ004()));//近12个月平均每张卡申请记录数
+			odi.setSQ040(getCreditCardBindLogs(list, "1", "recently"));//最近一次使用信用卡认证申请距今的时间
+			Date dateEnd = DateUtils.yyyyMMddToDate(updateTime);
+			if(null!=odi.getSQ040()){
+				odi.setSQ041(DateUtils.getIntervalDayAmount(
+						DateUtils.yyyyMMddToDate(odi.getSQ040()), 
+						dateEnd));//最近一次使用信用卡认证申请距今的天数
+			}
+			odi.setSQ042(getCreditCardBindLogs(list, "1", "early"));//最早一次使用信用卡认证申请时间
+			if(null!=odi.getSQ042()){
+				odi.setSQ043(DateUtils.getIntervalDayAmount(
+						DateUtils.yyyyMMddToDate(odi.getSQ042()), 
+						dateEnd));//最早一次使用信用卡认证申请距今的天数
+			}
+			odi.setSQ044(getCreditCardBindLogs(list, "0", "recently"));//最近一次_借记卡_申请认证时间
+			if(null!=odi.getSQ044()){
+				odi.setSQ045(DateUtils.getIntervalDayAmount(
+						DateUtils.yyyyMMddToDate(odi.getSQ044()), 
+						dateEnd));//最近一次_借记卡_申请认证_距今天数
+			}
+			odi.setSQ046(getCreditCardBindLogs(list, "1", "early"));//最早一次_借记卡_申请认证时间
+			if(null!=odi.getSQ046()){
+				odi.setSQ047(DateUtils.getIntervalDayAmount(
+						DateUtils.yyyyMMddToDate(odi.getSQ046()), 
+						dateEnd));//最早一次_借记卡_申请认证_距今天数
+			}
 		}
+	}
+	
+	/**
+	 * 获取最近或者最早信用卡时间 dcType:借贷类型(0：借记卡，1：贷记卡)
+	 * @param list
+	 * @param dcType
+	 * @return
+	 */
+	public String getCreditCardBindLogs(List<BindCardLog> list, String dcType,String status){
+		List<BindCardLog> tmpList = new ArrayList<BindCardLog>();
+		for (BindCardLog o : list) {
+			if(dcType.equals(o.getDC_TYPE())){
+				tmpList.add(o);
+			}
+		}
+		if(tmpList.size()>0){
+			Collections.sort(tmpList);
+			if("early".equals(status)){//最早
+				return tmpList.get(0).getTXN_DATE();
+			}else if("recently".equals(status)){//最近
+				return tmpList.get(tmpList.size()-1).getTXN_DATE();
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -1037,12 +1083,8 @@ public class TaskServer {
 			List<TradeDetailDO> tmp = entry.getValue();
 			if (tmp.size() <= 1)
 				continue;
-			int tmpOverTimes = overDueDays(list, ywbzLst, 1);
-			if(tmpOverTimes!=0){
-				overTimes= overTimes+tmpOverTimes;
-			}
+			overTimes= overTimes+overDueDays(list, ywbzLst, 1);
 		}
-		System.out.println(overTimes);
 		return overTimes;
 	}
 

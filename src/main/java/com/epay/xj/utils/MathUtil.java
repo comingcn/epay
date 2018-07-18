@@ -50,9 +50,7 @@ public class MathUtil {
         if (number2.equals(BigDecimal.ZERO)) 
             return new BigDecimal("0").setScale(0,BigDecimal.ROUND_HALF_UP);
 
-        BigDecimal result = number1.divide(number2);
-
-        result = result.setScale(2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal result = number1.divide(number2, 2, BigDecimal.ROUND_HALF_UP);
         return result;
     }
 

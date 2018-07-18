@@ -1037,12 +1037,8 @@ public class TaskServer {
 			List<TradeDetailDO> tmp = entry.getValue();
 			if (tmp.size() <= 1)
 				continue;
-			int tmpOverTimes = overDueDays(list, ywbzLst, 1);
-			if(tmpOverTimes!=0){
-				overTimes= overTimes+tmpOverTimes;
-			}
+			overTimes= overTimes+overDueDays(list, ywbzLst, 1);
 		}
-		System.out.println(overTimes);
 		return overTimes;
 	}
 

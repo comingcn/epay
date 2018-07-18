@@ -618,14 +618,58 @@ public class TaskServer {
 
 		if (month == 7) {// 七天
 			/******************************* 逾期一天以上次数 ***************************************/
+		    
+		    /******************************* 风险类变量 ***************************************/
+            odi.setFX026(yebzProportion(list, returnCodeDic));
+            
+            int xjYebzAmount = yebzCount(list, "xj", returnCodeDic);
+            int dkYebzAmount = yebzCount(list, "dk", returnCodeDic);
+            int yhYebzAmount = yebzCount(list, "yh", returnCodeDic);
+            int xdYebzAmount = yebzCount(list, "xd", returnCodeDic);
+            
+            odi.setFX027(xjYebzAmount);
+            odi.setFX028(dkYebzAmount);
+            odi.setFX029(yhYebzAmount);
+            odi.setFX030(xdYebzAmount);
 
 		} else if (month == 15) {// 十五天
 			/******************************* 逾期一天以上次数 ***************************************/
 
+		    /******************************* 风险类变量 ***************************************/
+            odi.setFX031(yebzProportion(list, returnCodeDic));
+            
+            int xjYebzAmount = yebzCount(list, "xj", returnCodeDic);
+            int dkYebzAmount = yebzCount(list, "dk", returnCodeDic);
+            int yhYebzAmount = yebzCount(list, "yh", returnCodeDic);
+            int xdYebzAmount = yebzCount(list, "xd", returnCodeDic);
+            
+            odi.setFX032(xjYebzAmount);
+            odi.setFX033(dkYebzAmount);
+            odi.setFX034(yhYebzAmount);
+            odi.setFX035(xdYebzAmount);
+		    
 		} else if (month == 1) {// 一个月
 			/******************************* 逾期一天以上次数 ***************************************/
 
-		} else if (month == 3) {
+		    /******************************* 还款类变量 ***************************************/
+		    int dkRepaymentSuccessAmount = repaymentSuccessCount(list, "dk", returnCodeDic);
+		    int xjRepaymentSuccessAmount = repaymentSuccessCount(list, "xj", returnCodeDic);
+		    int yhRepaymentSuccessAmount = repaymentSuccessCount(list, "yh", returnCodeDic);
+		    int xdRepaymentSuccessAmount = repaymentSuccessCount(list, "xd", returnCodeDic);
+		    
+		    int sumRepaymentSuccessAmount = dkRepaymentSuccessAmount + xjRepaymentSuccessAmount
+		                                  + yhRepaymentSuccessAmount + xdRepaymentSuccessAmount;
+		   
+		    odi.setHK034(sumRepaymentSuccessAmount);
+            odi.setHK035(repaymentSuccessProportion(list, returnCodeDic));
+		    
+		} else if (month == 2) {// 两个月
+		    
+		    /******************************* 还款类变量 ***************************************/
+            odi.setHK032(repaymentSuccessProportion(list, returnCodeDic));
+            odi.setHK033(repaymentSuccessMoneyProportion(list, returnCodeDic));
+		    
+	    } else if (month == 3) {
 			/******************************* 逾期一天以上次数 ***************************************/
 			odi.setYQ013(loanOrgOverDueOneDay(list, "dk", returnCodeDic));
 			odi.setYQ014(loanOrgOverDueOneDay(list, "xj", returnCodeDic));
@@ -679,6 +723,20 @@ public class TaskServer {
 			odi.setFX023(acctfMoneyProportion(list, returnCodeDic));
 			odi.setFX024(otlmtMoneyProportion(list, returnCodeDic));
 			odi.setFX025(otlmtProportion(list, returnCodeDic));
+			
+			/******************************* 还款类变量 ***************************************/
+            odi.setHK022(repaymentSuccessCount(list, "dk", returnCodeDic));
+            odi.setHK023(repaymentSuccessProportion(list, returnCodeDic));
+            odi.setHK024(repamentYebzCount(list, returnCodeDic));
+            odi.setHK025(repamentFailcProportion(list, returnCodeDic));
+            
+            odi.setHK026(repaymentSuccessOrgCount(list, "dk", returnCodeDic));
+            odi.setHK027(repaymentSuccessOrgCount(list, "yh", returnCodeDic));
+            odi.setHK028(repaymentSuccessOrgCount(list, "xj", returnCodeDic));
+            odi.setHK029(repaymentSuccessOrgCount(list, "xd", returnCodeDic));
+            
+            odi.setHK030(repamentYebzProportion(list, returnCodeDic));
+            odi.setHK031(repamentYebzMoneyProportion(list, returnCodeDic));
 
 		} else if (month == 6) {
 			/******************************* 逾期一天以上次数 ***************************************/
@@ -732,10 +790,10 @@ public class TaskServer {
 			int xdAcctfAmount = acctfCount(list, "xd", returnCodeDic);
             
             /******************************* 还款类变量 ***************************************/
-            odi.setHK054(repaymentSuccessCount(list, "yh", returnCodeDic));
-            odi.setHK055(repaymentSuccessCount(list, "xj", returnCodeDic));
-            odi.setHK056(repaymentSuccessCount(list, "xd", returnCodeDic));
-            odi.setHK057(repaymentSuccessCount(list, "dk", returnCodeDic));
+            odi.setHK054(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
+            odi.setHK055(repaymentSuccessMoneyCount(list, "xj", returnCodeDic));
+            odi.setHK056(repaymentSuccessMoneyCount(list, "xd", returnCodeDic));
+            odi.setHK057(repaymentSuccessMoneyCount(list, "dk", returnCodeDic));
 
 			odi.setFX008(dkAcctfAmount);
 			odi.setFX009(xjAcctfAmount);
@@ -744,10 +802,27 @@ public class TaskServer {
 			// odi.setFX012(dkAcctfAmount + xjAcctfAmount + yhAcctfAmount +
 			// xdAcctfAmount);
 
-			odi.setFX013(acctfProportion(list, returnCodeDic));
-			odi.setFX014(acctfMoneyProportion(list, returnCodeDic));
-			odi.setFX015(otlmtMoneyProportion(list, returnCodeDic));
-			odi.setFX016(otlmtProportion(list, returnCodeDic));
+//			odi.setFX013(acctfProportion(list, returnCodeDic));
+//			odi.setFX014(acctfMoneyProportion(list, returnCodeDic));
+//			odi.setFX015(otlmtMoneyProportion(list, returnCodeDic));
+//			odi.setFX016(otlmtProportion(list, returnCodeDic));
+			
+//			odi.setHK054(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
+//          odi.setHK055(repaymentSuccessMoneyCount(list, "xj", returnCodeDic));
+//          odi.setHK056(repaymentSuccessMoneyCount(list, "xd", returnCodeDic));
+//          odi.setHK057(repaymentSuccessMoneyCount(list, "dk", returnCodeDic));
+            
+            odi.setHK012(repaymentSuccessCount(list, "dk", returnCodeDic));
+            odi.setHK013(repaymentSuccessProportion(list, returnCodeDic));
+            odi.setHK014(repaymentSuccessOrgCount(list, "dk", returnCodeDic));
+            odi.setHK015(repaymentSuccessOrgCount(list, "yh", returnCodeDic));
+            odi.setHK016(repaymentSuccessOrgCount(list, "xj", returnCodeDic));
+            odi.setHK017(repaymentSuccessOrgCount(list, "xd", returnCodeDic));
+            
+            odi.setHK018(repamentYebzCount(list, returnCodeDic));
+            odi.setHK019(repamentFailcProportion(list, returnCodeDic));
+            odi.setHK020(repamentYebzProportion(list, returnCodeDic));
+            odi.setHK021(repamentYebzMoneyProportion(list, returnCodeDic));
 
 			/******************************* 放款类变量 ***************************************/
 			odi.setFK008(fkSuccessCount(list, returnCodeDic));
@@ -820,10 +895,31 @@ public class TaskServer {
 			odi.setFX007(acctfMoneyProportion(list, returnCodeDic));
             
             /******************************* 还款类变量 ***************************************/
-            odi.setHK050(repaymentSuccessCount(list, "yh", returnCodeDic));
-            odi.setHK051(repaymentSuccessCount(list, "xj", returnCodeDic));
-            odi.setHK052(repaymentSuccessCount(list, "xd", returnCodeDic));
-            odi.setHK053(repaymentSuccessCount(list, "dk", returnCodeDic));
+            odi.setHK050(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
+            odi.setHK051(repaymentSuccessMoneyCount(list, "xj", returnCodeDic));
+            odi.setHK052(repaymentSuccessMoneyCount(list, "xd", returnCodeDic));
+            odi.setHK053(repaymentSuccessMoneyCount(list, "dk", returnCodeDic));
+            
+            odi.setHK001(repaymentSuccessCount(list, "dk", returnCodeDic));
+            odi.setHK002(repaymentSuccessProportion(list, returnCodeDic));
+            odi.setHK003(repaymentSuccessOrgCount(list, "dk", returnCodeDic));
+            odi.setHK004(repaymentSuccessOrgCount(list, "yh", returnCodeDic));
+            odi.setHK005(repaymentSuccessOrgCount(list, "xj", returnCodeDic));
+            odi.setHK006(repaymentSuccessOrgCount(list, "xd", returnCodeDic));
+            
+            odi.setHK007(repamentYebzCount(list, returnCodeDic));
+            odi.setHK008(repamentFailcProportion(list, returnCodeDic));
+            odi.setHK009(repamentYebzProportion(list, returnCodeDic));
+            odi.setHK010(repamentYebzMoneyProportion(list, returnCodeDic));
+            
+            /**
+             * 还款类变量：时间指标
+             */
+            //最早一次
+//            Map<String, Object> earliestCountResultMap = new HashMap<String, Object>();
+//            odi.setHK036();
+            
+            
 		}
 	}
 
@@ -1658,6 +1754,41 @@ public class TaskServer {
 
 		return acctfCountResult;
 	}
+	
+    /**
+     * @Description: 风险类变量。因余额不足还款失败的次数。
+     * @param list
+     * @param string
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月18日
+     */
+    private int yebzCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
+     // 商户类型归属分类字典
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        // 具体机构类
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
+        // 帐户问题还款失败的返回码
+        List<String> yebzList = Arrays.asList(returnCodeDic.get("yebz"));
+
+        List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
+
+        for (TradeDetailDO o : list) {
+            if (orgTypeList.contains(o.getMER_TYPE().toString())) {
+                merTypeTradeDetailDOList.add(o);
+            }
+        }
+
+        int yebzCountResult = 0;
+        for (TradeDetailDO o : merTypeTradeDetailDOList) {
+            if (yebzList.contains(o.getRETURN_CODE())) {
+                yebzCountResult++;
+            }
+        }
+
+        return yebzCountResult;
+    }
 
 	/**
 	 * @Description: 风险类变量。因账户原因还款失败的记录数占比。
@@ -1679,8 +1810,30 @@ public class TaskServer {
 			}
 		}
 
-		return MathUtil.divide(oltmtAmount, acctfList.size());
+		return MathUtil.divide(oltmtAmount, list.size());
 	}
+	
+    /**
+     * @Description: 风险类变量。余额不足记录数占比。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月18日
+     */
+    private BigDecimal yebzProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        // 余额不足的返回码
+        List<String> yebzList = Arrays.asList(returnCodeDic.get("yebz"));
+
+        int yebzAmount = 0;
+        for (TradeDetailDO o : list) {
+            if (yebzList.contains(o.getRETURN_CODE())) {
+                yebzAmount++;
+            }
+        }
+
+        return MathUtil.divide(yebzAmount, yebzList.size());
+    }
 
 	/**
 	 * @Description: 风险类变量。因账户原因还款失败的金额占比。
@@ -1939,7 +2092,7 @@ public class TaskServer {
      * @author LZG
      * @date 2018年07月18日
      */
-    private BigDecimal repaymentSuccessCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
+    private BigDecimal repaymentSuccessMoneyCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
         
         List<String> successList = Arrays.asList(returnCodeDic.get("success"));
         
@@ -1961,6 +2114,214 @@ public class TaskServer {
         }
         
         return sumMoney;
+    }
+    
+    /**
+     * @Description: 还款类变量。还款成功记录数。
+     * @param list
+     * @param string
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月18日
+     */
+    private int repaymentSuccessCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
+        
+        // 商户类型归属分类字典
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        // 具体机构类
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
+        // 还款成功的返回码
+        List<String> successReturnCodeList = Arrays.asList(returnCodeDic.get("success"));
+
+        List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
+
+        for (TradeDetailDO o : list) {
+            if (orgTypeList.contains(o.getMER_TYPE().toString())) {
+                merTypeTradeDetailDOList.add(o);
+            }
+        }
+
+        int successCountResult = 0;
+        for (TradeDetailDO o : merTypeTradeDetailDOList) {
+            if (successReturnCodeList.contains(o.getRETURN_CODE())) {
+                successCountResult++;
+            }
+        }
+
+        return successCountResult;
+    }
+    
+    /**
+     * @Description: 还款类变量。还款成功记录数占比。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月18日
+     */
+    private BigDecimal repaymentSuccessProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        List<String> successReturnCodeList = Arrays.asList(returnCodeDic.get("success"));
+
+        int successAmount = 0;
+        for (TradeDetailDO o : list) {
+            if (successReturnCodeList.contains(o.getRETURN_CODE())) {
+                successAmount++;
+            }
+        }
+
+        return MathUtil.divide(successAmount, list.size());
+    }
+    
+    /**
+     * @Description: 还款类变量。还款成功的机构数
+     * @param list
+     * @param string
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月18日
+     */
+    private int repaymentSuccessOrgCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
+        
+        // 商户类型归属分类字典
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        // 具体机构类
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
+        // 还款成功的返回码
+        List<String> successReturnCodeList = Arrays.asList(returnCodeDic.get("success"));
+
+        List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
+
+        for (TradeDetailDO o : list) {
+            if (orgTypeList.contains(o.getMER_TYPE().toString())) {
+                merTypeTradeDetailDOList.add(o);
+            }
+        }
+        
+        Set<String> repaymentSuccessOrgCountSet = new HashSet<String>();
+        for (TradeDetailDO o : list) {
+            if ('S' == o.getSF_TYPE() && successReturnCodeList.contains(o.getRETURN_CODE())) {
+                repaymentSuccessOrgCountSet.add(o.getSOURCE_MERNO());
+            }
+        }
+        
+        return repaymentSuccessOrgCountSet.size();
+    }
+    
+    
+    /**
+     * @Description: 还款类变量。 还款余额不足的记录数。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月18日
+     */
+    private int repamentYebzCount(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        
+        List<String> yebzReturnCodeList = Arrays.asList(returnCodeDic.get("yebz"));
+
+        int yebzAmount = 0;
+        for (TradeDetailDO o : list) {
+            if ('S' == o.getSF_TYPE() && yebzReturnCodeList.contains(o.getRETURN_CODE())) {
+                yebzAmount++;
+            }
+        }
+
+        return yebzAmount;
+    }
+    
+    /**
+     * @Description: 还款类变量。失败还款记录的占比。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月18日
+     */
+    private BigDecimal repamentFailcProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+       
+        List<String> failcReturnCodeList = Arrays.asList(returnCodeDic.get("failc"));
+
+        int failcAmount = 0;
+        for (TradeDetailDO o : list) {
+            if ('S' == o.getSF_TYPE() && failcReturnCodeList.contains(o.getRETURN_CODE())) {
+                failcAmount++;
+            }
+        }
+
+        return MathUtil.divide(failcAmount, list.size());
+    }
+    
+    /**
+     * @Description: 还款类变量。余额不足的记录数占比。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月18日
+     */
+    private BigDecimal repamentYebzProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        
+        List<String> yebzReturnCodeList = Arrays.asList(returnCodeDic.get("yebz"));
+
+        int yebzAmount = 0;
+        for (TradeDetailDO o : list) {
+            if ('S' == o.getSF_TYPE() && yebzReturnCodeList.contains(o.getRETURN_CODE())) {
+                yebzAmount++;
+            }
+        }
+
+        return MathUtil.divide(yebzAmount, list.size());
+    }
+    
+    /**
+     * @Description: 还款类变量。余额不足的金额数占比。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月18日
+     */
+    private BigDecimal repamentYebzMoneyProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        
+        List<String> yebzReturnCodeList = Arrays.asList(returnCodeDic.get("yebz"));
+        
+        BigDecimal sumMoney = new BigDecimal("0"); 
+        BigDecimal yebzMoney = new BigDecimal("0");
+        for(TradeDetailDO o : list) {
+            sumMoney = sumMoney.add(o.getAMOUNT());
+            if('S' == o.getSF_TYPE() && yebzReturnCodeList.contains(o.getRETURN_CODE())) {
+                yebzMoney = yebzMoney.add(o.getAMOUNT());
+            }
+        }
+        
+        return MathUtil.divide(yebzMoney, sumMoney);
+    }
+    
+    /**
+     * @Description: 还款类变量。还款成功金额占比。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月18日
+     */
+    private BigDecimal repaymentSuccessMoneyProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        
+        List<String> successReturnCodeList = Arrays.asList(returnCodeDic.get("success"));
+        
+        BigDecimal sumMoney = new BigDecimal("0"); 
+        BigDecimal successMoney = new BigDecimal("0");
+        for(TradeDetailDO o : list) {
+            sumMoney = sumMoney.add(o.getAMOUNT());
+            if('S' == o.getSF_TYPE() && successReturnCodeList.contains(o.getRETURN_CODE())) {
+                successMoney = successMoney.add(o.getAMOUNT());
+            }
+        }
+        
+        return MathUtil.divide(successMoney, sumMoney);
     }
     
 }

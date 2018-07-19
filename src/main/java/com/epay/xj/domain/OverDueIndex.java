@@ -11,6 +11,7 @@ public class OverDueIndex {
 
 	@Id
 	public String CERT_NO;//身份证号
+	public Integer SCORE;//信用分
 	/************************ 逾期类变量***************************/
 	public int YQ001;	//6个月	逾期一天以上	近6个月在贷款类机构逾期1天以上次数
 	public int YQ002;	//6个月	逾期一天以上	近6个月在消费金融机构逾期1天以上次数
@@ -155,7 +156,7 @@ public class OverDueIndex {
 	public BigDecimal HK008;	//12个月	失败占比	近12个月失败还款记录数的占比
 	public BigDecimal HK009;	//12个月	失败占比	近12个月余额不足的记录数占比
 	public BigDecimal HK010;	//12个月	失败占比	近12个月余额不足的金额数占比
-	public int HK011;	//6个月	成功次数	近6个月成功还款的记录数
+//	public int HK011;	//6个月	成功次数	近6个月成功还款的记录数
 	public int HK012;	//6个月	成功次数	近6个月在贷款类机构划扣成功的记录数
 	public BigDecimal HK013;	//6个月	成功占比	近6个月成功还款的记录数占比
 	public int HK014;	//6个月	机构数	近6个月成功还款的贷款类机构数
@@ -916,12 +917,12 @@ public class OverDueIndex {
 	public void setHK010(BigDecimal hK010) {
 		HK010 = hK010;
 	}
-	public int getHK011() {
-		return HK011;
-	}
-	public void setHK011(int hK011) {
-		HK011 = hK011;
-	}
+//	public int getHK011() {
+//		return HK011;
+//	}
+//	public void setHK011(int hK011) {
+//		HK011 = hK011;
+//	}
 	public int getHK012() {
 		return HK012;
 	}
@@ -1755,5 +1756,11 @@ public class OverDueIndex {
 	}
 	public void setSQ051(BigDecimal sQ051) {
 		SQ051 = sQ051;
+	}
+	public Integer getSCORE() {
+		return SCORE;
+	}
+	public void setSCORE(Integer sCORE) {
+		SCORE = sCORE;
 	}
 }

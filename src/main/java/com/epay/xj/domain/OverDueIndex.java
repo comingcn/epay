@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
 @Entity
 @Table(name="cp_kpi.P1055_PERSON_TRANSTRAIT_INFO_JAVA")
 public class OverDueIndex {
@@ -144,15 +145,15 @@ public class OverDueIndex {
 	public int FX033;	//近15天	失败次数	近15天在小贷行业余额不足的记录数
 	public int FX034;	//近15天	失败次数	近15天在银行类机构余额不足的记录数
 	public int FX035;	//近15天	失败次数	近15天在贷款类机构余额不足的记录数
-	public int FX036;//全卡_余额不足_失败次数
-	public BigDecimal FX037;//全卡_失败扣款_余额不足记录数_占比
-	public BigDecimal FX038;//全卡_失败扣款_余额不足金额_占比
-	public int FX039;//全卡_余额不足_扣款失败次数
-	public BigDecimal FX040;//全卡_失败扣款_余额不足记录数_占比
-	public BigDecimal FX041;//全卡_失败扣款_余额不足金额_占比
-	public int FX042;//全卡_余额不足_失败扣款_次数
-	public BigDecimal FX043;//全卡_失败扣款_余额不足记录数_占比
-	public BigDecimal FX044;//全卡_失败扣款_余额不足金额_占比
+	public BigDecimal FX036; //12月_全卡_全机构_划扣_总额
+	public BigDecimal FX037; //6月_全卡_全机构_划扣_总额
+	public BigDecimal FX038; //3月_全卡_全机构_划扣_总额
+	public int FX039; //12个月_全卡_全机构_还款_成功_记录数
+	public int FX040; //6个月_全卡_全机构_还款_成功_记录数
+	public int FX041; //3个月_全卡_全机构_还款_成功_记录数
+	public int FX042; //12个月_全量卡_还款_成功_机构数
+	public int FX043; //6个月_全量卡_还款_成功_机构数
+	public int FX044; //3个月_全量卡_还款_成功_机构数
 
 	/************************ 还款类变量 ***************************/
 	public int HK001;	//12个月	成功次数	近12个月成功还款的记录数
@@ -1791,10 +1792,10 @@ public class OverDueIndex {
 	public void setSCORE(Integer sCORE) {
 		SCORE = sCORE;
 	}
-	public int getFX036() {
+	public BigDecimal getFX036() {
 		return FX036;
 	}
-	public void setFX036(int fX036) {
+	public void setFX036(BigDecimal fX036) {
 		FX036 = fX036;
 	}
 
@@ -1823,28 +1824,28 @@ public class OverDueIndex {
 	public void setFX038(BigDecimal fX038) {
 		FX038 = fX038;
 	}
-	public BigDecimal getFX040() {
+	public int getFX040() {
 		return FX040;
 	}
-	public void setFX040(BigDecimal fX040) {
+	public void setFX040(int fX040) {
 		FX040 = fX040;
 	}
-	public BigDecimal getFX041() {
+	public int getFX041() {
 		return FX041;
 	}
-	public void setFX041(BigDecimal fX041) {
+	public void setFX041(int fX041) {
 		FX041 = fX041;
 	}
-	public BigDecimal getFX043() {
+	public int getFX043() {
 		return FX043;
 	}
-	public void setFX043(BigDecimal fX043) {
+	public void setFX043(int fX043) {
 		FX043 = fX043;
 	}
-	public BigDecimal getFX044() {
+	public int getFX044() {
 		return FX044;
 	}
-	public void setFX044(BigDecimal fX044) {
+	public void setFX044(int fX044) {
 		FX044 = fX044;
 	}
 	public BigDecimal getKK001() {

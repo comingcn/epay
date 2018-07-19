@@ -221,7 +221,6 @@ public class CreditScoreUtil {
 //        dataMap.clear();
 
     }
-    
 
     /**
      * @Description: compareRange方法测试

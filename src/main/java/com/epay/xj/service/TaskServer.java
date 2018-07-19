@@ -916,10 +916,35 @@ public class TaskServer {
              * 还款类变量：时间指标
              */
             //最早一次
-//            Map<String, Object> earliestCountResultMap = new HashMap<String, Object>();
-//            odi.setHK036();
+            Map<String, Object> hkEarliestCountResultMap = hkEarlistDateAndDays(list, "dk");
+            odi.setHK036((String)hkEarliestCountResultMap.get("hkDate"));
+            odi.setHK037((Integer)hkEarliestCountResultMap.get("hkDays"));
             
+            //最近一次
+            Map<String, Object> hkLatestCountResultMap = hkLatestDateAndDays(list, "dk");
+            odi.setHK038((String)hkLatestCountResultMap.get("hkDate"));
+            odi.setHK039((Integer)hkLatestCountResultMap.get("hkDays"));
             
+            Map<String, Object> hkDkLatestOfOrgSuccessCountResultMap = hkLatestOfOrgDateAndDays(list, "dk", returnCodeDic, "success");
+            odi.setHK040((String)hkDkLatestOfOrgSuccessCountResultMap.get("hkDate"));
+            odi.setHK041((Integer)hkDkLatestOfOrgSuccessCountResultMap.get("hkDays"));
+            
+            Map<String, Object> hkYhLatestOfOrgSuccessCountResultMap = hkLatestOfOrgDateAndDays(list, "yh", returnCodeDic, "success");
+            odi.setHK042((String)hkYhLatestOfOrgSuccessCountResultMap.get("hkDate"));
+            odi.setHK043((Integer)hkYhLatestOfOrgSuccessCountResultMap.get("hkDays"));
+            
+            Map<String, Object> hkDkLatestOfOrgFailCountResultMap = hkLatestOfOrgDateAndDays(list, "dk", returnCodeDic, "fail");
+            odi.setHK044((String)hkDkLatestOfOrgFailCountResultMap.get("hkDate"));
+            odi.setHK045((Integer)hkDkLatestOfOrgFailCountResultMap.get("hkDays"));
+            
+            Map<String, Object> hkYhLatestOfOrgFailCountResultMap = hkLatestOfOrgDateAndDays(list, "yh", returnCodeDic, "fail");
+            odi.setHK046((String)hkYhLatestOfOrgFailCountResultMap.get("hkDate"));
+            odi.setHK047((Integer)hkYhLatestOfOrgFailCountResultMap.get("hkDays"));
+            
+            Map<String, Object> hkXdLatestOfOrgFailCountResultMap = hkLatestOfOrgDateAndDays(list, "xd", returnCodeDic, "fail");
+            odi.setHK048((String)hkXdLatestOfOrgFailCountResultMap.get("hkDate"));
+            odi.setHK049((Integer)hkXdLatestOfOrgFailCountResultMap.get("hkDays"));
+		
 		}
 	}
 
@@ -2322,6 +2347,141 @@ public class TaskServer {
         }
         
         return MathUtil.divide(successMoney, sumMoney);
+    }
+    
+    /**
+     * @Description: 还款类变量。最早一次还款时间和距离今天的天数。
+     * @param list
+     * @param string
+     * @param returnCodeDic
+     * @return HashMap key: hkDate || hkDays
+     * @author LZG
+     * @date 2018年07月19日
+     */
+    private Map<String, Object> hkEarlistDateAndDays(List<TradeDetailDO> list, String orgType) {
+        
+        // 商户类型归属分类字典
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        // 具体机构类
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
+
+        List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
+
+        for (TradeDetailDO o : list) {
+            if (orgTypeList.contains(o.getMER_TYPE().toString())) {
+                merTypeTradeDetailDOList.add(o);
+            }
+        }
+
+        int merTypeTradeDetailDOListSzie = merTypeTradeDetailDOList.size();
+        String earlistDateStr = "";
+        int intervalDays = 0;
+        for(int i = merTypeTradeDetailDOListSzie - 1; i >= 0; i--) {
+            if('S' == merTypeTradeDetailDOList.get(i).getSF_TYPE()) {
+                Date earlistDate = DateUtils.formatTimeStamp(merTypeTradeDetailDOList.get(i).getCREATE_TIME().toString());
+                earlistDateStr = DateUtils.yyyyMMddToString(earlistDate);
+                intervalDays = DateUtils.getIntervalDayAmount(earlistDate, new Date());
+                break;
+            }
+        }
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("hkDate", earlistDateStr);
+        resultMap.put("hkDays", intervalDays);
+        
+        return resultMap;
+    }
+    
+    /**
+     * @Description: 还款类变量。最近一次还款时间和距离今天的天数。
+     * @param list
+     * @param string
+     * @param returnCodeDic
+     * @return HashMap key: hkDate || hkDays
+     * @author LZG
+     * @date 2018年07月19日
+     */
+    private Map<String, Object> hkLatestDateAndDays(List<TradeDetailDO> list, String orgType) {
+        
+        // 商户类型归属分类字典
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        // 具体机构类
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
+
+        List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
+
+        for (TradeDetailDO o : list) {
+            if (orgTypeList.contains(o.getMER_TYPE().toString())) {
+                merTypeTradeDetailDOList.add(o);
+            }
+        }
+
+        String earlistDateStr = "";
+        int intervalDays = 0;
+        for(TradeDetailDO o : merTypeTradeDetailDOList) {
+            if('S' == o.getSF_TYPE()) {
+                Date earlistDate = DateUtils.formatTimeStamp(o.getCREATE_TIME().toString());
+                earlistDateStr = DateUtils.yyyyMMddToString(earlistDate);
+                intervalDays = DateUtils.getIntervalDayAmount(earlistDate, new Date());
+                break;
+            }
+        }
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("hkDate", earlistDateStr);
+        resultMap.put("hkDays", intervalDays);
+        
+        return resultMap;
+    }
+    
+    /**
+     * @Description: 还款类变量。最近一次在不同类型机构(1)下的还款是否成功(2)的日期和距离今天天数
+     * @param list
+     * @param string
+     * @param returnCodeDic
+     * @param flag 标识：success(成功)  fail(失败)
+     * @return 
+     * @author LZG
+     * @date 2018年07月19日
+     */
+    private Map<String, Object> hkLatestOfOrgDateAndDays(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic, String flag) {
+        // 商户类型归属分类字典
+        Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
+        // 具体机构类
+        List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
+        
+        //筛选数据
+        List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
+        for (TradeDetailDO o : list) {
+            if (orgTypeList.contains(o.getMER_TYPE().toString())) {
+                merTypeTradeDetailDOList.add(o);
+            }
+        }
+        
+        List<String> returnCodeList = new ArrayList<String>();
+        if(flag.equals("successs")) {
+            returnCodeList = Arrays.asList(returnCodeDic.get("success"));
+        } else if(flag.equals("fail")){
+            returnCodeList = Arrays.asList(returnCodeDic.get("failc"));
+        }
+        
+        
+        String earlistDateStr = "";
+        int intervalDays = 0;
+        for(TradeDetailDO o : merTypeTradeDetailDOList) {
+            if('S' == o.getSF_TYPE() && returnCodeList.contains(o.getRETURN_CODE())) {
+                Date earlistDate = DateUtils.formatTimeStamp(o.getCREATE_TIME().toString());
+                earlistDateStr = DateUtils.yyyyMMddToString(earlistDate);
+                intervalDays = DateUtils.getIntervalDayAmount(earlistDate, new Date());
+                break;
+            }
+        }
+        
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("hkDate", earlistDateStr);
+        resultMap.put("hkDays", intervalDays);
+        
+        return resultMap;
     }
     
 }

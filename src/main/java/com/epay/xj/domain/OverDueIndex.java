@@ -11,6 +11,7 @@ public class OverDueIndex {
 
 	@Id
 	public String CERT_NO;//身份证号
+	/************************ 逾期类变量***************************/
 	public int YQ001;	//6个月	逾期一天以上	近6个月在贷款类机构逾期1天以上次数
 	public int YQ002;	//6个月	逾期一天以上	近6个月在消费金融机构逾期1天以上次数
 	public int YQ003;	//6个月	逾期一天以上	近6个月在银行类机构逾期1天以上次数
@@ -31,11 +32,11 @@ public class OverDueIndex {
 	public int YQ018;	//3个月	逾期机构数	近3个月发生逾期的消费金融类机构数
 	public int YQ019;	//3个月	逾期机构数	近3个月发生逾期的银行类机构数
 	public int YQ020;	//3个月	逾期机构数	近3个月发生逾期的小贷类机构数
-	public BigDecimal YQ021;	//3个月	平均逾期次数	近3个月逾期的平均每家机构逾期次数
+//	public BigDecimal YQ021;	//3个月	平均逾期次数	近3个月逾期的平均每家机构逾期次数
 	public BigDecimal YQ022;	//3个月	平均逾期次数	近3个月在消费金融机构逾期的平均每家机构逾期次数
 	public BigDecimal YQ023;	//3个月	平均逾期次数	近3个月在银行类机构逾期的平均每家机构逾期次数
 	public BigDecimal YQ024;	//3个月	平均逾期次数	近3个月在小贷类机构逾期的平均每家机构逾期次数
-//	public BigDecimal YQ025;	//3个月	平均逾期次数	近3个月在贷款类机构逾期的平均每家机构逾期次数
+	public BigDecimal YQ025;	//3个月	平均逾期次数	近3个月在贷款类机构逾期的平均每家机构逾期次数
 	public int YQ026;	//6个月	逾期天数总和	近6个月逾期1天以上天数总和
 	public int YQ027;	//3个月	逾期天数总和	近3个月逾期1天以上天数总和
 	public BigDecimal YQ028;	//6个月	逾期金额总和	近6个月逾期30天以上金额总和
@@ -393,12 +394,12 @@ public class OverDueIndex {
 	public void setYQ020(int yQ020) {
 		YQ020 = yQ020;
 	}
-	public BigDecimal getYQ021() {
-		return YQ021;
-	}
-	public void setYQ021(BigDecimal yQ021) {
-		YQ021 = yQ021;
-	}
+//	public BigDecimal getYQ021() {
+//		return YQ021;
+//	}
+//	public void setYQ021(BigDecimal yQ021) {
+//		YQ021 = yQ021;
+//	}
 	public BigDecimal getYQ022() {
 		return YQ022;
 	}
@@ -417,12 +418,12 @@ public class OverDueIndex {
 	public void setYQ024(BigDecimal yQ024) {
 		YQ024 = yQ024;
 	}
-//	public BigDecimal getYQ025() {
-//		return YQ025;
-//	}
-//	public void setYQ025(BigDecimal yQ025) {
-//		YQ025 = yQ025;
-//	}
+	public BigDecimal getYQ025() {
+		return YQ025;
+	}
+	public void setYQ025(BigDecimal yQ025) {
+		YQ025 = yQ025;
+	}
 	public int getYQ026() {
 		return YQ026;
 	}

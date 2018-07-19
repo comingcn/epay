@@ -9,7 +9,7 @@ package com.epay.xj.utils;
 import java.math.BigDecimal;
 
 /**
- * @Description: 计算工具类(平均逾期次数统计)
+ * @Description: 计算工具类
  * @author LZG
  * @date 2018年07月10日
  */
@@ -33,7 +33,7 @@ public class MathUtil {
         if (result == 0.00)
             return new BigDecimal("0").setScale(0,BigDecimal.ROUND_HALF_UP);
         
-        BigDecimal value = new BigDecimal(result).setScale(2,BigDecimal.ROUND_HALF_UP);
+        BigDecimal value = new BigDecimal(result).setScale(4, BigDecimal.ROUND_HALF_UP);
         return value;
     }
     
@@ -50,8 +50,26 @@ public class MathUtil {
         if (number2.equals(BigDecimal.ZERO)) 
             return new BigDecimal("0").setScale(0,BigDecimal.ROUND_HALF_UP);
 
-        BigDecimal result = number1.divide(number2, 2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal result = number1.divide(number2, 4, BigDecimal.ROUND_HALF_UP);
         return result;
+    }
+    
+    /**
+     * @Description: 加计算
+     * @param args
+     * @return 
+     * @author LZG
+     * @date 2018年07月19日
+     */
+    public static int plus(BigDecimal ...args) {
+        
+        BigDecimal result = new BigDecimal("0");
+        for(int i = 0; i < args.length; i++) {
+            result = result.add(args[i]);
+        }
+        //四舍五入
+        result = result.setScale(0, BigDecimal.ROUND_HALF_UP);
+        return Integer.parseInt(result.toString());
     }
 
     // 测试
@@ -67,6 +85,9 @@ public class MathUtil {
         
         System.out.println(MathUtil.divide(number1, number2));
         System.out.println(MathUtil.divide(number1, number3));
+        
+        System.out.println(MathUtil.plus(number1, number2, new BigDecimal("0.33")));
+        System.out.println(MathUtil.plus(number1, number2, new BigDecimal("0.52")));
       
     }
 

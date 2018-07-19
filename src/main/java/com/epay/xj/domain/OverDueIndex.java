@@ -6,7 +6,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 @Entity
-@Table(name="cp_kpi.P1055_YQ")
+@Table(name="cp_kpi.P1055_PERSON_TRANSTRAIT_INFO_JAVA")
 public class OverDueIndex {
 
 	@Id
@@ -144,7 +144,16 @@ public class OverDueIndex {
 	public int FX033;	//近15天	失败次数	近15天在小贷行业余额不足的记录数
 	public int FX034;	//近15天	失败次数	近15天在银行类机构余额不足的记录数
 	public int FX035;	//近15天	失败次数	近15天在贷款类机构余额不足的记录数
-	
+	public int FX036;//全卡_余额不足_失败次数
+	public BigDecimal FX037;//全卡_失败扣款_余额不足记录数_占比
+	public BigDecimal FX038;//全卡_失败扣款_余额不足金额_占比
+	public int FX039;//全卡_余额不足_扣款失败次数
+	public BigDecimal FX040;//全卡_失败扣款_余额不足记录数_占比
+	public BigDecimal FX041;//全卡_失败扣款_余额不足金额_占比
+	public int FX042;//全卡_余额不足_失败扣款_次数
+	public BigDecimal FX043;//全卡_失败扣款_余额不足记录数_占比
+	public BigDecimal FX044;//全卡_失败扣款_余额不足金额_占比
+
 	/************************ 还款类变量 ***************************/
 	public int HK001;	//12个月	成功次数	近12个月成功还款的记录数
 	public BigDecimal HK002;	//12个月	成功占比	近12个月成功还款的记录数占比
@@ -268,6 +277,25 @@ public class OverDueIndex {
 	public BigDecimal SX010;	//3个月	总额度	近3个月在银行类机构授信的总额度
 	public BigDecimal SX011;	//3个月	最大额度	近3个月在小额贷款类机构授信的最大额度
 	public BigDecimal SX012;	//3个月	最大额度	近3个月在消费金融类机构授信的最大额度
+	
+	public BigDecimal KK001;//12个月	还款成功记录数占比
+	public BigDecimal KK002;//12个月	失败占比
+	public BigDecimal KK003;//6个月	还款成功记录数占比
+	public BigDecimal KK004;//6个月	失败占比
+	public BigDecimal KK005;//3个月	还款成功记录数占比
+	public BigDecimal KK006;//3个月	失败占比
+	public BigDecimal KK007;//2个月	还款成功记录数占比
+	public BigDecimal KK008;//2个月	还款成功金额占比
+	public BigDecimal KK009;//1个月	还款成功记录数占比
+	public BigDecimal KK010;//12个月	还款总额
+	public BigDecimal KK011;//6个月	还款总额
+	public BigDecimal KK012;//3个月	还款总额
+	public int KK013;//12个月	还款成功次数
+	public int KK014;//6个月	还款成功次数
+	public int KK015;//3个月	还款成功次数
+	public int KK016;//12个月	还款成功机构数
+	public int KK017;//12个月	还款成功机构数
+	public int KK018;//12个月	还款成功机构数
 	
 	public String getCERT_NO() {
 		return CERT_NO;
@@ -1763,4 +1791,169 @@ public class OverDueIndex {
 	public void setSCORE(Integer sCORE) {
 		SCORE = sCORE;
 	}
+	public int getFX036() {
+		return FX036;
+	}
+	public void setFX036(int fX036) {
+		FX036 = fX036;
+	}
+
+	public int getFX039() {
+		return FX039;
+	}
+	public void setFX039(int fX039) {
+		FX039 = fX039;
+	}
+	
+	public int getFX042() {
+		return FX042;
+	}
+	public void setFX042(int fX042) {
+		FX042 = fX042;
+	}
+	public BigDecimal getFX037() {
+		return FX037;
+	}
+	public void setFX037(BigDecimal fX037) {
+		FX037 = fX037;
+	}
+	public BigDecimal getFX038() {
+		return FX038;
+	}
+	public void setFX038(BigDecimal fX038) {
+		FX038 = fX038;
+	}
+	public BigDecimal getFX040() {
+		return FX040;
+	}
+	public void setFX040(BigDecimal fX040) {
+		FX040 = fX040;
+	}
+	public BigDecimal getFX041() {
+		return FX041;
+	}
+	public void setFX041(BigDecimal fX041) {
+		FX041 = fX041;
+	}
+	public BigDecimal getFX043() {
+		return FX043;
+	}
+	public void setFX043(BigDecimal fX043) {
+		FX043 = fX043;
+	}
+	public BigDecimal getFX044() {
+		return FX044;
+	}
+	public void setFX044(BigDecimal fX044) {
+		FX044 = fX044;
+	}
+	public BigDecimal getKK001() {
+		return KK001;
+	}
+	public void setKK001(BigDecimal kK001) {
+		KK001 = kK001;
+	}
+	public BigDecimal getKK002() {
+		return KK002;
+	}
+	public void setKK002(BigDecimal kK002) {
+		KK002 = kK002;
+	}
+	public BigDecimal getKK003() {
+		return KK003;
+	}
+	public void setKK003(BigDecimal kK003) {
+		KK003 = kK003;
+	}
+	public BigDecimal getKK004() {
+		return KK004;
+	}
+	public void setKK004(BigDecimal kK004) {
+		KK004 = kK004;
+	}
+	public BigDecimal getKK005() {
+		return KK005;
+	}
+	public void setKK005(BigDecimal kK005) {
+		KK005 = kK005;
+	}
+	public BigDecimal getKK006() {
+		return KK006;
+	}
+	public void setKK006(BigDecimal kK006) {
+		KK006 = kK006;
+	}
+	public BigDecimal getKK007() {
+		return KK007;
+	}
+	public void setKK007(BigDecimal kK007) {
+		KK007 = kK007;
+	}
+	public BigDecimal getKK008() {
+		return KK008;
+	}
+	public void setKK008(BigDecimal kK008) {
+		KK008 = kK008;
+	}
+	public BigDecimal getKK009() {
+		return KK009;
+	}
+	public void setKK009(BigDecimal kK009) {
+		KK009 = kK009;
+	}
+	public BigDecimal getKK010() {
+		return KK010;
+	}
+	public void setKK010(BigDecimal kK010) {
+		KK010 = kK010;
+	}
+	public BigDecimal getKK011() {
+		return KK011;
+	}
+	public void setKK011(BigDecimal kK011) {
+		KK011 = kK011;
+	}
+	public BigDecimal getKK012() {
+		return KK012;
+	}
+	public void setKK012(BigDecimal kK012) {
+		KK012 = kK012;
+	}
+	public int getKK013() {
+		return KK013;
+	}
+	public void setKK013(int kK013) {
+		KK013 = kK013;
+	}
+	public int getKK014() {
+		return KK014;
+	}
+	public void setKK014(int kK014) {
+		KK014 = kK014;
+	}
+	public int getKK015() {
+		return KK015;
+	}
+	public void setKK015(int kK015) {
+		KK015 = kK015;
+	}
+	public int getKK016() {
+		return KK016;
+	}
+	public void setKK016(int kK016) {
+		KK016 = kK016;
+	}
+	public int getKK017() {
+		return KK017;
+	}
+	public void setKK017(int kK017) {
+		KK017 = kK017;
+	}
+	public int getKK018() {
+		return KK018;
+	}
+	public void setKK018(int kK018) {
+		KK018 = kK018;
+	}
+	
 }

@@ -63,7 +63,7 @@ public class TaskServer {
 		for (int i = 0; i < size; i++) {
 			OverDueIndex dd = list.get(i);
 			entityManager.persist(dd);
-			if (i % 10000 == 0 || i == (size - 1)) { // 每1000条数据执行一次，或者最后不足1000条时执行
+			if (i % 500 == 0 || i == (size - 1)) { // 每1000条数据执行一次，或者最后不足1000条时执行
 				entityManager.flush();
 				entityManager.clear();
 			}
@@ -200,7 +200,7 @@ public class TaskServer {
 								bindCardMouth(list, odi, month, returnCodeDic, udpateTimes);
 							}
 						}
-						logger.info("odi:{}", JSON.toJSONString(odi));
+//						logger.info("odi:{}", JSON.toJSONString(odi));
 					
 						// 信用分计算
 						BigDecimal v1 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_s_rcd_yebz_j3m_pct, odi.getHK030());
@@ -219,6 +219,7 @@ public class TaskServer {
 						
 						lst.add(odi);
 					}
+//					batchInsert(lst);
 					return lst;
 				}
 			};
@@ -236,7 +237,7 @@ public class TaskServer {
 				List<OverDueIndex> lst = future.get();
 				logger.info("-------------------------------lst.size:{}", lst.size());
 				// sb.append("size:").append(lst.size()).append(",");
-				// batchInsert(lst);
+				 batchInsert(lst);
 				// for (OverDueIndex overDueIndex : lst) {
 				// logger.info("certNo:{},index:{}",
 				// overDueIndex.getCertNo(),JSON.toJSONString(overDueIndex));
@@ -719,7 +720,7 @@ public class TaskServer {
             odi.setFX028(dkYebzAmount);
             odi.setFX029(yhYebzAmount);
             odi.setFX030(xdYebzAmount);
-
+            
 		} else if (month == 15) {// 十五天
 			/******************************* 逾期类变量 ***************************************/
 			/**** 最大逾期天数 *****/
@@ -761,12 +762,24 @@ public class TaskServer {
 		   
 		    odi.setHK034(sumRepaymentSuccessAmount);
             odi.setHK035(repaymentSuccessProportion(list, returnCodeDic));
+            /******************************* 扣款类指标 ***************************************/
+            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
+            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
+            odi.setKK009(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
 		    
 		} else if (month == 2) {// 两个月
 		    
 		    /******************************* 还款类变量 ***************************************/
             odi.setHK032(repaymentSuccessProportion(list, returnCodeDic));
             odi.setHK033(repaymentSuccessMoneyProportion(list, returnCodeDic));
+            
+            /******************************* 扣款类指标 ***************************************/
+            
+            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
+            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
+            BigDecimal withholdSuccessTotalMoney = withholdTotalMoney(list,"0000");//
+            odi.setKK007(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
+            odi.setKK008(MathUtil.divide(withholdSuccessTotalMoney, withholdTotalMoney(list,null)));//全卡_扣款成功_金额_占比
 		    
 	    } else if (month == 3) {
 			/******************************* 逾期类变量 ***************************************/
@@ -838,6 +851,15 @@ public class TaskServer {
             
             odi.setHK030(repamentYebzProportion(list, returnCodeDic));
             odi.setHK031(repamentYebzMoneyProportion(list, returnCodeDic));
+            
+            /******************************* 扣款类指标 ***************************************/
+            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
+            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
+            odi.setKK005(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
+            odi.setKK006(MathUtil.divide((withholdRecord-withholdSuccessRecord),withholdRecord));//失败扣款_记录数_占比
+            odi.setKK012(withholdTotalMoney(list,null));//全卡_全机构_扣款_总额
+            odi.setKK015(withholdRecord);//全卡_全机构_扣款成功_记录数
+            odi.setKK018(withholdMerTypeMap(list));//全卡_扣款成功_机构数
 
 		} else if (month == 6) {
 			/******************************* 逾期类变量 ***************************************/
@@ -928,7 +950,15 @@ public class TaskServer {
             odi.setHK019(repamentFailcProportion(list, returnCodeDic));
             odi.setHK020(repamentYebzProportion(list, returnCodeDic));
             odi.setHK021(repamentYebzMoneyProportion(list, returnCodeDic));
-
+            
+            /******************************* 扣款类指标 ***************************************/
+            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
+            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
+            odi.setKK003(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
+            odi.setKK004(MathUtil.divide((withholdRecord-withholdSuccessRecord),withholdRecord));//失败扣款_记录数_占比
+            odi.setKK011(withholdTotalMoney(list,null));//全卡_全机构_扣款_总额
+            odi.setKK014(withholdRecord);//全卡_全机构_扣款成功_记录数
+            odi.setKK017(withholdMerTypeMap(list));//全卡_扣款成功_机构数
 		} else if (month == 12) {
 			
 			/******************************* 逾期机构数 ***************************************/
@@ -1042,7 +1072,60 @@ public class TaskServer {
             odi.setHK048((String)hkXdLatestOfOrgFailCountResultMap.get("hkDate"));
             odi.setHK049((Integer)hkXdLatestOfOrgFailCountResultMap.get("hkDays"));
 		
+            /******************************* 扣款类指标 ***************************************/
+            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
+            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
+            odi.setKK001(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
+            odi.setKK002(MathUtil.divide((withholdRecord-withholdSuccessRecord),withholdRecord));//失败扣款_记录数_占比
+            odi.setKK010(withholdTotalMoney(list,null));//全卡_全机构_扣款_总额
+            odi.setKK013(withholdRecord);//全卡_全机构_扣款成功_记录数
+            odi.setKK016(withholdMerTypeMap(list));//全卡_扣款成功_机构数
 		}
+	}
+
+	/**
+	 * 扣款总金额
+	 * @param list
+	 * @return
+	 */
+	private BigDecimal withholdTotalMoney(List<TradeDetailDO> list,String success) {
+		BigDecimal sum = new BigDecimal(0.00);
+		for (TradeDetailDO o : list) {
+			if(null == success){
+				if("S".equals(o.getSF_TYPE().toString())){
+					sum = sum.add(o.getAMOUNT());
+				}
+			}else{
+				if("S".equals(o.getSF_TYPE().toString()) && success.equals(o.getRETURN_CODE())){
+					sum = sum.add(o.getAMOUNT());
+				}
+			}
+			
+		}
+		return sum;
+	}
+
+	/**
+	 * 扣款记录数
+	 * @param list
+	 * @param success
+	 * @return
+	 */
+	private int withholdRecord(List<TradeDetailDO> list, String success) {
+		int i = 0;
+		for (TradeDetailDO o : list) {
+			if(null == success){
+				if("S".equals(o.getSF_TYPE().toString())){
+					i++;
+				}
+			}else{
+				if("S".equals(o.getSF_TYPE().toString())&& o.getRETURN_CODE().equals("0000")){//扣款成功
+					i++;
+				}
+			}
+			
+		}
+		return i;
 	}
 
 	/**
@@ -1121,6 +1204,25 @@ public class TaskServer {
 			map.put(merId, records);
 		}
 		return map;
+	}
+	
+	/**
+	 * 扣款成功机构数
+	 * @param list
+	 * @param orgTypeList
+	 * @return
+	 */
+	public int withholdMerTypeMap(List<TradeDetailDO> list) {
+		Set<String> set = new HashSet<String>();
+		for (TradeDetailDO o : list) {
+			if("S".equals(o.getSF_TYPE().toString())&& o.getRETURN_CODE().equals("0000")){//扣款成功
+				String merId = o.getSOURCE_MERNO();// 银行卡
+				if (!set.contains(merId)) {
+					set.add(merId);
+				}
+			}
+		}
+		return set.size();
 	}
 
 	/**

@@ -33,6 +33,7 @@ import com.epay.xj.domain.BindCardLog;
 import com.epay.xj.domain.OverDueIndex;
 import com.epay.xj.domain.TradeDetailDO;
 import com.epay.xj.properties.InitProperties;
+import com.epay.xj.utils.CreditScoreUtil;
 import com.epay.xj.utils.DateUtils;
 import com.epay.xj.utils.MathUtil;
 
@@ -200,6 +201,22 @@ public class TaskServer {
 							}
 						}
 						logger.info("odi:{}", JSON.toJSONString(odi));
+					
+						// 信用分计算
+						BigDecimal v1 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_s_rcd_yebz_j3m_pct, odi.getHK030());
+						BigDecimal v2 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_s_amt_success_j2m_pct, odi.getHK033());
+						BigDecimal v3 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_s_latesttn_fail_xj, new BigDecimal(odi.getHK046()));
+						BigDecimal v4 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.overdue3_1d_amt_sum_j3m, odi.getYQ033());
+						BigDecimal v5 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_suces_dk_cnt_j6m, new BigDecimal(odi.getHK012()));
+						BigDecimal v6 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_f_mer_success_j12m_dk_cnt, new BigDecimal(odi.getFK002()));
+						BigDecimal v7 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_card_audit_all_rcd_disntcd_all_j1m, odi.getSQ035());
+						BigDecimal v8 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_s_rcd_fail_j12m_pct, odi.getHK008());
+						BigDecimal v9 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_card_audit_dbt_rcd_nearist_days, new BigDecimal(odi.getSQ045()));
+						BigDecimal v10 =CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_card_audit_dbt_rcd_disntcd_all_j6m_min, new BigDecimal(odi.getSQ015()));
+						
+						int creditScore = MathUtil.plus(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10);
+						odi.setSCORE(creditScore);
+						
 						lst.add(odi);
 					}
 					return lst;

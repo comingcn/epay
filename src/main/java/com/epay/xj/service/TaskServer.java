@@ -836,6 +836,10 @@ public class TaskServer {
 			odi.setFX024(otlmtMoneyProportion(list, returnCodeDic));
 			odi.setFX025(otlmtProportion(list, returnCodeDic));
 			
+			odi.setFX038(fxMoneyCount(list, returnCodeDic));
+			odi.setFX041(fxSuccessCount(list, returnCodeDic));
+			odi.setFX044(fxSuccessOrgCount(list, returnCodeDic));
+			
 			/******************************* 还款类变量 ***************************************/
             odi.setHK022(repaymentSuccessCount(list, "dk", returnCodeDic));
             odi.setHK023(repaymentSuccessProportion(list, returnCodeDic));
@@ -934,6 +938,10 @@ public class TaskServer {
 			odi.setFX015(otlmtMoneyProportion(list, returnCodeDic));
 			odi.setFX016(otlmtProportion(list, returnCodeDic));
 			
+			odi.setFX037(fxMoneyCount(list, returnCodeDic));
+			odi.setFX040(fxSuccessCount(list, returnCodeDic));
+			odi.setFX043(fxSuccessOrgCount(list, returnCodeDic));
+			
 //			odi.setHK054(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
 //          odi.setHK055(repaymentSuccessMoneyCount(list, "xj", returnCodeDic));
 //          odi.setHK056(repaymentSuccessMoneyCount(list, "xd", returnCodeDic));
@@ -1020,6 +1028,10 @@ public class TaskServer {
 
 			odi.setFX006(acctfProportion(list, returnCodeDic));
 			odi.setFX007(acctfMoneyProportion(list, returnCodeDic));
+			
+			odi.setFX036(fxMoneyCount(list, returnCodeDic));
+			odi.setFX039(fxSuccessCount(list, returnCodeDic));
+			odi.setFX042(fxSuccessOrgCount(list, returnCodeDic));
             
             /******************************* 还款类变量 ***************************************/
             odi.setHK050(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
@@ -1083,7 +1095,7 @@ public class TaskServer {
 		}
 	}
 
-	/**
+    /**
 	 * 扣款总金额
 	 * @param list
 	 * @return
@@ -2595,6 +2607,70 @@ public class TaskServer {
         resultMap.put("hkDays", intervalDays);
         
         return resultMap;
+    }
+    
+    /**
+     * @Description: 风险类变量。全机构划扣总金额。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月19日
+     */
+    private BigDecimal fxMoneyCount(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        
+        List<String> successReturnCodeList = Arrays.asList(returnCodeDic.get("success"));
+        
+        BigDecimal sumMoney = new BigDecimal("0");
+        for (TradeDetailDO o : list) {
+            if ('S' == o.getSF_TYPE() && successReturnCodeList.contains(o.getRETURN_CODE())) {
+                sumMoney = sumMoney.add(o.getAMOUNT());
+            }
+        }
+        sumMoney = sumMoney.setScale(2, BigDecimal.ROUND_HALF_UP);
+        
+        return sumMoney;
+    }
+    
+    /**
+     * @Description: 风险类变量。还款成功次数。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月19日
+     */
+    private int fxSuccessCount(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        List<String> successReturnCodeList = Arrays.asList(returnCodeDic.get("success"));
+        
+        int result = 0;
+        for (TradeDetailDO o : list) {
+            if ('S' == o.getSF_TYPE() && successReturnCodeList.contains(o.getRETURN_CODE())) {
+                result++;
+            }
+        }
+        return result;
+    }
+    
+    /**
+     * @Description: 风险类变量。还款成功的机构数。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月19日
+     */
+    private int fxSuccessOrgCount(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        List<String> successReturnCodeList = Arrays.asList(returnCodeDic.get("success"));
+        
+        Set<String> fkSuccessOrgCountSet = new HashSet<String>();
+        for (TradeDetailDO o : list) {
+            if ('F' == o.getSF_TYPE() || successReturnCodeList.contains(o.getRETURN_CODE())) {
+                    fkSuccessOrgCountSet.add(o.getSOURCE_MERNO());
+            }
+        }
+        
+        return fkSuccessOrgCountSet.size();
     }
     
 }

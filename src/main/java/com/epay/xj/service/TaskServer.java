@@ -1058,6 +1058,7 @@ public class TaskServer {
             odi.setHK005(repaymentSuccessOrgCount(list, "xj", returnCodeDic));
             odi.setHK006(repaymentSuccessOrgCount(list, "xd", returnCodeDic));
             
+            
 //            odi.setHK007(repamentYebzCount(list, returnCodeDic));
 //            odi.setHK008(repamentFailcProportion(list, returnCodeDic));
 //            odi.setHK009(repamentYebzProportion(list, returnCodeDic));

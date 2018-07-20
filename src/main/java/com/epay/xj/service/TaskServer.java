@@ -219,6 +219,7 @@ public class TaskServer {
 						lst.add(odi);
 					}
 //					batchInsert(lst);
+					System.out.println("线程名称："+Thread.currentThread().getName()+"集合数量:"+lst.size());
 					return lst;
 				}
 			};

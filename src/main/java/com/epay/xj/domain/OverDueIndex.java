@@ -145,52 +145,52 @@ public class OverDueIndex {
 	public int FX033;	//近15天	失败次数	近15天在小贷行业余额不足的记录数
 	public int FX034;	//近15天	失败次数	近15天在银行类机构余额不足的记录数
 	public int FX035;	//近15天	失败次数	近15天在贷款类机构余额不足的记录数
-	public BigDecimal FX036; //12月_全卡_全机构_划扣_总额
-	public BigDecimal FX037; //6月_全卡_全机构_划扣_总额
-	public BigDecimal FX038; //3月_全卡_全机构_划扣_总额
-	public int FX039; //12个月_全卡_全机构_还款_成功_记录数
-	public int FX040; //6个月_全卡_全机构_还款_成功_记录数
-	public int FX041; //3个月_全卡_全机构_还款_成功_记录数
-	public int FX042; //12个月_全量卡_还款_成功_机构数
-	public int FX043; //6个月_全量卡_还款_成功_机构数
-	public int FX044; //3个月_全量卡_还款_成功_机构数
+	public int FX036; //12月_全卡_余额不足_失败次数-------------------------------修改
+	public BigDecimal FX037; //12月_全卡_失败扣款_余额不足记录数_占比-------------------------------修改
+	public BigDecimal FX038; //12月_全卡_失败扣款_余额不足金额_占比-------------------------------修改
+	public int FX039; //6月_全卡_余额不足_扣款失败次数-------------------------------修改
+	public BigDecimal FX040; //6月_全卡_失败扣款_余额不足记录数_占比-------------------------------修改
+	public BigDecimal FX041; //6月_全卡_失败扣款_余额不足金额_占比-------------------------------修改
+	public int FX042; //3月_全卡_余额不足_失败扣款_次数-------------------------------修改
+	public BigDecimal FX043; //3月_全卡_失败扣款_余额不足记录数_占比-------------------------------修改
+	public BigDecimal FX044; //3月_全卡_失败扣款_余额不足金额_占比-------------------------------修改
 
 	/************************ 还款类变量 ***************************/
 	public int HK001;	//12个月	成功次数	近12个月成功还款的记录数
-	public BigDecimal HK002;	//12个月	成功占比	近12个月成功还款的记录数占比
+//	public BigDecimal HK002;	//12个月	成功占比	近12个月成功还款的记录数占比
 	public int HK003;	//12个月	机构数	近12个月成功还款的机构数
 	public int HK004;	//12个月	机构数	近12个月成功还款的银行类机构数
 	public int HK005;	//12个月	机构数	近12个月成功还款的消金类机构数
 	public int HK006;	//12个月	机构数	近12个月成功还款的小贷类机构数
-	public int HK007;	//12个月	失败次数	近12个月余额不足的记录数
-	public BigDecimal HK008;	//12个月	失败占比	近12个月失败还款记录数的占比
-	public BigDecimal HK009;	//12个月	失败占比	近12个月余额不足的记录数占比
-	public BigDecimal HK010;	//12个月	失败占比	近12个月余额不足的金额数占比
-//	public int HK011;	//6个月	成功次数	近6个月成功还款的记录数
+//	public int HK007;	//12个月	失败次数	近12个月余额不足的记录数
+//	public BigDecimal HK008;	//12个月	失败占比	近12个月失败还款记录数的占比
+//	public BigDecimal HK009;	//12个月	失败占比	近12个月余额不足的记录数占比
+//	public BigDecimal HK010;	//12个月	失败占比	近12个月余额不足的金额数占比
+////	public int HK011;	//6个月	成功次数	近6个月成功还款的记录数
 	public int HK012;	//6个月	成功次数	近6个月在贷款类机构划扣成功的记录数
-	public BigDecimal HK013;	//6个月	成功占比	近6个月成功还款的记录数占比
+//	public BigDecimal HK013;	//6个月	成功占比	近6个月成功还款的记录数占比
 	public int HK014;	//6个月	机构数	近6个月成功还款的贷款类机构数
 	public int HK015;	//6个月	机构数	近6个月成功还款的银行类机构数
 	public int HK016;	//6个月	机构数	近6个月成功还款的消金类机构数
 	public int HK017;	//6个月	机构数	近6个月成功还款的小贷类机构数
-	public int HK018;	//6个月	失败次数	近6个月余额不足的记录数
-	public BigDecimal HK019;	//6个月	失败占比	近6个月划扣失败的记录数占比
-	public BigDecimal HK020;	//6个月	失败占比	近6个月余额不足的记录数占比
-	public BigDecimal HK021;	//6个月	失败占比	近6个月余额不足的金额数占比
+//	public int HK018;	//6个月	失败次数	近6个月余额不足的记录数
+//	public BigDecimal HK019;	//6个月	失败占比	近6个月划扣失败的记录数占比
+//	public BigDecimal HK020;	//6个月	失败占比	近6个月余额不足的记录数占比
+//	public BigDecimal HK021;	//6个月	失败占比	近6个月余额不足的金额数占比
 	public int HK022;	//3个月	成功次数	近3个月成功还款的记录数
-	public BigDecimal HK023;	//3个月	成功占比	近3个月成功还款的记录数占比
-	public int HK024;	//3个月	失败次数	近3个月余额不足的记录数
-	public BigDecimal HK025;	//3个月	失败占比	近3个月划扣失败的记录数占比
+//	public BigDecimal HK023;	//3个月	成功占比	近3个月成功还款的记录数占比
+//	public int HK024;	//3个月	失败次数	近3个月余额不足的记录数
+//	public BigDecimal HK025;	//3个月	失败占比	近3个月划扣失败的记录数占比
 	public int HK026;	//3个月	机构数	近3个月成功还款的贷款类机构数
 	public int HK027;	//3个月	机构数	近3个月成功还款的银行类机构数
 	public int HK028;	//3个月	机构数	近3个月成功还款的消金类机构数
 	public int HK029;	//3个月	机构数	近3个月成功还款的小贷类机构数
-	public BigDecimal HK030;	//3个月	失败占比	近3个月余额不足的记录数占比
-	public BigDecimal HK031;	//3个月	失败占比	近3个月余额不足的金额数占比
-	public BigDecimal HK032;	//2个月	成功占比	近2个月代扣成功的记录数占比 
-	public BigDecimal HK033;	//2个月	成功占比	近2个月代扣成功的金额占比 
+//	public BigDecimal HK030;	//3个月	失败占比	近3个月余额不足的记录数占比
+//	public BigDecimal HK031;	//3个月	失败占比	近3个月余额不足的金额数占比
+//	public BigDecimal HK032;	//2个月	成功占比	近2个月代扣成功的记录数占比 
+//	public BigDecimal HK033;	//2个月	成功占比	近2个月代扣成功的金额占比 
 	public int HK034;	//1个月	成功次数	近1个月成功还款的记录数
-	public BigDecimal HK035;	//1个月	成功占比	近1个月成功还款的记录数占比
+//	public BigDecimal HK035;	//1个月	成功占比	近1个月成功还款的记录数占比
 	public String HK036;	//最早一次	时间指标	最早一次在贷款机构还款距今的时间
 	public int HK037;	//最早一次	时间指标	最早一次在贷款机构还款距今的天数
 	public String HK038;	//最近一次	时间指标	最近一次在贷款机构划扣距今的时间
@@ -278,7 +278,7 @@ public class OverDueIndex {
 	public BigDecimal SX010;	//3个月	总额度	近3个月在银行类机构授信的总额度
 	public BigDecimal SX011;	//3个月	最大额度	近3个月在小额贷款类机构授信的最大额度
 	public BigDecimal SX012;	//3个月	最大额度	近3个月在消费金融类机构授信的最大额度
-	
+	/************************ 扣款类指标 ***************************/
 	public BigDecimal KK001;//12个月	还款成功记录数占比
 	public BigDecimal KK002;//12个月	失败占比
 	public BigDecimal KK003;//6个月	还款成功记录数占比
@@ -297,12 +297,17 @@ public class OverDueIndex {
 	public int KK016;//12个月	还款成功机构数
 	public int KK017;//12个月	还款成功机构数
 	public int KK018;//12个月	还款成功机构数
-	
 	public String getCERT_NO() {
 		return CERT_NO;
 	}
 	public void setCERT_NO(String cERT_NO) {
 		CERT_NO = cERT_NO;
+	}
+	public Integer getSCORE() {
+		return SCORE;
+	}
+	public void setSCORE(Integer sCORE) {
+		SCORE = sCORE;
 	}
 	public int getYQ001() {
 		return YQ001;
@@ -424,12 +429,6 @@ public class OverDueIndex {
 	public void setYQ020(int yQ020) {
 		YQ020 = yQ020;
 	}
-//	public BigDecimal getYQ021() {
-//		return YQ021;
-//	}
-//	public void setYQ021(BigDecimal yQ021) {
-//		YQ021 = yQ021;
-//	}
 	public BigDecimal getYQ022() {
 		return YQ022;
 	}
@@ -574,6 +573,186 @@ public class OverDueIndex {
 	public void setYQ045(int yQ045) {
 		YQ045 = yQ045;
 	}
+	public int getYQ046() {
+		return YQ046;
+	}
+	public void setYQ046(int yQ046) {
+		YQ046 = yQ046;
+	}
+	public int getYQ047() {
+		return YQ047;
+	}
+	public void setYQ047(int yQ047) {
+		YQ047 = yQ047;
+	}
+	public int getYQ048() {
+		return YQ048;
+	}
+	public void setYQ048(int yQ048) {
+		YQ048 = yQ048;
+	}
+	public int getYQ049() {
+		return YQ049;
+	}
+	public void setYQ049(int yQ049) {
+		YQ049 = yQ049;
+	}
+	public int getYQ050() {
+		return YQ050;
+	}
+	public void setYQ050(int yQ050) {
+		YQ050 = yQ050;
+	}
+	public int getYQ051() {
+		return YQ051;
+	}
+	public void setYQ051(int yQ051) {
+		YQ051 = yQ051;
+	}
+	public int getYQ052() {
+		return YQ052;
+	}
+	public void setYQ052(int yQ052) {
+		YQ052 = yQ052;
+	}
+	public int getYQ053() {
+		return YQ053;
+	}
+	public void setYQ053(int yQ053) {
+		YQ053 = yQ053;
+	}
+	public int getYQ054() {
+		return YQ054;
+	}
+	public void setYQ054(int yQ054) {
+		YQ054 = yQ054;
+	}
+	public int getYQ055() {
+		return YQ055;
+	}
+	public void setYQ055(int yQ055) {
+		YQ055 = yQ055;
+	}
+	public int getYQ056() {
+		return YQ056;
+	}
+	public void setYQ056(int yQ056) {
+		YQ056 = yQ056;
+	}
+	public int getYQ057() {
+		return YQ057;
+	}
+	public void setYQ057(int yQ057) {
+		YQ057 = yQ057;
+	}
+	public int getYQ058() {
+		return YQ058;
+	}
+	public void setYQ058(int yQ058) {
+		YQ058 = yQ058;
+	}
+	public int getYQ059() {
+		return YQ059;
+	}
+	public void setYQ059(int yQ059) {
+		YQ059 = yQ059;
+	}
+	public int getYQ060() {
+		return YQ060;
+	}
+	public void setYQ060(int yQ060) {
+		YQ060 = yQ060;
+	}
+	public int getYQ061() {
+		return YQ061;
+	}
+	public void setYQ061(int yQ061) {
+		YQ061 = yQ061;
+	}
+	public int getYQ062() {
+		return YQ062;
+	}
+	public void setYQ062(int yQ062) {
+		YQ062 = yQ062;
+	}
+	public int getYQ063() {
+		return YQ063;
+	}
+	public void setYQ063(int yQ063) {
+		YQ063 = yQ063;
+	}
+	public int getYQ064() {
+		return YQ064;
+	}
+	public void setYQ064(int yQ064) {
+		YQ064 = yQ064;
+	}
+	public int getYQ065() {
+		return YQ065;
+	}
+	public void setYQ065(int yQ065) {
+		YQ065 = yQ065;
+	}
+	public int getYQ066() {
+		return YQ066;
+	}
+	public void setYQ066(int yQ066) {
+		YQ066 = yQ066;
+	}
+	public int getYQ067() {
+		return YQ067;
+	}
+	public void setYQ067(int yQ067) {
+		YQ067 = yQ067;
+	}
+	public int getYQ068() {
+		return YQ068;
+	}
+	public void setYQ068(int yQ068) {
+		YQ068 = yQ068;
+	}
+	public int getYQ069() {
+		return YQ069;
+	}
+	public void setYQ069(int yQ069) {
+		YQ069 = yQ069;
+	}
+	public int getYQ070() {
+		return YQ070;
+	}
+	public void setYQ070(int yQ070) {
+		YQ070 = yQ070;
+	}
+	public int getYQ071() {
+		return YQ071;
+	}
+	public void setYQ071(int yQ071) {
+		YQ071 = yQ071;
+	}
+	public int getYQ072() {
+		return YQ072;
+	}
+	public void setYQ072(int yQ072) {
+		YQ072 = yQ072;
+	}
+	public int getYQ073() {
+		return YQ073;
+	}
+	public void setYQ073(int yQ073) {
+		YQ073 = yQ073;
+	}
+	public int getYQ074() {
+		return YQ074;
+	}
+	public void setYQ074(int yQ074) {
+		YQ074 = yQ074;
+	}
+	public int getYQ075() {
+		return YQ075;
+	}
+	public void setYQ075(int yQ075) {
+		YQ075 = yQ075;
+	}
 	public int getFK001() {
 		return FK001;
 	}
@@ -586,12 +765,6 @@ public class OverDueIndex {
 	public void setFK002(int fK002) {
 		FK002 = fK002;
 	}
-//	public int getFK003() {
-//		return FK003;
-//	}
-//	public void setFK003(int fK003) {
-//		FK003 = fK003;
-//	}
 	public BigDecimal getFK004() {
 		return FK004;
 	}
@@ -700,12 +873,6 @@ public class OverDueIndex {
 	public void setFX004(int fX004) {
 		FX004 = fX004;
 	}
-//	public int getFX005() {
-//		return FX005;
-//	}
-//	public void setFX005(int fX005) {
-//		FX005 = fX005;
-//	}
 	public BigDecimal getFX006() {
 		return FX006;
 	}
@@ -742,12 +909,6 @@ public class OverDueIndex {
 	public void setFX011(int fX011) {
 		FX011 = fX011;
 	}
-//	public int getFX012() {
-//		return FX012;
-//	}
-//	public void setFX012(int fX012) {
-//		FX012 = fX012;
-//	}
 	public BigDecimal getFX013() {
 		return FX013;
 	}
@@ -796,12 +957,6 @@ public class OverDueIndex {
 	public void setFX020(int fX020) {
 		FX020 = fX020;
 	}
-//	public int getFX021() {
-//		return FX021;
-//	}
-//	public void setFX021(int fX021) {
-//		FX021 = fX021;
-//	}
 	public BigDecimal getFX022() {
 		return FX022;
 	}
@@ -886,17 +1041,65 @@ public class OverDueIndex {
 	public void setFX035(int fX035) {
 		FX035 = fX035;
 	}
+	public int getFX036() {
+		return FX036;
+	}
+	public void setFX036(int fX036) {
+		FX036 = fX036;
+	}
+	public BigDecimal getFX037() {
+		return FX037;
+	}
+	public void setFX037(BigDecimal fX037) {
+		FX037 = fX037;
+	}
+	public BigDecimal getFX038() {
+		return FX038;
+	}
+	public void setFX038(BigDecimal fX038) {
+		FX038 = fX038;
+	}
+	public int getFX039() {
+		return FX039;
+	}
+	public void setFX039(int fX039) {
+		FX039 = fX039;
+	}
+	public BigDecimal getFX040() {
+		return FX040;
+	}
+	public void setFX040(BigDecimal fX040) {
+		FX040 = fX040;
+	}
+	public BigDecimal getFX041() {
+		return FX041;
+	}
+	public void setFX041(BigDecimal fX041) {
+		FX041 = fX041;
+	}
+	public int getFX042() {
+		return FX042;
+	}
+	public void setFX042(int fX042) {
+		FX042 = fX042;
+	}
+	public BigDecimal getFX043() {
+		return FX043;
+	}
+	public void setFX043(BigDecimal fX043) {
+		FX043 = fX043;
+	}
+	public BigDecimal getFX044() {
+		return FX044;
+	}
+	public void setFX044(BigDecimal fX044) {
+		FX044 = fX044;
+	}
 	public int getHK001() {
 		return HK001;
 	}
 	public void setHK001(int hK001) {
 		HK001 = hK001;
-	}
-	public BigDecimal getHK002() {
-		return HK002;
-	}
-	public void setHK002(BigDecimal hK002) {
-		HK002 = hK002;
 	}
 	public int getHK003() {
 		return HK003;
@@ -922,47 +1125,11 @@ public class OverDueIndex {
 	public void setHK006(int hK006) {
 		HK006 = hK006;
 	}
-	public int getHK007() {
-		return HK007;
-	}
-	public void setHK007(int hK007) {
-		HK007 = hK007;
-	}
-	public BigDecimal getHK008() {
-		return HK008;
-	}
-	public void setHK008(BigDecimal hK008) {
-		HK008 = hK008;
-	}
-	public BigDecimal getHK009() {
-		return HK009;
-	}
-	public void setHK009(BigDecimal hK009) {
-		HK009 = hK009;
-	}
-	public BigDecimal getHK010() {
-		return HK010;
-	}
-	public void setHK010(BigDecimal hK010) {
-		HK010 = hK010;
-	}
-//	public int getHK011() {
-//		return HK011;
-//	}
-//	public void setHK011(int hK011) {
-//		HK011 = hK011;
-//	}
 	public int getHK012() {
 		return HK012;
 	}
 	public void setHK012(int hK012) {
 		HK012 = hK012;
-	}
-	public BigDecimal getHK013() {
-		return HK013;
-	}
-	public void setHK013(BigDecimal hK013) {
-		HK013 = hK013;
 	}
 	public int getHK014() {
 		return HK014;
@@ -988,53 +1155,11 @@ public class OverDueIndex {
 	public void setHK017(int hK017) {
 		HK017 = hK017;
 	}
-	public int getHK018() {
-		return HK018;
-	}
-	public void setHK018(int hK018) {
-		HK018 = hK018;
-	}
-	public BigDecimal getHK019() {
-		return HK019;
-	}
-	public void setHK019(BigDecimal hK019) {
-		HK019 = hK019;
-	}
-	public BigDecimal getHK020() {
-		return HK020;
-	}
-	public void setHK020(BigDecimal hK020) {
-		HK020 = hK020;
-	}
-	public BigDecimal getHK021() {
-		return HK021;
-	}
-	public void setHK021(BigDecimal hK021) {
-		HK021 = hK021;
-	}
 	public int getHK022() {
 		return HK022;
 	}
 	public void setHK022(int hK022) {
 		HK022 = hK022;
-	}
-	public BigDecimal getHK023() {
-		return HK023;
-	}
-	public void setHK023(BigDecimal hK023) {
-		HK023 = hK023;
-	}
-	public int getHK024() {
-		return HK024;
-	}
-	public void setHK024(int hK024) {
-		HK024 = hK024;
-	}
-	public BigDecimal getHK025() {
-		return HK025;
-	}
-	public void setHK025(BigDecimal hK025) {
-		HK025 = hK025;
 	}
 	public int getHK026() {
 		return HK026;
@@ -1060,41 +1185,11 @@ public class OverDueIndex {
 	public void setHK029(int hK029) {
 		HK029 = hK029;
 	}
-	public BigDecimal getHK030() {
-		return HK030;
-	}
-	public void setHK030(BigDecimal hK030) {
-		HK030 = hK030;
-	}
-	public BigDecimal getHK031() {
-		return HK031;
-	}
-	public void setHK031(BigDecimal hK031) {
-		HK031 = hK031;
-	}
-	public BigDecimal getHK032() {
-		return HK032;
-	}
-	public void setHK032(BigDecimal hK032) {
-		HK032 = hK032;
-	}
-	public BigDecimal getHK033() {
-		return HK033;
-	}
-	public void setHK033(BigDecimal hK033) {
-		HK033 = hK033;
-	}
 	public int getHK034() {
 		return HK034;
 	}
 	public void setHK034(int hK034) {
 		HK034 = hK034;
-	}
-	public BigDecimal getHK035() {
-		return HK035;
-	}
-	public void setHK035(BigDecimal hK035) {
-		HK035 = hK035;
 	}
 	public String getHK036() {
 		return HK036;
@@ -1179,6 +1274,54 @@ public class OverDueIndex {
 	}
 	public void setHK049(int hK049) {
 		HK049 = hK049;
+	}
+	public BigDecimal getHK050() {
+		return HK050;
+	}
+	public void setHK050(BigDecimal hK050) {
+		HK050 = hK050;
+	}
+	public BigDecimal getHK051() {
+		return HK051;
+	}
+	public void setHK051(BigDecimal hK051) {
+		HK051 = hK051;
+	}
+	public BigDecimal getHK052() {
+		return HK052;
+	}
+	public void setHK052(BigDecimal hK052) {
+		HK052 = hK052;
+	}
+	public BigDecimal getHK053() {
+		return HK053;
+	}
+	public void setHK053(BigDecimal hK053) {
+		HK053 = hK053;
+	}
+	public BigDecimal getHK054() {
+		return HK054;
+	}
+	public void setHK054(BigDecimal hK054) {
+		HK054 = hK054;
+	}
+	public BigDecimal getHK055() {
+		return HK055;
+	}
+	public void setHK055(BigDecimal hK055) {
+		HK055 = hK055;
+	}
+	public BigDecimal getHK056() {
+		return HK056;
+	}
+	public void setHK056(BigDecimal hK056) {
+		HK056 = hK056;
+	}
+	public BigDecimal getHK057() {
+		return HK057;
+	}
+	public void setHK057(BigDecimal hK057) {
+		HK057 = hK057;
 	}
 	public int getSQ001() {
 		return SQ001;
@@ -1462,6 +1605,30 @@ public class OverDueIndex {
 	public void setSQ047(int sQ047) {
 		SQ047 = sQ047;
 	}
+	public BigDecimal getSQ048() {
+		return SQ048;
+	}
+	public void setSQ048(BigDecimal sQ048) {
+		SQ048 = sQ048;
+	}
+	public BigDecimal getSQ049() {
+		return SQ049;
+	}
+	public void setSQ049(BigDecimal sQ049) {
+		SQ049 = sQ049;
+	}
+	public int getSQ050() {
+		return SQ050;
+	}
+	public void setSQ050(int sQ050) {
+		SQ050 = sQ050;
+	}
+	public BigDecimal getSQ051() {
+		return SQ051;
+	}
+	public void setSQ051(BigDecimal sQ051) {
+		SQ051 = sQ051;
+	}
 	public BigDecimal getSX001() {
 		return SX001;
 	}
@@ -1533,320 +1700,6 @@ public class OverDueIndex {
 	}
 	public void setSX012(BigDecimal sX012) {
 		SX012 = sX012;
-	}
-	public int getYQ046() {
-		return YQ046;
-	}
-	public void setYQ046(int yQ046) {
-		YQ046 = yQ046;
-	}
-	public int getYQ047() {
-		return YQ047;
-	}
-	public void setYQ047(int yQ047) {
-		YQ047 = yQ047;
-	}
-	public int getYQ048() {
-		return YQ048;
-	}
-	public void setYQ048(int yQ048) {
-		YQ048 = yQ048;
-	}
-	public int getYQ049() {
-		return YQ049;
-	}
-	public void setYQ049(int yQ049) {
-		YQ049 = yQ049;
-	}
-	public int getYQ050() {
-		return YQ050;
-	}
-	public void setYQ050(int yQ050) {
-		YQ050 = yQ050;
-	}
-	public int getYQ051() {
-		return YQ051;
-	}
-	public void setYQ051(int yQ051) {
-		YQ051 = yQ051;
-	}
-	public int getYQ052() {
-		return YQ052;
-	}
-	public void setYQ052(int yQ052) {
-		YQ052 = yQ052;
-	}
-	public int getYQ053() {
-		return YQ053;
-	}
-	public void setYQ053(int yQ053) {
-		YQ053 = yQ053;
-	}
-	public int getYQ054() {
-		return YQ054;
-	}
-	public void setYQ054(int yQ054) {
-		YQ054 = yQ054;
-	}
-	public int getYQ055() {
-		return YQ055;
-	}
-	public void setYQ055(int yQ055) {
-		YQ055 = yQ055;
-	}
-	public int getYQ056() {
-		return YQ056;
-	}
-	public void setYQ056(int yQ056) {
-		YQ056 = yQ056;
-	}
-	public int getYQ057() {
-		return YQ057;
-	}
-	public void setYQ057(int yQ057) {
-		YQ057 = yQ057;
-	}
-	public int getYQ058() {
-		return YQ058;
-	}
-	public void setYQ058(int yQ058) {
-		YQ058 = yQ058;
-	}
-	public int getYQ059() {
-		return YQ059;
-	}
-	public void setYQ059(int yQ059) {
-		YQ059 = yQ059;
-	}
-	public int getYQ060() {
-		return YQ060;
-	}
-	public void setYQ060(int yQ060) {
-		YQ060 = yQ060;
-	}
-	public int getYQ061() {
-		return YQ061;
-	}
-	public void setYQ061(int yQ061) {
-		YQ061 = yQ061;
-	}
-	public int getYQ062() {
-		return YQ062;
-	}
-	public void setYQ062(int yQ062) {
-		YQ062 = yQ062;
-	}
-	public int getYQ063() {
-		return YQ063;
-	}
-	public void setYQ063(int yQ063) {
-		YQ063 = yQ063;
-	}
-	public int getYQ064() {
-		return YQ064;
-	}
-	public void setYQ064(int yQ064) {
-		YQ064 = yQ064;
-	}
-	public int getYQ065() {
-		return YQ065;
-	}
-	public void setYQ065(int yQ065) {
-		YQ065 = yQ065;
-	}
-	public int getYQ066() {
-		return YQ066;
-	}
-	public void setYQ066(int yQ066) {
-		YQ066 = yQ066;
-	}
-	public int getYQ067() {
-		return YQ067;
-	}
-	public void setYQ067(int yQ067) {
-		YQ067 = yQ067;
-	}
-	public int getYQ068() {
-		return YQ068;
-	}
-	public void setYQ068(int yQ068) {
-		YQ068 = yQ068;
-	}
-	public int getYQ069() {
-		return YQ069;
-	}
-	public void setYQ069(int yQ069) {
-		YQ069 = yQ069;
-	}
-	public int getYQ070() {
-		return YQ070;
-	}
-	public void setYQ070(int yQ070) {
-		YQ070 = yQ070;
-	}
-	public int getYQ071() {
-		return YQ071;
-	}
-	public void setYQ071(int yQ071) {
-		YQ071 = yQ071;
-	}
-	public int getYQ072() {
-		return YQ072;
-	}
-	public void setYQ072(int yQ072) {
-		YQ072 = yQ072;
-	}
-	public int getYQ073() {
-		return YQ073;
-	}
-	public void setYQ073(int yQ073) {
-		YQ073 = yQ073;
-	}
-	public int getYQ074() {
-		return YQ074;
-	}
-	public void setYQ074(int yQ074) {
-		YQ074 = yQ074;
-	}
-	public int getYQ075() {
-		return YQ075;
-	}
-	public void setYQ075(int yQ075) {
-		YQ075 = yQ075;
-	}
-	public BigDecimal getHK050() {
-		return HK050;
-	}
-	public void setHK050(BigDecimal hK050) {
-		HK050 = hK050;
-	}
-	public BigDecimal getHK051() {
-		return HK051;
-	}
-	public void setHK051(BigDecimal hK051) {
-		HK051 = hK051;
-	}
-	public BigDecimal getHK052() {
-		return HK052;
-	}
-	public void setHK052(BigDecimal hK052) {
-		HK052 = hK052;
-	}
-	public BigDecimal getHK053() {
-		return HK053;
-	}
-	public void setHK053(BigDecimal hK053) {
-		HK053 = hK053;
-	}
-	public BigDecimal getHK054() {
-		return HK054;
-	}
-	public void setHK054(BigDecimal hK054) {
-		HK054 = hK054;
-	}
-	public BigDecimal getHK055() {
-		return HK055;
-	}
-	public void setHK055(BigDecimal hK055) {
-		HK055 = hK055;
-	}
-	public BigDecimal getHK056() {
-		return HK056;
-	}
-	public void setHK056(BigDecimal hK056) {
-		HK056 = hK056;
-	}
-	public BigDecimal getHK057() {
-		return HK057;
-	}
-	public void setHK057(BigDecimal hK057) {
-		HK057 = hK057;
-	}
-	public BigDecimal getSQ048() {
-		return SQ048;
-	}
-	public void setSQ048(BigDecimal sQ048) {
-		SQ048 = sQ048;
-	}
-	public BigDecimal getSQ049() {
-		return SQ049;
-	}
-	public void setSQ049(BigDecimal sQ049) {
-		SQ049 = sQ049;
-	}
-	public int getSQ050() {
-		return SQ050;
-	}
-	public void setSQ050(int sQ050) {
-		SQ050 = sQ050;
-	}
-	public BigDecimal getSQ051() {
-		return SQ051;
-	}
-	public void setSQ051(BigDecimal sQ051) {
-		SQ051 = sQ051;
-	}
-	public Integer getSCORE() {
-		return SCORE;
-	}
-	public void setSCORE(Integer sCORE) {
-		SCORE = sCORE;
-	}
-	public BigDecimal getFX036() {
-		return FX036;
-	}
-	public void setFX036(BigDecimal fX036) {
-		FX036 = fX036;
-	}
-
-	public int getFX039() {
-		return FX039;
-	}
-	public void setFX039(int fX039) {
-		FX039 = fX039;
-	}
-	
-	public int getFX042() {
-		return FX042;
-	}
-	public void setFX042(int fX042) {
-		FX042 = fX042;
-	}
-	public BigDecimal getFX037() {
-		return FX037;
-	}
-	public void setFX037(BigDecimal fX037) {
-		FX037 = fX037;
-	}
-	public BigDecimal getFX038() {
-		return FX038;
-	}
-	public void setFX038(BigDecimal fX038) {
-		FX038 = fX038;
-	}
-	public int getFX040() {
-		return FX040;
-	}
-	public void setFX040(int fX040) {
-		FX040 = fX040;
-	}
-	public int getFX041() {
-		return FX041;
-	}
-	public void setFX041(int fX041) {
-		FX041 = fX041;
-	}
-	public int getFX043() {
-		return FX043;
-	}
-	public void setFX043(int fX043) {
-		FX043 = fX043;
-	}
-	public int getFX044() {
-		return FX044;
-	}
-	public void setFX044(int fX044) {
-		FX044 = fX044;
 	}
 	public BigDecimal getKK001() {
 		return KK001;

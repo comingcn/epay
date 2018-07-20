@@ -137,6 +137,10 @@ public class CreditScoreUtil {
     public static BigDecimal getCreditScoreByCertScoreType(String cerditSocreType, BigDecimal odiValue) {
         HashMap<String, String> cerditScoreTypeMap = creditScoreMap.get(cerditSocreType);
         
+        if(null == odiValue) {
+            return new BigDecimal("0");
+        }
+        
         List<String> rangeKeyList = new ArrayList<String>();
         for(String key : cerditScoreTypeMap.keySet()) {
             rangeKeyList.add(key);

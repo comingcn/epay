@@ -202,16 +202,16 @@ public class TaskServer {
 //						logger.info("odi:{}", JSON.toJSONString(odi));
 					
 						// 信用分计算
-						BigDecimal v1 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_s_rcd_yebz_j3m_pct, odi.getHK030());
-						BigDecimal v2 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_s_amt_success_j2m_pct, odi.getHK033());
-						BigDecimal v3 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_s_latesttn_fail_xj, new BigDecimal(odi.getHK046()));
-						BigDecimal v4 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.overdue3_1d_amt_sum_j3m, odi.getYQ033());
+						BigDecimal v1 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_yebz_pct_j3m, odi.getFX043());
+						BigDecimal v2 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_suces_j2m_pct, odi.getKK007());
+						BigDecimal v3 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_latesttn_fail_xj, new BigDecimal(odi.getHK046()));
+						BigDecimal v4 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.ovd3_1d_dk_amt_sum_j3m, new BigDecimal(odi.getYQ034()));
 						BigDecimal v5 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_suces_dk_cnt_j6m, new BigDecimal(odi.getHK012()));
-						BigDecimal v6 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_f_mer_success_j12m_dk_cnt, new BigDecimal(odi.getFK002()));
-						BigDecimal v7 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_card_audit_all_rcd_disntcd_all_j1m, odi.getSQ035());
-						BigDecimal v8 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_s_rcd_fail_j12m_pct, odi.getHK008());
-						BigDecimal v9 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_card_audit_dbt_rcd_nearist_days, new BigDecimal(odi.getSQ045()));
-						BigDecimal v10 =CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.yl_card_audit_dbt_rcd_disntcd_all_j6m_min, new BigDecimal(odi.getSQ015()));
+						BigDecimal v6 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_mer_suces_dk_cnt_j12m, new BigDecimal(odi.getHK003()));
+						BigDecimal v7 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.aud_all_rcd_disntcd_all_avg_j1m, odi.getSQ035());
+						BigDecimal v8 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_fail_pct_j12m, odi.getKK002());
+						BigDecimal v9 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.aud_dbt_rcd_nearist_days, new BigDecimal(odi.getSQ045()));
+						BigDecimal v10 =CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.aud_dbt_rcd_disntcd_all_min_j6m, new BigDecimal(odi.getSQ015()));
 						
 						int creditScore = MathUtil.plus(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10);
 						odi.setSCORE(creditScore);
@@ -761,7 +761,7 @@ public class TaskServer {
 		                                  + yhRepaymentSuccessAmount + xdRepaymentSuccessAmount;
 		   
 		    odi.setHK034(sumRepaymentSuccessAmount);
-            odi.setHK035(repaymentSuccessProportion(list, returnCodeDic));
+//            odi.setHK035(repaymentSuccessProportion(list, returnCodeDic));
             /******************************* 扣款类指标 ***************************************/
             int withholdRecord = withholdRecord(list,null);//所有划扣记录数
             int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
@@ -770,8 +770,8 @@ public class TaskServer {
 		} else if (month == 2) {// 两个月
 		    
 		    /******************************* 还款类变量 ***************************************/
-            odi.setHK032(repaymentSuccessProportion(list, returnCodeDic));
-            odi.setHK033(repaymentSuccessMoneyProportion(list, returnCodeDic));
+//            odi.setHK032(repaymentSuccessProportion(list, returnCodeDic));
+//            odi.setHK033(repaymentSuccessMoneyProportion(list, returnCodeDic));
             
             /******************************* 扣款类指标 ***************************************/
             
@@ -836,23 +836,27 @@ public class TaskServer {
 			odi.setFX024(otlmtMoneyProportion(list, returnCodeDic));
 			odi.setFX025(otlmtProportion(list, returnCodeDic));
 			
-			odi.setFX038(fxMoneyCount(list, returnCodeDic));
-			odi.setFX041(fxSuccessCount(list, returnCodeDic));
-			odi.setFX044(fxSuccessOrgCount(list, returnCodeDic));
+//			odi.setFX038(fxMoneyCount(list, returnCodeDic));
+//			odi.setFX041(fxSuccessCount(list, returnCodeDic));
+//			odi.setFX044(fxSuccessOrgCount(list, returnCodeDic));
+			
+		    odi.setFX042(fxFailCount(list, returnCodeDic));
+            odi.setFX043(fxFailProportion(list, returnCodeDic));
+            odi.setFX044(fxFailMoneyProportion(list, returnCodeDic));
 			
 			/******************************* 还款类变量 ***************************************/
             odi.setHK022(repaymentSuccessCount(list, "dk", returnCodeDic));
-            odi.setHK023(repaymentSuccessProportion(list, returnCodeDic));
-            odi.setHK024(repamentYebzCount(list, returnCodeDic));
-            odi.setHK025(repamentFailcProportion(list, returnCodeDic));
+//            odi.setHK023(repaymentSuccessProportion(list, returnCodeDic));
+//            odi.setHK024(repamentYebzCount(list, returnCodeDic));
+//            odi.setHK025(repamentFailcProportion(list, returnCodeDic));
             
             odi.setHK026(repaymentSuccessOrgCount(list, "dk", returnCodeDic));
             odi.setHK027(repaymentSuccessOrgCount(list, "yh", returnCodeDic));
             odi.setHK028(repaymentSuccessOrgCount(list, "xj", returnCodeDic));
             odi.setHK029(repaymentSuccessOrgCount(list, "xd", returnCodeDic));
             
-            odi.setHK030(repamentYebzProportion(list, returnCodeDic));
-            odi.setHK031(repamentYebzMoneyProportion(list, returnCodeDic));
+//            odi.setHK030(repamentYebzProportion(list, returnCodeDic));
+//            odi.setHK031(repamentYebzMoneyProportion(list, returnCodeDic));
             
             /******************************* 扣款类指标 ***************************************/
             int withholdRecord = withholdRecord(list,null);//所有划扣记录数
@@ -938,9 +942,13 @@ public class TaskServer {
 			odi.setFX015(otlmtMoneyProportion(list, returnCodeDic));
 			odi.setFX016(otlmtProportion(list, returnCodeDic));
 			
-			odi.setFX037(fxMoneyCount(list, returnCodeDic));
-			odi.setFX040(fxSuccessCount(list, returnCodeDic));
-			odi.setFX043(fxSuccessOrgCount(list, returnCodeDic));
+//			odi.setFX037(fxMoneyCount(list, returnCodeDic));
+//			odi.setFX040(fxSuccessCount(list, returnCodeDic));
+//			odi.setFX043(fxSuccessOrgCount(list, returnCodeDic));
+			
+	        odi.setFX039(fxFailCount(list, returnCodeDic));
+            odi.setFX040(fxFailProportion(list, returnCodeDic));
+	        odi.setFX041(fxFailMoneyProportion(list, returnCodeDic));
 			
 //			odi.setHK054(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
 //          odi.setHK055(repaymentSuccessMoneyCount(list, "xj", returnCodeDic));
@@ -948,16 +956,16 @@ public class TaskServer {
 //          odi.setHK057(repaymentSuccessMoneyCount(list, "dk", returnCodeDic));
             
             odi.setHK012(repaymentSuccessCount(list, "dk", returnCodeDic));
-            odi.setHK013(repaymentSuccessProportion(list, returnCodeDic));
+//            odi.setHK013(repaymentSuccessProportion(list, returnCodeDic));
             odi.setHK014(repaymentSuccessOrgCount(list, "dk", returnCodeDic));
             odi.setHK015(repaymentSuccessOrgCount(list, "yh", returnCodeDic));
             odi.setHK016(repaymentSuccessOrgCount(list, "xj", returnCodeDic));
             odi.setHK017(repaymentSuccessOrgCount(list, "xd", returnCodeDic));
             
-            odi.setHK018(repamentYebzCount(list, returnCodeDic));
-            odi.setHK019(repamentFailcProportion(list, returnCodeDic));
-            odi.setHK020(repamentYebzProportion(list, returnCodeDic));
-            odi.setHK021(repamentYebzMoneyProportion(list, returnCodeDic));
+//            odi.setHK018(repamentYebzCount(list, returnCodeDic));
+//            odi.setHK019(repamentFailcProportion(list, returnCodeDic));
+//            odi.setHK020(repamentYebzProportion(list, returnCodeDic));
+//            odi.setHK021(repamentYebzMoneyProportion(list, returnCodeDic));
             
             /******************************* 扣款类指标 ***************************************/
             int withholdRecord = withholdRecord(list,null);//所有划扣记录数
@@ -1029,9 +1037,13 @@ public class TaskServer {
 			odi.setFX006(acctfProportion(list, returnCodeDic));
 			odi.setFX007(acctfMoneyProportion(list, returnCodeDic));
 			
-			odi.setFX036(fxMoneyCount(list, returnCodeDic));
-			odi.setFX039(fxSuccessCount(list, returnCodeDic));
-			odi.setFX042(fxSuccessOrgCount(list, returnCodeDic));
+//			odi.setFX036(fxMoneyCount(list, returnCodeDic));
+//			odi.setFX039(fxSuccessCount(list, returnCodeDic));
+//			odi.setFX042(fxSuccessOrgCount(list, returnCodeDic));
+			
+			odi.setFX036(fxFailCount(list, returnCodeDic));
+			odi.setFX037(fxFailProportion(list, returnCodeDic));
+			odi.setFX038(fxFailMoneyProportion(list, returnCodeDic));
             
             /******************************* 还款类变量 ***************************************/
             odi.setHK050(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
@@ -1040,16 +1052,16 @@ public class TaskServer {
             odi.setHK053(repaymentSuccessMoneyCount(list, "dk", returnCodeDic));
             
             odi.setHK001(repaymentSuccessCount(list, "dk", returnCodeDic));
-            odi.setHK002(repaymentSuccessProportion(list, returnCodeDic));
+//            odi.setHK002(repaymentSuccessProportion(list, returnCodeDic));
             odi.setHK003(repaymentSuccessOrgCount(list, "dk", returnCodeDic));
             odi.setHK004(repaymentSuccessOrgCount(list, "yh", returnCodeDic));
             odi.setHK005(repaymentSuccessOrgCount(list, "xj", returnCodeDic));
             odi.setHK006(repaymentSuccessOrgCount(list, "xd", returnCodeDic));
             
-            odi.setHK007(repamentYebzCount(list, returnCodeDic));
-            odi.setHK008(repamentFailcProportion(list, returnCodeDic));
-            odi.setHK009(repamentYebzProportion(list, returnCodeDic));
-            odi.setHK010(repamentYebzMoneyProportion(list, returnCodeDic));
+//            odi.setHK007(repamentYebzCount(list, returnCodeDic));
+//            odi.setHK008(repamentFailcProportion(list, returnCodeDic));
+//            odi.setHK009(repamentYebzProportion(list, returnCodeDic));
+//            odi.setHK010(repamentYebzMoneyProportion(list, returnCodeDic));
             
             /**
              * 还款类变量：时间指标
@@ -2671,6 +2683,72 @@ public class TaskServer {
         }
         
         return fkSuccessOrgCountSet.size();
+    }
+    
+    /**
+     * @Description: 风险类变量。余额不足失败的次数。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月20日
+     */
+    private int fxFailCount(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        List<String> yebzReturnCodeList = Arrays.asList(returnCodeDic.get("yebz"));
+        
+        int fxFailCountResult = 0;
+        for(TradeDetailDO o : list) {
+            if('S' ==  o.getSF_TYPE() && yebzReturnCodeList.contains(o.getRETURN_CODE())) {
+                fxFailCountResult++;
+            }
+        }
+        
+        return fxFailCountResult;
+    }
+    
+    /**
+     * @Description: 风险类变量。失败占比。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月20日
+     */
+    private BigDecimal fxFailProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        
+        List<String> yebzReturnCodeList = Arrays.asList(returnCodeDic.get("yebz"));
+        
+        int fxFailCountResult = 0;
+        for(TradeDetailDO o : list) {
+            if('S' ==  o.getSF_TYPE() && yebzReturnCodeList.contains(o.getRETURN_CODE())) {
+                fxFailCountResult++;
+            }
+        }
+        
+        return MathUtil.divide(fxFailCountResult, list.size());
+    }
+    
+    /**
+     * @Description: 风险类变量。失败金额数占比。
+     * @param list
+     * @param returnCodeDic
+     * @return 
+     * @author LZG
+     * @date 2018年07月20日
+     */
+    private BigDecimal fxFailMoneyProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
+        List<String> yebzReturnCodeList = Arrays.asList(returnCodeDic.get("yebz"));
+        
+        BigDecimal sumMoney = new BigDecimal("0");
+        BigDecimal failMoney = new BigDecimal("0");
+        for(TradeDetailDO o : list) {
+            sumMoney = sumMoney.add(o.getAMOUNT());
+            if('S' ==  o.getSF_TYPE() && yebzReturnCodeList.contains(o.getRETURN_CODE())) {
+                failMoney = failMoney.add(o.getAMOUNT());
+            }
+        }
+        
+        return MathUtil.divide(failMoney, sumMoney);
     }
     
 }

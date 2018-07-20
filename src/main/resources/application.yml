@@ -3,8 +3,8 @@ spring:
     active: dev
   datasource:
     driver-class-name: com.ibm.db2.jcc.DB2Driver
-    url: jdbc:db2://131.252.83.213:60000/etl
-#    url: jdbc:db2://10.118.192.35:50000/cp_edw
+#    url: jdbc:db2://131.252.83.213:60000/etl
+    url: jdbc:db2://10.118.192.35:50000/cp_edw
     username: db2inst1
     password: 1qaz@WSX
     testWhileIdle: true

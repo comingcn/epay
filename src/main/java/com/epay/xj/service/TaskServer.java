@@ -48,7 +48,7 @@ public class TaskServer {
 	private EntityManager entityManager;
 	
 	public List<String> getTaskList(String updateTime, String flag) {
-		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST_PY";
+		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST";
 		return entityManager.createNativeQuery(sql).getResultList();
 	}
 
@@ -62,7 +62,7 @@ public class TaskServer {
 		for (int i = 0; i < size; i++) {
 			OverDueIndex dd = list.get(i);
 			entityManager.persist(dd);
-			if (i % 500 == 0 || i == (size - 1)) { // 每1000条数据执行一次，或者最后不足1000条时执行
+			if (i % 1000 == 0 || i == (size - 1)) { // 每1000条数据执行一次，或者最后不足1000条时执行
 				entityManager.flush();
 				entityManager.clear();
 			}
@@ -98,7 +98,7 @@ public class TaskServer {
 	public Map<Integer, List<TradeDetailDO>> fatherList(String certNo, String updateTime) {
 		// List<TradeDetailDO> tradeDetailList = new ArrayList<TradeDetailDO>();
 		Map<Integer, List<TradeDetailDO>> tradeMap = new HashMap<Integer, List<TradeDetailDO>>();
-		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA_PY where IDCARD='" + certNo + "'";
+		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA where IDCARD='" + certNo + "'";
 		try {
 			List<TradeDetailDO> tradeDetailList = entityManager.createNativeQuery(sql, TradeDetailDO.class)
 					.getResultList();
@@ -195,6 +195,7 @@ public class TaskServer {
 			task = new Callable<List<OverDueIndex>>() {
 				@Override
 				public List<OverDueIndex> call() throws Exception {
+					long sysBeginTime = System.nanoTime();
 					List<OverDueIndex> lst = new ArrayList<OverDueIndex>();
 					for (int i = 0; i < listStr.size(); i++) {
 						String certNo = listStr.get(i);
@@ -242,7 +243,9 @@ public class TaskServer {
 						lst.add(odi);
 					}
 //					batchInsert(lst);
-					System.out.println("线程名称："+Thread.currentThread().getName()+"集合数量:"+lst.size());
+					String useTime = String.valueOf((System.nanoTime() - sysBeginTime) / Math.pow(10, 9));
+					logger.info("线程名称:{},size:{},写入记录useTime:{}秒", Thread.currentThread().getName(),lst.size(), useTime);
+//					System.out.println("线程名称："+Thread.currentThread().getName()+"集合数量:"+lst.size());
 //					batchInsert(lst, em);
 					
 					return lst;

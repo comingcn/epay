@@ -223,7 +223,12 @@ public class TaskServer {
 						// 信用分计算
 						BigDecimal v1 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_yebz_pct_j3m, odi.getFX043());
 						BigDecimal v2 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_suces_j2m_pct, odi.getKK007());
-						BigDecimal v3 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_latesttn_fail_xj, new BigDecimal(odi.getHK046()));
+						
+						BigDecimal v3 = new BigDecimal("0");
+						if(null != odi.getHK046() && !"".equals(odi.getHK046())) {
+						     v3 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_latesttn_fail_xj, new BigDecimal(odi.getHK046()));
+						} 
+						
 						BigDecimal v4 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.ovd3_1d_dk_amt_sum_j3m, new BigDecimal(odi.getYQ034()));
 						BigDecimal v5 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_suces_dk_cnt_j6m, new BigDecimal(odi.getHK012()));
 						BigDecimal v6 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_mer_suces_dk_cnt_j12m, new BigDecimal(odi.getHK003()));

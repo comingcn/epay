@@ -20,7 +20,7 @@ import java.util.List;
 public class CreditScoreUtil {
     
     public static String sf_s_rcd_yebz_pct_j3m = "sf_s_rcd_yebz_pct_j3m"; //1
-    public static String sf_s_amt_suces_pct_j2m = "sf_s_amt_suces_pct_j2m"; //2
+    public static String sf_s_rcd_suces_j2m_pct = "sf_s_rcd_suces_j2m_pct"; //2
     public static String sf_s_latesttn_fail_xj = "sf_s_latesttn_fail_xj"; //3
     public static String ovd3_1d_dk_amt_sum_j3m = "ovd3_1d_dk_amt_sum_j3m"; //4
     public static String sf_s_rcd_suces_dk_cnt_j6m = "sf_s_rcd_suces_dk_cnt_j6m"; //5
@@ -47,7 +47,7 @@ public class CreditScoreUtil {
         secondDataMap.put("-1.0, -1.0", "63.8992411344539");
         secondDataMap.put("0.00140829614456, 0.679771571928", "63.5680264844452");
         secondDataMap.put("0.680848181852, 1.0", "49.2914363654322");
-        creditScoreMap.put(sf_s_amt_suces_pct_j2m, secondDataMap);
+        creditScoreMap.put(sf_s_rcd_suces_j2m_pct, secondDataMap);
         
         //3
         LinkedHashMap<String, String> thirdDataMap = new LinkedHashMap<String, String>();

@@ -777,9 +777,7 @@ public class TaskServer {
             
             int withholdRecord = withholdRecord(list,null);//所有划扣记录数
             int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
-            BigDecimal withholdSuccessTotalMoney = withholdTotalMoney(list,"0000");//
             odi.setKK007(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
-            odi.setKK008(MathUtil.divide(withholdSuccessTotalMoney, withholdTotalMoney(list,null)));//全卡_扣款成功_金额_占比
 		    
 	    } else if (month == 3) {
 			/******************************* 逾期类变量 ***************************************/
@@ -855,7 +853,9 @@ public class TaskServer {
             /******************************* 扣款类指标 ***************************************/
             int withholdRecord = withholdRecord(list,null);//所有划扣记录数
             int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
+            BigDecimal withholdSuccessTotalMoney = withholdTotalMoney(list,"0000");//
             odi.setKK005(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
+            odi.setKK008(MathUtil.divide(withholdSuccessTotalMoney, withholdTotalMoney(list,null)));//全卡_扣款成功_金额_占比
             odi.setKK006(MathUtil.divide((withholdRecord-withholdSuccessRecord),withholdRecord));//失败扣款_记录数_占比
             odi.setKK012(withholdTotalMoney(list,null));//全卡_全机构_扣款_总额
             odi.setKK015(withholdRecord);//全卡_全机构_扣款成功_记录数

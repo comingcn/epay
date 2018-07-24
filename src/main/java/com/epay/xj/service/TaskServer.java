@@ -32,7 +32,6 @@ import com.epay.xj.domain.BindCardLog;
 import com.epay.xj.domain.OverDueIndex;
 import com.epay.xj.domain.TradeDetailDO;
 import com.epay.xj.properties.InitProperties;
-import com.epay.xj.utils.CreditScoreUtil;
 import com.epay.xj.utils.DateUtils;
 import com.epay.xj.utils.MathUtil;
 
@@ -43,6 +42,9 @@ public class TaskServer {
 	Logger logger = LoggerFactory.getLogger(getClass());
 	@Autowired
 	private InitProperties initProperties;
+	
+	@Autowired
+	private BatchInsertService batchInsertService;
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -54,35 +56,16 @@ public class TaskServer {
 
 	/**
 	 * batchInsert
-	 * 
 	 * @param list
 	 */
-	public void batchInsert(List<OverDueIndex> list) {
+	public void batchInsert(List<OverDueIndex> list,final int threadSizes) {
 		int size = list.size();
 		for (int i = 0; i < size; i++) {
 			OverDueIndex dd = list.get(i);
 			entityManager.persist(dd);
-			if (i % 1000 == 0 || i == (size - 1)) { // 每1000条数据执行一次，或者最后不足1000条时执行
+			if (i % threadSizes == 0 || i == (size - 1)) { // 每threadSizes条数据执行一次，或者最后不足threadSizes条时执行
 				entityManager.flush();
 				entityManager.clear();
-			}
-		}
-	}
-	
-	/**
-	 * batchInsert
-	 * 
-	 * @param list
-	 */
-	public synchronized void batchInsert(List<OverDueIndex> list,final EntityManager em) {
-		int threadSize = Integer.valueOf(initProperties.getThreadSize())/2;
-		int size = list.size();
-		for (int i = 0; i < size; i++) {
-			OverDueIndex dd = list.get(i);
-			em.persist(dd);
-			if (i % threadSize == 0 || i == (size - 1)) { // 每1000条数据执行一次，或者最后不足1000条时执行
-				em.flush();
-				em.clear();
 			}
 		}
 	}
@@ -98,6 +81,7 @@ public class TaskServer {
 	public Map<Integer, List<TradeDetailDO>> fatherList(String certNo, String updateTime) {
 		// List<TradeDetailDO> tradeDetailList = new ArrayList<TradeDetailDO>();
 		Map<Integer, List<TradeDetailDO>> tradeMap = new HashMap<Integer, List<TradeDetailDO>>();
+//		long sysBeginTime = System.nanoTime();
 		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA where IDCARD='" + certNo + "'";
 		try {
 			List<TradeDetailDO> tradeDetailList = entityManager.createNativeQuery(sql, TradeDetailDO.class)
@@ -107,6 +91,8 @@ public class TaskServer {
 			for (int month : overDueMouth.values()) {
 				tradeMap.put(month, getListByMonth(tradeDetailList, month, updateTime));
 			}
+//			String useTime = String.valueOf((System.nanoTime() - sysBeginTime) / Math.pow(10, 9));
+//			logger.info("fatherList耗时:{}秒", useTime);
 		} catch (Exception e) {
 			logger.error("执行sql:{},error:{}", sql, e.getMessage());
 			e.printStackTrace();
@@ -114,6 +100,25 @@ public class TaskServer {
 		return tradeMap;
 	}
 
+	/**
+	 * 测试一次取出所有人的记录 key > list
+	 * @return
+	 */
+	public Map<String, List<BindCardLog>>  getBindCardLog(){
+		Map<String, List<BindCardLog>> map = new HashMap<String, List<BindCardLog>>();
+		String sql = "select * from CP_ODS.P1055_UMP_BIND_LOG_PARA";
+		List<BindCardLog> tradeDetailList = entityManager.createNativeQuery(sql, BindCardLog.class).getResultList();
+		for (BindCardLog o : tradeDetailList) {
+			if (map.containsKey(o.getCERT_NO())) {
+				map.get(o.getCERT_NO()).add(o);
+			} else {
+				List<BindCardLog> bclLst = new ArrayList<BindCardLog>();
+				bclLst.add(o);
+				map.put(o.getCERT_NO(), bclLst);
+			}
+		}
+		return map;
+	}
 	/**
 	 * @param certNo
 	 * @param updateTime
@@ -146,7 +151,7 @@ public class TaskServer {
 		List<BindCardLog> list = new ArrayList<BindCardLog>();
 		Timestamp end = new Timestamp(DateUtils.yyyyMMddToDate(updateTime).getTime());
 		Timestamp begin = null;
-		if (month == 15) {// 按天计算日期
+		if (month == 15 || month==7) {// 按天计算日期
 			begin = DateUtils.getDateOfXDaysAgo(end, month);
 		} else {
 			begin = DateUtils.getDateOfXMonthsAgo(end, month);
@@ -161,6 +166,7 @@ public class TaskServer {
 	}
 
 	public void sliceTask(List<String> taskList, String updateTime) throws InterruptedException {
+		long beginTime = System.nanoTime();
 		// 每500条数据开启一条线程
 		int threadSize = Integer.valueOf(initProperties.getThreadSize());
 		// 总数据条数
@@ -189,97 +195,87 @@ public class TaskServer {
 			}
 			final List<String> listStr = cutList;
 			final String udpateTimes = updateTime;
+//			final Map<String, List<BindCardLog>> certNoMap = getBindCardLog();
 			final Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
 			final Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
-			final EntityManager em = entityManager;
 			task = new Callable<List<OverDueIndex>>() {
 				@Override
 				public List<OverDueIndex> call() throws Exception {
-					long sysBeginTime = System.nanoTime();
 					List<OverDueIndex> lst = new ArrayList<OverDueIndex>();
 					for (int i = 0; i < listStr.size(); i++) {
+//						long sysBeginTime = System.nanoTime();
 						String certNo = listStr.get(i);
 						OverDueIndex odi = new OverDueIndex();
 						odi.setCERT_NO(certNo);
 						// 如果是人的所有记录
 						Map<Integer, List<TradeDetailDO>> tradeMap = fatherList(certNo, udpateTimes);
 						for (int month : overDueMouth.values()) {
-							// 指标结果集
+//							// 指标结果集
 							List<TradeDetailDO> list = tradeMap.get(month);
-							if (list.size() != 0) {
+							if (!list.isEmpty()) {
 								overDueMouth(list, odi, month, returnCodeDic);
 							}
 						}
-						// 客户申请行为统计
-						Map<Integer, List<BindCardLog>> bindCardLogMap = getBindCardLog(certNo, udpateTimes);
-						if (bindCardLogMap.size() != 0) {
-							for (int month : overDueMouth.values()) {
-								// 指标结果集
-								List<BindCardLog> list = bindCardLogMap.get(month);
-								bindCardMouth(list, odi, month, returnCodeDic, udpateTimes);
-							}
-						}
+//						// 客户申请行为统计
+//						Map<Integer, List<BindCardLog>> bindCardLogMap = getBindCardLog(certNo, udpateTimes);
+//						if (bindCardLogMap.size() != 0) {
+//							for (int month : overDueMouth.values()) {
+//								// 指标结果集
+//								List<BindCardLog> list = bindCardLogMap.get(month);
+//								if(list.size()==0)continue;
+//								bindCardMouth(list, odi, month, returnCodeDic, udpateTimes);
+//							}
+//						}
+//						String useTime = String.valueOf((System.nanoTime() - sysBeginTime) / Math.pow(10, 9));
+//  						logger.info("一个人计算逾期指标耗时:{}秒", useTime);
+//  						sysBeginTime = System.nanoTime();
 //						logger.info("odi:{}", JSON.toJSONString(odi));
-					
 						// 信用分计算
-						BigDecimal v1 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_yebz_pct_j3m, odi.getFX043());
-						BigDecimal v2 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_suces_j2m_pct, odi.getKK007());
-						
-						BigDecimal v3 = new BigDecimal("0");
-						if(null != odi.getHK046() && !"".equals(odi.getHK046())) {
-						     v3 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_latesttn_fail_xj, new BigDecimal(odi.getHK046()));
-						} 
-						
-						BigDecimal v4 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.ovd3_1d_dk_amt_sum_j3m, new BigDecimal(odi.getYQ034()));
-						BigDecimal v5 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_suces_dk_cnt_j6m, new BigDecimal(odi.getHK012()));
-						BigDecimal v6 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_mer_suces_dk_cnt_j12m, new BigDecimal(odi.getHK003()));
-						BigDecimal v7 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.aud_all_rcd_disntcd_all_avg_j1m, odi.getSQ035());
-						BigDecimal v8 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_fail_pct_j12m, odi.getKK002());
-						BigDecimal v9 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.aud_dbt_rcd_nearist_days, new BigDecimal(odi.getSQ045()));
-						BigDecimal v10 =CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.aud_dbt_rcd_disntcd_all_min_j6m, new BigDecimal(odi.getSQ015()));
-						
-						int creditScore = MathUtil.plus(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10);
-  						odi.setSCORE(creditScore);
+//						BigDecimal v1 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_yebz_pct_j3m, odi.getFX043());
+//						BigDecimal v2 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_suces_j2m_pct, odi.getKK007());
+//						BigDecimal v3 = new BigDecimal("0");
+//						if(null != odi.getHK046() && !"".equals(odi.getHK046())) {
+//						     v3 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_latesttn_fail_xj, new BigDecimal(odi.getHK046()));
+//						} 
+//						
+//						BigDecimal v4 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.ovd3_1d_dk_amt_sum_j3m, new BigDecimal(odi.getYQ034()));
+//						BigDecimal v5 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_suces_dk_cnt_j6m, new BigDecimal(odi.getHK012()));
+//						BigDecimal v6 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_mer_suces_dk_cnt_j12m, new BigDecimal(odi.getHK003()));
+//						BigDecimal v7 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.aud_all_rcd_disntcd_all_avg_j1m, odi.getSQ035());
+//						BigDecimal v8 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_fail_pct_j12m, odi.getKK002());
+//						BigDecimal v9 = CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.aud_dbt_rcd_nearist_days, new BigDecimal(odi.getSQ045()));
+//						BigDecimal v10 =CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.aud_dbt_rcd_disntcd_all_min_j6m, new BigDecimal(odi.getSQ015()));
+//						
+//						int creditScore = MathUtil.plus(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10);
+//  						odi.setSCORE(creditScore);
+//  						String useTime = String.valueOf((System.nanoTime() - sysBeginTime) / Math.pow(10, 9));
+//  						logger.info("计算指标耗时:{}秒", useTime);
 						lst.add(odi);
 					}
-//					batchInsert(lst);
-					String useTime = String.valueOf((System.nanoTime() - sysBeginTime) / Math.pow(10, 9));
-					logger.info("线程名称:{},size:{},写入记录useTime:{}秒", Thread.currentThread().getName(),lst.size(), useTime);
-//					System.out.println("线程名称："+Thread.currentThread().getName()+"集合数量:"+lst.size());
-//					batchInsert(lst, em);
-					
 					return lst;
 				}
 			};
 			// 这里提交的任务容器列表和返回的Future列表存在顺序对应的关系
 			tasks.add(task);
 		}
-
 		List<Future<List<OverDueIndex>>> results = exec.invokeAll(tasks);
-		// StringBuffer sb = new StringBuffer();
-		long sysBeginTime = System.nanoTime();
+		List<OverDueIndex> resultLst = new ArrayList<OverDueIndex>();
 		for (Future<List<OverDueIndex>> future : results) {
 			try {
-				// 遍历所有人list
-
-				List<OverDueIndex> lst = future.get();
-				logger.info("-------------------------------lst.size:{}", lst.size());
-				// sb.append("size:").append(lst.size()).append(",");
-//				batchInsertService.addList(lst);
-				 batchInsert(lst);
-				// for (OverDueIndex overDueIndex : lst) {
-				// logger.info("certNo:{},index:{}",
-				// overDueIndex.getCertNo(),JSON.toJSONString(overDueIndex));
-				// }
+				resultLst.addAll(future.get());
 			} catch (ExecutionException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
-		String useTime = String.valueOf((System.nanoTime() - sysBeginTime) / Math.pow(10, 9));
-		logger.info("sb:{},写入记录useTime:{}秒", null, useTime);
+		String useTime = String.valueOf((System.nanoTime() - beginTime) / Math.pow(10, 9));
+		logger.info("集合大小:{},计算指标耗时:{}秒", resultLst.size(), useTime);
+		long sysBeginTime = System.nanoTime();
+		batchInsertService.addList(resultLst);
+		useTime = String.valueOf((System.nanoTime() - sysBeginTime) / Math.pow(10, 9));
+		logger.info("所有指标入库耗时:{}秒", useTime);
 		// 关闭线程池
 		exec.shutdown();
+		
 	}
 
 	/**
@@ -330,90 +326,90 @@ public class TaskServer {
 	private void bindCardMouth(List<BindCardLog> list, OverDueIndex odi, int month, Map<String, String[]> returnCodeDic,
 			String updateTime) {
 		/* 15天 */
-		if (month == 15) {
-			odi.setSQ036(bindCardMerMap(list, null).size());// 申请认证机构数
-			odi.setSQ037(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
-			odi.setSQ038(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
-			odi.setSQ039(list.size());// 申请记录数
-		}
+//		if (month == 15) {
+//			odi.setSQ036(bindCardMerMap(list, null).size());// 申请认证机构数
+//			odi.setSQ037(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
+//			odi.setSQ038(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
+//			odi.setSQ039(list.size());// 申请记录数
+//		}
 		/* 1个月 */
 		if (month == 1) {
-			odi.setSQ031(bindCardMerMap(list, null).size());// 申请认证机构数
-			odi.setSQ032(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
-			odi.setSQ033(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
-			odi.setSQ034(list.size());// 申请记录数
-			odi.setSQ035(averageBindCardRecord(list, null, "0", "0000"));// 卡均申请记录数:每张借记卡申请认证成功的平均记录数
+//			odi.setSQ031(bindCardMerMap(list, null).size());// 申请认证机构数
+//			odi.setSQ032(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
+//			odi.setSQ033(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
+//			odi.setSQ034(list.size());// 申请记录数
+//			odi.setSQ035(averageBindCardRecord(list, null, "0", "0000"));// 卡均申请记录数:每张借记卡申请认证成功的平均记录数
 		}
 		/* 2个月 */
-		if (month == 2) {
-			odi.setSQ027(bindCardMerMap(list, null).size());// 申请认证机构数
-			odi.setSQ028(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
-			odi.setSQ029(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
-			odi.setSQ030(list.size());// 申请记录数
-		}
+//		if (month == 2) {
+//			odi.setSQ027(bindCardMerMap(list, null).size());// 申请认证机构数
+//			odi.setSQ028(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
+//			odi.setSQ029(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
+//			odi.setSQ030(list.size());// 申请记录数
+//		}
 		/* 3个月 */
-		if (month == 3) {
-			odi.setSQ019(bindCardMerMap(list, null).size());// 申请认证的不同机构数
-			odi.setSQ020(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
-			odi.setSQ021(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
-			odi.setSQ022(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
-			odi.setSQ023(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ022()));// 平均每张借记卡申请记录数
-			odi.setSQ024(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ022()));// 平均每张贷记卡申请记录数
-			odi.setSQ025(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ022()));// 平均每张卡在贷款类机构申请认证的记录数
-			odi.setSQ026(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ022()));// 平均每张卡在贷款类机构申请认证的记录数
-			odi.setSQ051(MathUtil.divide(list.size(),odi.getSQ022()));//近3个月平均每张卡申请记录数
-		}
+//		if (month == 3) {
+//			odi.setSQ019(bindCardMerMap(list, null).size());// 申请认证的不同机构数
+//			odi.setSQ020(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
+//			odi.setSQ021(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
+//			odi.setSQ022(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
+//			odi.setSQ023(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ022()));// 平均每张借记卡申请记录数
+//			odi.setSQ024(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ022()));// 平均每张贷记卡申请记录数
+//			odi.setSQ025(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ022()));// 平均每张卡在贷款类机构申请认证的记录数
+//			odi.setSQ026(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ022()));// 平均每张卡在贷款类机构申请认证的记录数
+//			odi.setSQ051(MathUtil.divide(list.size(),odi.getSQ022()));//近3个月平均每张卡申请记录数
+//		}
 		/* 6个月 */
 		if (month == 6) {
-			odi.setSQ009(bindCardMerMap(list, null).size());// 申请认证的不同机构数
-			odi.setSQ010(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
-			odi.setSQ011(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
-			odi.setSQ012(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
-			odi.setSQ013(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ012()));// 平均每张借记卡申请记录数
-			odi.setSQ014(MathUtil.divide(getBindCardByDcType(list, null,"1"), odi.getSQ012()));// 平均每张贷记卡申请记录数
-			odi.setSQ015(getBindCardMinRecordsByDcType(list, "0", "max"));// 每张借记卡申请最小记录数
-			odi.setSQ016(getBindCardMinRecordsByDcType(list, "1","min"));//每张贷记卡申请最小记录数
-			odi.setSQ017(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ012()));// 平均每张卡在贷款类机构申请认证的记录数
-			odi.setSQ018(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ012()));// 平均每张卡在贷款类机构申请认证的记录数
-			odi.setSQ049(MathUtil.divide(list.size(),odi.getSQ012()));//近6个月平均每张卡申请记录数
-			odi.setSQ050(getBindCardMinRecordsByDcType(list, null,"min"));//6个月_全量卡_单卡_申请次数_最小
+//			odi.setSQ009(bindCardMerMap(list, null).size());// 申请认证的不同机构数
+//			odi.setSQ010(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
+//			odi.setSQ011(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
+//			odi.setSQ012(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
+//			odi.setSQ013(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ012()));// 平均每张借记卡申请记录数
+//			odi.setSQ014(MathUtil.divide(getBindCardByDcType(list, null,"1"), odi.getSQ012()));// 平均每张贷记卡申请记录数
+//			odi.setSQ015(getBindCardMinRecordsByDcType(list, "0", "max"));// 每张借记卡申请最小记录数
+//			odi.setSQ016(getBindCardMinRecordsByDcType(list, "1","min"));//每张贷记卡申请最小记录数
+//			odi.setSQ017(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ012()));// 平均每张卡在贷款类机构申请认证的记录数
+//			odi.setSQ018(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ012()));// 平均每张卡在贷款类机构申请认证的记录数
+//			odi.setSQ049(MathUtil.divide(list.size(),odi.getSQ012()));//近6个月平均每张卡申请记录数
+//			odi.setSQ050(getBindCardMinRecordsByDcType(list, null,"min"));//6个月_全量卡_单卡_申请次数_最小
 		}
 		/* 12个月 */
 		if (month == 12) {
-			odi.setSQ001(bindCardMerMap(list, null).size());// 申请认证的不同机构数
-			odi.setSQ002(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
-			odi.setSQ003(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
-			odi.setSQ004(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
-			odi.setSQ005(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ004()));// 平均每张借记卡申请记录数
-			odi.setSQ006(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ004()));// 平均每张贷记卡申请记录数
-			odi.setSQ007(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ004()));// 平均每张卡在贷款类机构申请认证的记录数
-			odi.setSQ008(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ004()));// 平均每张卡在银行类机构申请认证的记录数
-			odi.setSQ048(MathUtil.divide(list.size(),odi.getSQ004()));//近12个月平均每张卡申请记录数
-			odi.setSQ040(getCreditCardBindLogs(list, "1", "recently"));//最近一次使用信用卡认证申请距今的时间
+//			odi.setSQ001(bindCardMerMap(list, null).size());// 申请认证的不同机构数
+//			odi.setSQ002(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
+//			odi.setSQ003(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
+//			odi.setSQ004(bindCardNoMap(list, null).size());// 用户用于申请认证的银行卡数
+//			odi.setSQ005(MathUtil.divide(getBindCardByDcType(list, null, "0"), odi.getSQ004()));// 平均每张借记卡申请记录数
+//			odi.setSQ006(MathUtil.divide(getBindCardByDcType(list, null, "1"), odi.getSQ004()));// 平均每张贷记卡申请记录数
+//			odi.setSQ007(MathUtil.divide(getBindCardByDcType(list, "dk", null), odi.getSQ004()));// 平均每张卡在贷款类机构申请认证的记录数
+//			odi.setSQ008(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ004()));// 平均每张卡在银行类机构申请认证的记录数
+//			odi.setSQ048(MathUtil.divide(list.size(),odi.getSQ004()));//近12个月平均每张卡申请记录数
+//			odi.setSQ040(getCreditCardBindLogs(list, "1", "recently"));//最近一次使用信用卡认证申请距今的时间
 			Date dateEnd = DateUtils.yyyyMMddToDate(updateTime);
-			if(null!=odi.getSQ040()){
-				odi.setSQ041(DateUtils.getIntervalDayAmount(
-						DateUtils.yyyyMMddToDate(odi.getSQ040()), 
-						dateEnd));//最近一次使用信用卡认证申请距今的天数
-			}
-			odi.setSQ042(getCreditCardBindLogs(list, "1", "early"));//最早一次使用信用卡认证申请时间
-			if(null!=odi.getSQ042()){
-				odi.setSQ043(DateUtils.getIntervalDayAmount(
-						DateUtils.yyyyMMddToDate(odi.getSQ042()), 
-						dateEnd));//最早一次使用信用卡认证申请距今的天数
-			}
-			odi.setSQ044(getCreditCardBindLogs(list, "0", "recently"));//最近一次_借记卡_申请认证时间
-			if(null!=odi.getSQ044()){
-				odi.setSQ045(DateUtils.getIntervalDayAmount(
-						DateUtils.yyyyMMddToDate(odi.getSQ044()), 
-						dateEnd));//最近一次_借记卡_申请认证_距今天数
-			}
-			odi.setSQ046(getCreditCardBindLogs(list, "1", "early"));//最早一次_借记卡_申请认证时间
-			if(null!=odi.getSQ046()){
-				odi.setSQ047(DateUtils.getIntervalDayAmount(
-						DateUtils.yyyyMMddToDate(odi.getSQ046()), 
-						dateEnd));//最早一次_借记卡_申请认证_距今天数
-			}
+//			if(null!=odi.getSQ040()){
+//				odi.setSQ041(DateUtils.getIntervalDayAmount(
+//						DateUtils.yyyyMMddToDate(odi.getSQ040()), 
+//						dateEnd));//最近一次使用信用卡认证申请距今的天数
+//			}
+//			odi.setSQ042(getCreditCardBindLogs(list, "1", "early"));//最早一次使用信用卡认证申请时间
+//			if(null!=odi.getSQ042()){
+//				odi.setSQ043(DateUtils.getIntervalDayAmount(
+//						DateUtils.yyyyMMddToDate(odi.getSQ042()), 
+//						dateEnd));//最早一次使用信用卡认证申请距今的天数
+//			}
+//			odi.setSQ044(getCreditCardBindLogs(list, "0", "recently"));//最近一次_借记卡_申请认证时间
+//			if(null!=odi.getSQ044()){
+//				odi.setSQ045(DateUtils.getIntervalDayAmount(
+//						DateUtils.yyyyMMddToDate(odi.getSQ044()), 
+//						dateEnd));//最近一次_借记卡_申请认证_距今天数
+//			}
+//			odi.setSQ046(getCreditCardBindLogs(list, "1", "early"));//最早一次_借记卡_申请认证时间
+//			if(null!=odi.getSQ046()){
+//				odi.setSQ047(DateUtils.getIntervalDayAmount(
+//						DateUtils.yyyyMMddToDate(odi.getSQ046()), 
+//						dateEnd));//最早一次_借记卡_申请认证_距今天数
+//			}
 		}
 	}
 	
@@ -669,7 +665,7 @@ public class TaskServer {
 				TradeDetailDO end = getNextRecordOfList(tmp, o);
 				if (null == end)
 					continue;
-				overDueDays = overDueDays + DateUtils.getIntervalDayAmount(o.getCREATE_TIME(), end.getCREATE_TIME());
+				overDueDays = overDueDays + DateUtils.getTrueDays(o.getCREATE_TIME(), end.getCREATE_TIME());
 			}
 		}
 		return overDueDays;
@@ -738,17 +734,17 @@ public class TaskServer {
 			odi.setYQ074(overDueMoreThanOneDayOfOrgSum(list,returnCodeDic,"dk",1));//全卡_贷款_逾期1天以上_机构数
 			odi.setYQ075(overDueMoreThanOneDayOfOrgSum(list,returnCodeDic,"dk",7));//全卡_贷款_逾期7天以上_机构数
 		    /******************************* 风险类变量 ***************************************/
-            odi.setFX026(yebzProportion(list, returnCodeDic));
-            
-            int xjYebzAmount = yebzCount(list, "xj", returnCodeDic);
-            int dkYebzAmount = yebzCount(list, "dk", returnCodeDic);
-            int yhYebzAmount = yebzCount(list, "yh", returnCodeDic);
-            int xdYebzAmount = yebzCount(list, "xd", returnCodeDic);
-            
-            odi.setFX027(xjYebzAmount);
-            odi.setFX028(dkYebzAmount);
-            odi.setFX029(yhYebzAmount);
-            odi.setFX030(xdYebzAmount);
+//            odi.setFX026(yebzProportion(list, returnCodeDic));
+//            
+//            int xjYebzAmount = yebzCount(list, "xj", returnCodeDic);
+//            int dkYebzAmount = yebzCount(list, "dk", returnCodeDic);
+//            int yhYebzAmount = yebzCount(list, "yh", returnCodeDic);
+//            int xdYebzAmount = yebzCount(list, "xd", returnCodeDic);
+//            
+//            odi.setFX027(xjYebzAmount);
+//            odi.setFX028(dkYebzAmount);
+//            odi.setFX029(yhYebzAmount);
+//            odi.setFX030(xdYebzAmount);
             
 		} else if (month == 15) {// 十五天
 			/******************************* 逾期类变量 ***************************************/
@@ -761,17 +757,17 @@ public class TaskServer {
 			odi.setYQ072(overDueMoreThanOneDayOfOrgSum(list,returnCodeDic,"dk",1));//全卡_贷款_逾期1天以上_机构数
 			odi.setYQ073(overDueMoreThanOneDayOfOrgSum(list,returnCodeDic,"dk",7));//全卡_贷款_逾期7天以上_机构数
 		    /******************************* 风险类变量 ***************************************/
-            odi.setFX031(yebzProportion(list, returnCodeDic));
-            
-            int xjYebzAmount = yebzCount(list, "xj", returnCodeDic);
-            int dkYebzAmount = yebzCount(list, "dk", returnCodeDic);
-            int yhYebzAmount = yebzCount(list, "yh", returnCodeDic);
-            int xdYebzAmount = yebzCount(list, "xd", returnCodeDic);
-            
-            odi.setFX032(xjYebzAmount);
-            odi.setFX033(dkYebzAmount);
-            odi.setFX034(yhYebzAmount);
-            odi.setFX035(xdYebzAmount);
+//            odi.setFX031(yebzProportion(list, returnCodeDic));
+//            
+//            int xjYebzAmount = yebzCount(list, "xj", returnCodeDic);
+//            int dkYebzAmount = yebzCount(list, "dk", returnCodeDic);
+//            int yhYebzAmount = yebzCount(list, "yh", returnCodeDic);
+//            int xdYebzAmount = yebzCount(list, "xd", returnCodeDic);
+//            
+//            odi.setFX032(xjYebzAmount);
+//            odi.setFX033(dkYebzAmount);
+//            odi.setFX034(yhYebzAmount);
+//            odi.setFX035(xdYebzAmount);
 		    
 		} else if (month == 1) {// 一个月
 			/******************************* 逾期类变量 ***************************************/
@@ -781,20 +777,20 @@ public class TaskServer {
 			odi.setYQ056(overDueInOrgsMaxDays(list,returnCodeDic,"yh"));//银行_单机构_最大逾期天数
 			odi.setYQ057(overDueInOrgsMaxDays(list,returnCodeDic,"dk"));//贷款_单机构_最大逾期天数
 		    /******************************* 还款类变量 ***************************************/
-		    int dkRepaymentSuccessAmount = repaymentSuccessCount(list, "dk", returnCodeDic);
-		    int xjRepaymentSuccessAmount = repaymentSuccessCount(list, "xj", returnCodeDic);
-		    int yhRepaymentSuccessAmount = repaymentSuccessCount(list, "yh", returnCodeDic);
-		    int xdRepaymentSuccessAmount = repaymentSuccessCount(list, "xd", returnCodeDic);
-		    
-		    int sumRepaymentSuccessAmount = dkRepaymentSuccessAmount + xjRepaymentSuccessAmount
-		                                  + yhRepaymentSuccessAmount + xdRepaymentSuccessAmount;
-		   
-		    odi.setHK034(sumRepaymentSuccessAmount);
-//            odi.setHK035(repaymentSuccessProportion(list, returnCodeDic));
+//		    int dkRepaymentSuccessAmount = repaymentSuccessCount(list, "dk", returnCodeDic);
+//		    int xjRepaymentSuccessAmount = repaymentSuccessCount(list, "xj", returnCodeDic);
+//		    int yhRepaymentSuccessAmount = repaymentSuccessCount(list, "yh", returnCodeDic);
+//		    int xdRepaymentSuccessAmount = repaymentSuccessCount(list, "xd", returnCodeDic);
+//		    
+//		    int sumRepaymentSuccessAmount = dkRepaymentSuccessAmount + xjRepaymentSuccessAmount
+//		                                  + yhRepaymentSuccessAmount + xdRepaymentSuccessAmount;
+//		   
+//		    odi.setHK034(sumRepaymentSuccessAmount);
+//            odi.setHK035(repaymentSuccessProportion(list, returnCodeDic));//不要的
             /******************************* 扣款类指标 ***************************************/
-            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
-            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
-            odi.setKK009(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
+//            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
+//            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
+//            odi.setKK009(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
 		    
 		} else if (month == 2) {// 两个月
 		    
@@ -804,9 +800,9 @@ public class TaskServer {
             
             /******************************* 扣款类指标 ***************************************/
             
-            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
-            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
-            odi.setKK007(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
+//            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
+//            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
+//            odi.setKK007(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
 		    
 	    } else if (month == 3) {
 			/******************************* 逾期类变量 ***************************************/
@@ -842,61 +838,61 @@ public class TaskServer {
 			odi.setYQ071(overDueMoreThanOneDayOfOrgSum(list,returnCodeDic,"dk",30));//全卡_贷款_逾期30天以上_机构数
 			
 			/******************************* 授信类变量 ***************************************/
-			odi.setSX009(totalCreditLine(list, "dk", returnCodeDic));//全卡_贷款_授信_总额
-			odi.setSX010(totalCreditLine(list, "yh", returnCodeDic));//全卡_银行_授信_总额
-			odi.setSX011(maxCreditLine(list, "xd", returnCodeDic));//全卡_小贷_单机构_授信额_最大
-			odi.setSX012(maxCreditLine(list, "xj", returnCodeDic));//全卡_消金_单机构_授信额_最大
+//			odi.setSX009(totalCreditLine(list, "dk", returnCodeDic));//全卡_贷款_授信_总额
+//			odi.setSX010(totalCreditLine(list, "yh", returnCodeDic));//全卡_银行_授信_总额
+//			odi.setSX011(maxCreditLine(list, "xd", returnCodeDic));//全卡_小贷_单机构_授信额_最大
+//			odi.setSX012(maxCreditLine(list, "xj", returnCodeDic));//全卡_消金_单机构_授信额_最大
 
 			/******************************* 风险类变量 *****************************/
-			int dkAcctfAmount = acctfCount(list, "dk", returnCodeDic);
-			int xjAcctfAmount = acctfCount(list, "xj", returnCodeDic);
-			int yhAcctfAmount = acctfCount(list, "yh", returnCodeDic);
-			int xdAcctfAmount = acctfCount(list, "xd", returnCodeDic);
-
-			odi.setFX017(dkAcctfAmount);
-			odi.setFX018(xjAcctfAmount);
-			odi.setFX019(yhAcctfAmount);
-			odi.setFX020(xdAcctfAmount);
+//			int dkAcctfAmount = acctfCount(list, "dk", returnCodeDic);
+//			int xjAcctfAmount = acctfCount(list, "xj", returnCodeDic);
+//			int yhAcctfAmount = acctfCount(list, "yh", returnCodeDic);
+//			int xdAcctfAmount = acctfCount(list, "xd", returnCodeDic);
+//
+//			odi.setFX017(dkAcctfAmount);
+//			odi.setFX018(xjAcctfAmount);
+//			odi.setFX019(yhAcctfAmount);
+//			odi.setFX020(xdAcctfAmount);
 			// odi.setFX021(dkAcctfAmount + xjAcctfAmount + yhAcctfAmount +
-			// xdAcctfAmount);
+			// xdAcctfAmount);//不要的
 
-			odi.setFX022(acctfProportion(list, returnCodeDic));
-			odi.setFX023(acctfMoneyProportion(list, returnCodeDic));
-			odi.setFX024(otlmtMoneyProportion(list, returnCodeDic));
-			odi.setFX025(otlmtProportion(list, returnCodeDic));
+//			odi.setFX022(acctfProportion(list, returnCodeDic));
+//			odi.setFX023(acctfMoneyProportion(list, returnCodeDic));
+//			odi.setFX024(otlmtMoneyProportion(list, returnCodeDic));
+//			odi.setFX025(otlmtProportion(list, returnCodeDic));
 			
-//			odi.setFX038(fxMoneyCount(list, returnCodeDic));
-//			odi.setFX041(fxSuccessCount(list, returnCodeDic));
-//			odi.setFX044(fxSuccessOrgCount(list, returnCodeDic));
+//			odi.setFX038(fxMoneyCount(list, returnCodeDic));//不要的
+//			odi.setFX041(fxSuccessCount(list, returnCodeDic));//不要的
+//			odi.setFX044(fxSuccessOrgCount(list, returnCodeDic));//不要的
 			
-		    odi.setFX042(fxFailCount(list, returnCodeDic));
-            odi.setFX043(fxFailProportion(list, returnCodeDic));
-            odi.setFX044(fxFailMoneyProportion(list, returnCodeDic));
+//		    odi.setFX042(fxFailCount(list, returnCodeDic));
+//            odi.setFX043(fxFailProportion(list, returnCodeDic));
+//            odi.setFX044(fxFailMoneyProportion(list, returnCodeDic));
 			
 			/******************************* 还款类变量 ***************************************/
-            odi.setHK022(repaymentSuccessCount(list, "dk", returnCodeDic));
-//            odi.setHK023(repaymentSuccessProportion(list, returnCodeDic));
-//            odi.setHK024(repamentYebzCount(list, returnCodeDic));
-//            odi.setHK025(repamentFailcProportion(list, returnCodeDic));
+//            odi.setHK022(repaymentSuccessCount(list, "dk", returnCodeDic));
+//            odi.setHK023(repaymentSuccessProportion(list, returnCodeDic));//不要的
+//            odi.setHK024(repamentYebzCount(list, returnCodeDic));//不要的
+//            odi.setHK025(repamentFailcProportion(list, returnCodeDic));//不要的
             
-            odi.setHK026(repaymentSuccessOrgCount(list, "dk", returnCodeDic));
-            odi.setHK027(repaymentSuccessOrgCount(list, "yh", returnCodeDic));
-            odi.setHK028(repaymentSuccessOrgCount(list, "xj", returnCodeDic));
-            odi.setHK029(repaymentSuccessOrgCount(list, "xd", returnCodeDic));
+//            odi.setHK026(repaymentSuccessOrgCount(list, "dk", returnCodeDic));
+//            odi.setHK027(repaymentSuccessOrgCount(list, "yh", returnCodeDic));
+//            odi.setHK028(repaymentSuccessOrgCount(list, "xj", returnCodeDic));
+//            odi.setHK029(repaymentSuccessOrgCount(list, "xd", returnCodeDic));
             
-//            odi.setHK030(repamentYebzProportion(list, returnCodeDic));
-//            odi.setHK031(repamentYebzMoneyProportion(list, returnCodeDic));
+//            odi.setHK030(repamentYebzProportion(list, returnCodeDic));//不要的
+//            odi.setHK031(repamentYebzMoneyProportion(list, returnCodeDic));//不要的
             
             /******************************* 扣款类指标 ***************************************/
-            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
-            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
-            BigDecimal withholdSuccessTotalMoney = withholdTotalMoney(list,"0000");//
-            odi.setKK005(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
-            odi.setKK008(MathUtil.divide(withholdSuccessTotalMoney, withholdTotalMoney(list,null)));//全卡_扣款成功_金额_占比
-            odi.setKK006(MathUtil.divide((withholdRecord-withholdSuccessRecord),withholdRecord));//失败扣款_记录数_占比
-            odi.setKK012(withholdTotalMoney(list,null));//全卡_全机构_扣款_总额
-            odi.setKK015(withholdRecord);//全卡_全机构_扣款成功_记录数
-            odi.setKK018(withholdMerTypeMap(list));//全卡_扣款成功_机构数
+//            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
+//            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
+//            BigDecimal withholdSuccessTotalMoney = withholdTotalMoney(list,"0000");//
+//            odi.setKK005(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
+//            odi.setKK008(MathUtil.divide(withholdSuccessTotalMoney, withholdTotalMoney(list,null)));//全卡_扣款成功_金额_占比
+//            odi.setKK006(MathUtil.divide((withholdRecord-withholdSuccessRecord),withholdRecord));//失败扣款_记录数_占比
+//            odi.setKK012(withholdTotalMoney(list,null));//全卡_全机构_扣款_总额
+//            odi.setKK015(withholdRecord);//全卡_全机构_扣款成功_记录数
+//            odi.setKK018(withholdMerTypeMap(list));//全卡_扣款成功_机构数
 
 		} else if (month == 6) {
 			/******************************* 逾期类变量 ***************************************/
@@ -936,74 +932,74 @@ public class TaskServer {
 			odi.setYQ068(overDueMoreThanOneDayOfOrgSum(list,returnCodeDic,"dk",30));//全卡_贷款_逾期30天以上_机构数
 			
 			/******************************* 放款类变量 ***************************************/
-			odi.setFK008(loanOrgLoanSuccessTimes(list, "dk", returnCodeDic));// 成功放款的记录数
-			odi.setFK009(loanOrgLoanSuccessOrg(list, "dk", returnCodeDic));// 成功放款的不同机构数
-			odi.setFK010(loanOrgLoanSumMoney(list, "yh", returnCodeDic));// 在银行类机构放款的总金额
-			odi.setFK011(loanOrgLoanSumMoney(list, "xj", returnCodeDic));// 在消费金融类机构放款的总金额
-			odi.setFK012(loanOrgLoanSumMoney(list, "xd", returnCodeDic));// 在小额贷款类机构放款的总金额
-			odi.setFK013(loanOrgLoanSumMoney(list, "dk", returnCodeDic));// 在贷款类机构放款的总金额
+//			odi.setFK008(loanOrgLoanSuccessTimes(list, "dk", returnCodeDic));// 成功放款的记录数
+//			odi.setFK009(loanOrgLoanSuccessOrg(list, "dk", returnCodeDic));// 成功放款的不同机构数
+//			odi.setFK010(loanOrgLoanSumMoney(list, "yh", returnCodeDic));// 在银行类机构放款的总金额
+//			odi.setFK011(loanOrgLoanSumMoney(list, "xj", returnCodeDic));// 在消费金融类机构放款的总金额
+//			odi.setFK012(loanOrgLoanSumMoney(list, "xd", returnCodeDic));// 在小额贷款类机构放款的总金额
+//			odi.setFK013(loanOrgLoanSumMoney(list, "dk", returnCodeDic));// 在贷款类机构放款的总金额
 
 			/******************************* 授信类变量 ***************************************/
-			odi.setSX005(totalCreditLine(list, "dk", returnCodeDic));//全卡_贷款_授信_总额
-			odi.setSX006(totalCreditLine(list, "yh", returnCodeDic));//全卡_银行_授信_总额
-			odi.setSX007(maxCreditLine(list, "xd", returnCodeDic));//全卡_小贷_单机构_授信额_最大
-			odi.setSX004(maxCreditLine(list, "xj", returnCodeDic));//全卡_消金_单机构_授信额_最大
+//			odi.setSX005(totalCreditLine(list, "dk", returnCodeDic));//全卡_贷款_授信_总额
+//			odi.setSX006(totalCreditLine(list, "yh", returnCodeDic));//全卡_银行_授信_总额
+//			odi.setSX007(maxCreditLine(list, "xd", returnCodeDic));//全卡_小贷_单机构_授信额_最大
+//			odi.setSX004(maxCreditLine(list, "xj", returnCodeDic));//全卡_消金_单机构_授信额_最大
 
             /******************************* 还款类变量 ***************************************/
-            odi.setHK054(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
-            odi.setHK055(repaymentSuccessMoneyCount(list, "xj", returnCodeDic));
-            odi.setHK056(repaymentSuccessMoneyCount(list, "xd", returnCodeDic));
-            odi.setHK057(repaymentSuccessMoneyCount(list, "dk", returnCodeDic));
+//            odi.setHK054(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
+//            odi.setHK055(repaymentSuccessMoneyCount(list, "xj", returnCodeDic));
+//            odi.setHK056(repaymentSuccessMoneyCount(list, "xd", returnCodeDic));
+//            odi.setHK057(repaymentSuccessMoneyCount(list, "dk", returnCodeDic));
             
             /******************************* 风险类变量 *****************************/
-			int dkAcctfAmount = acctfCount(list, "dk", returnCodeDic);
-			int xjAcctfAmount = acctfCount(list, "xj", returnCodeDic);
-			int yhAcctfAmount = acctfCount(list, "yh", returnCodeDic);
-			int xdAcctfAmount = acctfCount(list, "xd", returnCodeDic);
-			odi.setFX008(dkAcctfAmount);
-			odi.setFX009(xjAcctfAmount);
-			odi.setFX010(yhAcctfAmount);
-			odi.setFX011(xdAcctfAmount);
+//			int dkAcctfAmount = acctfCount(list, "dk", returnCodeDic);
+//			int xjAcctfAmount = acctfCount(list, "xj", returnCodeDic);
+//			int yhAcctfAmount = acctfCount(list, "yh", returnCodeDic);
+//			int xdAcctfAmount = acctfCount(list, "xd", returnCodeDic);
+//			odi.setFX008(dkAcctfAmount);
+//			odi.setFX009(xjAcctfAmount);
+//			odi.setFX010(yhAcctfAmount);
+//			odi.setFX011(xdAcctfAmount);
 			// odi.setFX012(dkAcctfAmount + xjAcctfAmount + yhAcctfAmount +
-			// xdAcctfAmount);
-			odi.setFX013(acctfProportion(list, returnCodeDic));
-			odi.setFX014(acctfMoneyProportion(list, returnCodeDic));
-			odi.setFX015(otlmtMoneyProportion(list, returnCodeDic));
-			odi.setFX016(otlmtProportion(list, returnCodeDic));
+			// xdAcctfAmount);//不要的
+//			odi.setFX013(acctfProportion(list, returnCodeDic));
+//			odi.setFX014(acctfMoneyProportion(list, returnCodeDic));
+//			odi.setFX015(otlmtMoneyProportion(list, returnCodeDic));
+//			odi.setFX016(otlmtProportion(list, returnCodeDic));
 			
-//			odi.setFX037(fxMoneyCount(list, returnCodeDic));
-//			odi.setFX040(fxSuccessCount(list, returnCodeDic));
-//			odi.setFX043(fxSuccessOrgCount(list, returnCodeDic));
+//			odi.setFX037(fxMoneyCount(list, returnCodeDic));//不要的
+//			odi.setFX040(fxSuccessCount(list, returnCodeDic));//不要的
+//			odi.setFX043(fxSuccessOrgCount(list, returnCodeDic));//不要的
 			
-	        odi.setFX039(fxFailCount(list, returnCodeDic));
-            odi.setFX040(fxFailProportion(list, returnCodeDic));
-	        odi.setFX041(fxFailMoneyProportion(list, returnCodeDic));
+//	        odi.setFX039(fxFailCount(list, returnCodeDic));
+//            odi.setFX040(fxFailProportion(list, returnCodeDic));
+//	        odi.setFX041(fxFailMoneyProportion(list, returnCodeDic));
 			
-//			odi.setHK054(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
-//          odi.setHK055(repaymentSuccessMoneyCount(list, "xj", returnCodeDic));
-//          odi.setHK056(repaymentSuccessMoneyCount(list, "xd", returnCodeDic));
-//          odi.setHK057(repaymentSuccessMoneyCount(list, "dk", returnCodeDic));
+//			odi.setHK054(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));//不要的
+//          odi.setHK055(repaymentSuccessMoneyCount(list, "xj", returnCodeDic));//不要的
+//          odi.setHK056(repaymentSuccessMoneyCount(list, "xd", returnCodeDic));//不要的
+//          odi.setHK057(repaymentSuccessMoneyCount(list, "dk", returnCodeDic));//不要的
             
-            odi.setHK012(repaymentSuccessCount(list, "dk", returnCodeDic));
-//            odi.setHK013(repaymentSuccessProportion(list, returnCodeDic));
-            odi.setHK014(repaymentSuccessOrgCount(list, "dk", returnCodeDic));
-            odi.setHK015(repaymentSuccessOrgCount(list, "yh", returnCodeDic));
-            odi.setHK016(repaymentSuccessOrgCount(list, "xj", returnCodeDic));
-            odi.setHK017(repaymentSuccessOrgCount(list, "xd", returnCodeDic));
+//            odi.setHK012(repaymentSuccessCount(list, "dk", returnCodeDic));
+//            odi.setHK013(repaymentSuccessProportion(list, returnCodeDic));//不要的
+//            odi.setHK014(repaymentSuccessOrgCount(list, "dk", returnCodeDic));
+//            odi.setHK015(repaymentSuccessOrgCount(list, "yh", returnCodeDic));
+//            odi.setHK016(repaymentSuccessOrgCount(list, "xj", returnCodeDic));
+//            odi.setHK017(repaymentSuccessOrgCount(list, "xd", returnCodeDic));
             
-//            odi.setHK018(repamentYebzCount(list, returnCodeDic));
-//            odi.setHK019(repamentFailcProportion(list, returnCodeDic));
-//            odi.setHK020(repamentYebzProportion(list, returnCodeDic));
-//            odi.setHK021(repamentYebzMoneyProportion(list, returnCodeDic));
+//            odi.setHK018(repamentYebzCount(list, returnCodeDic));//不要的
+//            odi.setHK019(repamentFailcProportion(list, returnCodeDic));//不要的
+//            odi.setHK020(repamentYebzProportion(list, returnCodeDic));//不要的
+//            odi.setHK021(repamentYebzMoneyProportion(list, returnCodeDic));//不要的
             
             /******************************* 扣款类指标 ***************************************/
-            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
-            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
-            odi.setKK003(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
-            odi.setKK004(MathUtil.divide((withholdRecord-withholdSuccessRecord),withholdRecord));//失败扣款_记录数_占比
-            odi.setKK011(withholdTotalMoney(list,null));//全卡_全机构_扣款_总额
-            odi.setKK014(withholdRecord);//全卡_全机构_扣款成功_记录数
-            odi.setKK017(withholdMerTypeMap(list));//全卡_扣款成功_机构数
+//            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
+//            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
+//            odi.setKK003(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
+//            odi.setKK004(MathUtil.divide((withholdRecord-withholdSuccessRecord),withholdRecord));//失败扣款_记录数_占比
+//            odi.setKK011(withholdTotalMoney(list,null));//全卡_全机构_扣款_总额
+//            odi.setKK014(withholdRecord);//全卡_全机构_扣款成功_记录数
+//            odi.setKK017(withholdMerTypeMap(list));//全卡_扣款成功_机构数
 		} else if (month == 12) {
 			
 			/******************************* 逾期机构数 ***************************************/
@@ -1024,116 +1020,116 @@ public class TaskServer {
 			odi.setYQ045(everyOrgOverDueMaxTimes(list, "xd", returnCodeDic));//小贷_单机构_逾期次数_最大
 
 			/******************************* 放款类变量 ***************************************/
-			odi.setFK001(loanOrgLoanSuccessTimes(list, "dk", returnCodeDic));// 成功放款的记录数
-			odi.setFK002(loanOrgLoanSuccessOrg(list, "dk", returnCodeDic));// 成功放款的不同机构数
-			// odi.setFK003(odi.getFK003());// fk002 和 fk003 是一样的；
-			odi.setFK004(loanOrgLoanSumMoney(list, "yh", returnCodeDic));// 在银行类机构放款的总金额
-			odi.setFK005(loanOrgLoanSumMoney(list, "xj", returnCodeDic));// 在消费金融类机构放款的总金额
-			odi.setFK006(loanOrgLoanSumMoney(list, "xd", returnCodeDic));// 在小额贷款类机构放款的总金额
-			odi.setFK007(loanOrgLoanSumMoney(list, "dk", returnCodeDic));// 在贷款类机构放款的总金额
-			/* 最近一次 */
-			odi.setFK014(loanOrgRecentLoanDate(list, "dk", returnCodeDic, "2"));
-			if (odi.getFK014() != null) {
-				Date dateBegin = DateUtils.yyyyMMddToDate(odi.getFK014());
-				odi.setFK015(DateUtils.getIntervalDayAmount(dateBegin, new Date()));
-			}
-			/* 最早一次 */
-			odi.setFK016(loanOrgRecentLoanDate(list, "dk", returnCodeDic, "1"));
-			if (odi.getFK016() != null) {
-				Date dateBegin = DateUtils.yyyyMMddToDate(odi.getFK016());
-				odi.setFK017(DateUtils.getIntervalDayAmount(dateBegin, new Date()));
-			}
+//			odi.setFK001(loanOrgLoanSuccessTimes(list, "dk", returnCodeDic));// 成功放款的记录数
+//			odi.setFK002(loanOrgLoanSuccessOrg(list, "dk", returnCodeDic));// 成功放款的不同机构数
+			// odi.setFK003(odi.getFK003());// fk002 和 fk003 是一样的；//不要的
+//			odi.setFK004(loanOrgLoanSumMoney(list, "yh", returnCodeDic));// 在银行类机构放款的总金额
+//			odi.setFK005(loanOrgLoanSumMoney(list, "xj", returnCodeDic));// 在消费金融类机构放款的总金额
+//			odi.setFK006(loanOrgLoanSumMoney(list, "xd", returnCodeDic));// 在小额贷款类机构放款的总金额
+//			odi.setFK007(loanOrgLoanSumMoney(list, "dk", returnCodeDic));// 在贷款类机构放款的总金额
+//			/* 最近一次 */
+//			odi.setFK014(loanOrgRecentLoanDate(list, "dk", returnCodeDic, "2"));
+//			if (odi.getFK014() != null) {
+//				Date dateBegin = DateUtils.yyyyMMddToDate(odi.getFK014());
+//				odi.setFK015(DateUtils.getIntervalDayAmount(dateBegin, new Date()));
+//			}
+//			/* 最早一次 */
+//			odi.setFK016(loanOrgRecentLoanDate(list, "dk", returnCodeDic, "1"));
+//			if (odi.getFK016() != null) {
+//				Date dateBegin = DateUtils.yyyyMMddToDate(odi.getFK016());
+//				odi.setFK017(DateUtils.getIntervalDayAmount(dateBegin, new Date()));
+//			}
 
 			/******************************* 授信类变量 ***************************************/
-			odi.setSX001(maxCreditLine(list, "dk", returnCodeDic));//全卡_贷款_单机构_授信额_最大
-			odi.setSX002(maxCreditLine(list, "yh", returnCodeDic));//全卡_银行_单机构_授信额_最大
-			odi.setSX003(maxCreditLine(list, "xd", returnCodeDic));//全卡_小贷_单机构_授信额_最大
-			odi.setSX004(maxCreditLine(list, "xj", returnCodeDic));//全卡_消金_单机构_授信额_最大
+//			odi.setSX001(maxCreditLine(list, "dk", returnCodeDic));//全卡_贷款_单机构_授信额_最大
+//			odi.setSX002(maxCreditLine(list, "yh", returnCodeDic));//全卡_银行_单机构_授信额_最大
+//			odi.setSX003(maxCreditLine(list, "xd", returnCodeDic));//全卡_小贷_单机构_授信额_最大
+//			odi.setSX004(maxCreditLine(list, "xj", returnCodeDic));//全卡_消金_单机构_授信额_最大
 
 			/******************************* 风险类变量 ***************************************/
-			int dkAcctfAmount = acctfCount(list, "dk", returnCodeDic);
-			int xjAcctfAmount = acctfCount(list, "xj", returnCodeDic);
-			int yhAcctfAmount = acctfCount(list, "yh", returnCodeDic);
-			int xdAcctfAmount = acctfCount(list, "xd", returnCodeDic);
-
-			odi.setFX001(dkAcctfAmount);
-			odi.setFX002(xjAcctfAmount);
-			odi.setFX003(yhAcctfAmount);
-			odi.setFX004(xdAcctfAmount);
+//			int dkAcctfAmount = acctfCount(list, "dk", returnCodeDic);
+//			int xjAcctfAmount = acctfCount(list, "xj", returnCodeDic);
+//			int yhAcctfAmount = acctfCount(list, "yh", returnCodeDic);
+//			int xdAcctfAmount = acctfCount(list, "xd", returnCodeDic);
+//
+//			odi.setFX001(dkAcctfAmount);
+//			odi.setFX002(xjAcctfAmount);
+//			odi.setFX003(yhAcctfAmount);
+//			odi.setFX004(xdAcctfAmount);
 			// odi.setFX005(dkAcctfAmount + xjAcctfAmount + yhAcctfAmount +
-			// xdAcctfAmount);
+			// xdAcctfAmount);//不要的
 
-			odi.setFX006(acctfProportion(list, returnCodeDic));
-			odi.setFX007(acctfMoneyProportion(list, returnCodeDic));
+//			odi.setFX006(acctfProportion(list, returnCodeDic));
+//			odi.setFX007(acctfMoneyProportion(list, returnCodeDic));
 			
-//			odi.setFX036(fxMoneyCount(list, returnCodeDic));
-//			odi.setFX039(fxSuccessCount(list, returnCodeDic));
-//			odi.setFX042(fxSuccessOrgCount(list, returnCodeDic));
+//			odi.setFX036(fxMoneyCount(list, returnCodeDic));//不要的
+//			odi.setFX039(fxSuccessCount(list, returnCodeDic));//不要的
+//			odi.setFX042(fxSuccessOrgCount(list, returnCodeDic));//不要的
 			
-			odi.setFX036(fxFailCount(list, returnCodeDic));
-			odi.setFX037(fxFailProportion(list, returnCodeDic));
-			odi.setFX038(fxFailMoneyProportion(list, returnCodeDic));
+//			odi.setFX036(fxFailCount(list, returnCodeDic));
+//			odi.setFX037(fxFailProportion(list, returnCodeDic));
+//			odi.setFX038(fxFailMoneyProportion(list, returnCodeDic));
             
             /******************************* 还款类变量 ***************************************/
-            odi.setHK050(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
-            odi.setHK051(repaymentSuccessMoneyCount(list, "xj", returnCodeDic));
-            odi.setHK052(repaymentSuccessMoneyCount(list, "xd", returnCodeDic));
-            odi.setHK053(repaymentSuccessMoneyCount(list, "dk", returnCodeDic));
+//            odi.setHK050(repaymentSuccessMoneyCount(list, "yh", returnCodeDic));
+//            odi.setHK051(repaymentSuccessMoneyCount(list, "xj", returnCodeDic));
+//            odi.setHK052(repaymentSuccessMoneyCount(list, "xd", returnCodeDic));
+//            odi.setHK053(repaymentSuccessMoneyCount(list, "dk", returnCodeDic));
+//            
+//            odi.setHK001(repaymentSuccessCount(list, "dk", returnCodeDic));
+//            odi.setHK002(repaymentSuccessProportion(list, returnCodeDic));//不要的
+//            odi.setHK003(repaymentSuccessOrgCount(list, "dk", returnCodeDic));
+//            odi.setHK004(repaymentSuccessOrgCount(list, "yh", returnCodeDic));
+//            odi.setHK005(repaymentSuccessOrgCount(list, "xj", returnCodeDic));
+//            odi.setHK006(repaymentSuccessOrgCount(list, "xd", returnCodeDic));
             
-            odi.setHK001(repaymentSuccessCount(list, "dk", returnCodeDic));
-//            odi.setHK002(repaymentSuccessProportion(list, returnCodeDic));
-            odi.setHK003(repaymentSuccessOrgCount(list, "dk", returnCodeDic));
-            odi.setHK004(repaymentSuccessOrgCount(list, "yh", returnCodeDic));
-            odi.setHK005(repaymentSuccessOrgCount(list, "xj", returnCodeDic));
-            odi.setHK006(repaymentSuccessOrgCount(list, "xd", returnCodeDic));
             
-            
-//            odi.setHK007(repamentYebzCount(list, returnCodeDic));
-//            odi.setHK008(repamentFailcProportion(list, returnCodeDic));
-//            odi.setHK009(repamentYebzProportion(list, returnCodeDic));
-//            odi.setHK010(repamentYebzMoneyProportion(list, returnCodeDic));
+//            odi.setHK007(repamentYebzCount(list, returnCodeDic));//不要的
+//            odi.setHK008(repamentFailcProportion(list, returnCodeDic));//不要的
+//            odi.setHK009(repamentYebzProportion(list, returnCodeDic));//不要的
+//            odi.setHK010(repamentYebzMoneyProportion(list, returnCodeDic));//不要的
             
             /**
              * 还款类变量：时间指标
              */
             //最早一次
-            Map<String, Object> hkEarliestCountResultMap = hkEarlistDateAndDays(list, "dk");
-            odi.setHK036((String)hkEarliestCountResultMap.get("hkDate"));
-            odi.setHK037((Integer)hkEarliestCountResultMap.get("hkDays"));
+//            Map<String, Object> hkEarliestCountResultMap = hkEarlistDateAndDays(list, "dk");
+//            odi.setHK036((String)hkEarliestCountResultMap.get("hkDate"));
+//            odi.setHK037((Integer)hkEarliestCountResultMap.get("hkDays"));
+//            
+//            //最近一次
+//            Map<String, Object> hkLatestCountResultMap = hkLatestDateAndDays(list, "dk");
+//            odi.setHK038((String)hkLatestCountResultMap.get("hkDate"));
+//            odi.setHK039((Integer)hkLatestCountResultMap.get("hkDays"));
+//            
+//            Map<String, Object> hkDkLatestOfOrgSuccessCountResultMap = hkLatestOfOrgDateAndDays(list, "dk", returnCodeDic, "success");
+//            odi.setHK040((String)hkDkLatestOfOrgSuccessCountResultMap.get("hkDate"));
+//            odi.setHK041((Integer)hkDkLatestOfOrgSuccessCountResultMap.get("hkDays"));
+//            
+//            Map<String, Object> hkYhLatestOfOrgSuccessCountResultMap = hkLatestOfOrgDateAndDays(list, "yh", returnCodeDic, "success");
+//            odi.setHK042((String)hkYhLatestOfOrgSuccessCountResultMap.get("hkDate"));
+//            odi.setHK043((Integer)hkYhLatestOfOrgSuccessCountResultMap.get("hkDays"));
+//            
+//            Map<String, Object> hkDkLatestOfOrgFailCountResultMap = hkLatestOfOrgDateAndDays(list, "dk", returnCodeDic, "fail");
+//            odi.setHK044((String)hkDkLatestOfOrgFailCountResultMap.get("hkDate"));
+//            odi.setHK045((Integer)hkDkLatestOfOrgFailCountResultMap.get("hkDays"));
             
-            //最近一次
-            Map<String, Object> hkLatestCountResultMap = hkLatestDateAndDays(list, "dk");
-            odi.setHK038((String)hkLatestCountResultMap.get("hkDate"));
-            odi.setHK039((Integer)hkLatestCountResultMap.get("hkDays"));
+//            Map<String, Object> hkYhLatestOfOrgFailCountResultMap = hkLatestOfOrgDateAndDays(list, "yh", returnCodeDic, "fail");
+//            odi.setHK046((String)hkYhLatestOfOrgFailCountResultMap.get("hkDate"));
+//            odi.setHK047((Integer)hkYhLatestOfOrgFailCountResultMap.get("hkDays"));
             
-            Map<String, Object> hkDkLatestOfOrgSuccessCountResultMap = hkLatestOfOrgDateAndDays(list, "dk", returnCodeDic, "success");
-            odi.setHK040((String)hkDkLatestOfOrgSuccessCountResultMap.get("hkDate"));
-            odi.setHK041((Integer)hkDkLatestOfOrgSuccessCountResultMap.get("hkDays"));
-            
-            Map<String, Object> hkYhLatestOfOrgSuccessCountResultMap = hkLatestOfOrgDateAndDays(list, "yh", returnCodeDic, "success");
-            odi.setHK042((String)hkYhLatestOfOrgSuccessCountResultMap.get("hkDate"));
-            odi.setHK043((Integer)hkYhLatestOfOrgSuccessCountResultMap.get("hkDays"));
-            
-            Map<String, Object> hkDkLatestOfOrgFailCountResultMap = hkLatestOfOrgDateAndDays(list, "dk", returnCodeDic, "fail");
-            odi.setHK044((String)hkDkLatestOfOrgFailCountResultMap.get("hkDate"));
-            odi.setHK045((Integer)hkDkLatestOfOrgFailCountResultMap.get("hkDays"));
-            
-            Map<String, Object> hkYhLatestOfOrgFailCountResultMap = hkLatestOfOrgDateAndDays(list, "yh", returnCodeDic, "fail");
-            odi.setHK046((String)hkYhLatestOfOrgFailCountResultMap.get("hkDate"));
-            odi.setHK047((Integer)hkYhLatestOfOrgFailCountResultMap.get("hkDays"));
-            
-            Map<String, Object> hkXdLatestOfOrgFailCountResultMap = hkLatestOfOrgDateAndDays(list, "xd", returnCodeDic, "fail");
-            odi.setHK048((String)hkXdLatestOfOrgFailCountResultMap.get("hkDate"));
-            odi.setHK049((Integer)hkXdLatestOfOrgFailCountResultMap.get("hkDays"));
+//            Map<String, Object> hkXdLatestOfOrgFailCountResultMap = hkLatestOfOrgDateAndDays(list, "xd", returnCodeDic, "fail");
+//            odi.setHK048((String)hkXdLatestOfOrgFailCountResultMap.get("hkDate"));
+//            odi.setHK049((Integer)hkXdLatestOfOrgFailCountResultMap.get("hkDays"));
 		
             /******************************* 扣款类指标 ***************************************/
-            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
-            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
-            odi.setKK001(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
-            odi.setKK002(MathUtil.divide((withholdRecord-withholdSuccessRecord),withholdRecord));//失败扣款_记录数_占比
-            odi.setKK010(withholdTotalMoney(list,null));//全卡_全机构_扣款_总额
-            odi.setKK013(withholdRecord);//全卡_全机构_扣款成功_记录数
-            odi.setKK016(withholdMerTypeMap(list));//全卡_扣款成功_机构数
+//            int withholdRecord = withholdRecord(list,null);//所有划扣记录数
+//            int withholdSuccessRecord = withholdRecord(list,"0000");//扣款成功记录数
+//            odi.setKK001(MathUtil.divide(withholdSuccessRecord, withholdRecord));//全卡_扣款成功_记录数_占比
+//            odi.setKK002(MathUtil.divide((withholdRecord-withholdSuccessRecord),withholdRecord));//失败扣款_记录数_占比
+//            odi.setKK010(withholdTotalMoney(list,null));//全卡_全机构_扣款_总额
+//            odi.setKK013(withholdRecord);//全卡_全机构_扣款成功_记录数
+//            odi.setKK016(withholdMerTypeMap(list));//全卡_扣款成功_机构数
 		}
 	}
 

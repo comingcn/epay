@@ -9,9 +9,9 @@ initProperties:
   inputHeaderBcl: TXN_DATE,TXN_SEQ_ID,CERT_NO,CARD_NO,MER_ID,MER_TYPE,AMOUNT,SF_TYPE,RETURN_CODE
   bindCardLog: EXP_TRA_TRADE_DETAIL_PARA_
   #线程池大小
-  threadPoolSize: 40
+  threadPoolSize: 20
   #单个线程处理记录数量
-  threadSize: 2000
+  threadSize: 10000
   #逾期口径一二三配置
   #逾期类型一:1.在同一家公司划扣因余额不足失败，到最终划扣成功且划扣成功金额=失败金额为止，设定为逾期天数；
   #逾期类型二:2.在同一家公司划扣因余额不足失败，直至划扣成功金额>=失败金额为止

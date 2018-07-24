@@ -10,7 +10,7 @@ spring:
     testWhileIdle: true
     validationQuery: SELECT 1
 #    driver-class-name: com.mysql.jdbc.Driver
-#    url: jdbc:mysql://192.168.65.93:3306/sh_epay
+#    url: jdbc:mysql://192.168.70.82:3306/guns
 #    username: root
 #    password: yanghf
     connection-initial-size: 40

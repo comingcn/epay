@@ -236,7 +236,7 @@ public class DateUtils {
      * @author LZG
      * @date 2018年07月11日
      */
-    public static synchronized int getIntervalDayAmount(Date dateBegin, Date dateEnd) {
+    public static  int getIntervalDayAmount(Date dateBegin, Date dateEnd) {
       
         Calendar cal1 = Calendar.getInstance();
         cal1.setTime(dateBegin);
@@ -268,6 +268,19 @@ public class DateUtils {
         
     }
 
+    
+    public static int getTrueDays(Timestamp end,Timestamp start){
+		Calendar aCalendar = Calendar.getInstance();
+        Calendar bCalendar = Calendar.getInstance();
+        aCalendar.setTime(end);
+        bCalendar.setTime(start);
+        int days = 0;
+        while(aCalendar.before(bCalendar)){
+            days++;
+            aCalendar.add(Calendar.DAY_OF_YEAR, 1);
+        }
+        return days;
+    }
     public static void main(String[] args) {
         //test1();
         //test2();
@@ -283,7 +296,7 @@ public class DateUtils {
      */
       	
     private static void test4() {
-        int result = DateUtils.getIntervalDayAmount(DateUtils.yyyyMMddToDate("20180711"), DateUtils.yyyyMMddToDate("20180712"));
+        int result = DateUtils.getTrueDays(new Timestamp(DateUtils.yyyyMMddToDate("20180711").getTime()), new Timestamp(DateUtils.yyyyMMddToDate("20180911").getTime()));
         System.out.println(result);
     }
 

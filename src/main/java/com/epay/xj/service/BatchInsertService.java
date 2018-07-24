@@ -10,13 +10,12 @@ import javax.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import com.epay.xj.domain.OverDueIndex;
 import com.epay.xj.properties.InitProperties;
 
-@Order(2)
+
 @Service
 @Transactional
 public class BatchInsertService {
@@ -27,10 +26,9 @@ public class BatchInsertService {
 	@Autowired
 	private TaskServer taskServer;
 	
-	private ExecutorService executor = Executors.newFixedThreadPool(10);//给定线程池数量
-	private static final int MAX_DEAL = 10000;//对多数据进行分组，10000条一组，一组使用一个线程进行执行
-	
 	public void addList(List<OverDueIndex> list){
+		ExecutorService executor = Executors.newFixedThreadPool(initProperties.getThreadStoragePoolSize());//给定线程池数量
+		int MAX_DEAL = initProperties.getThreadStorageSize();//对多数据进行分组，10000条一组，一组使用一个线程进行执行
 		if(null==list || list.isEmpty())return;
 		int times = (list.size() + MAX_DEAL - 1) / MAX_DEAL;
 		//一个同步辅助类，在完成一组正在其他线程中执行的操作之前，它允许一个或多个线程一直等待。
@@ -67,7 +65,7 @@ public class BatchInsertService {
 		@Override
 		public void run() {
 			try {
-				taskServer.batchInsert(list,MAX_DEAL);
+				taskServer.batchInsert(list);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}finally {

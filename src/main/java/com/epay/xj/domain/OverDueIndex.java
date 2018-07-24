@@ -7,7 +7,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="cp_kpi.P1055_YQ_JAVA")
+@Table(name="CP_ODS.P1055_YQ_JAVA")
 public class OverDueIndex {
 
 	@Id

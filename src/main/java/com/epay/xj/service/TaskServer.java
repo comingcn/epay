@@ -58,16 +58,14 @@ public class TaskServer {
 	 * batchInsert
 	 * @param list
 	 */
-	public void batchInsert(List<OverDueIndex> list,final int threadSizes) {
+	public void batchInsert(List<OverDueIndex> list) {
 		int size = list.size();
 		for (int i = 0; i < size; i++) {
 			OverDueIndex dd = list.get(i);
 			entityManager.persist(dd);
-			if (i % threadSizes == 0 || i == (size - 1)) { // 每threadSizes条数据执行一次，或者最后不足threadSizes条时执行
-				entityManager.flush();
-				entityManager.clear();
-			}
 		}
+		entityManager.flush();
+		entityManager.clear();
 	}
 
 	/**
@@ -168,7 +166,7 @@ public class TaskServer {
 	public void sliceTask(List<String> taskList, String updateTime) throws InterruptedException {
 		long beginTime = System.nanoTime();
 		// 每500条数据开启一条线程
-		int threadSize = Integer.valueOf(initProperties.getThreadSize());
+		int threadSize = initProperties.getThreadIndexSize();
 		// 总数据条数
 		int dataSize = taskList.size();
 		// 线程数
@@ -176,7 +174,7 @@ public class TaskServer {
 		// 定义标记,过滤threadNum为整数
 		boolean special = dataSize % threadSize == 0;
 		// 创建一个线程池
-		int theadPoolSize = Integer.valueOf(initProperties.getThreadPoolSize());
+		int theadPoolSize = initProperties.getThreadIndexPoolSize();
 		ExecutorService exec = Executors.newFixedThreadPool(theadPoolSize);
 		// 定义一个任务集合
 		List<Callable<List<OverDueIndex>>> tasks = new ArrayList<Callable<List<OverDueIndex>>>();
@@ -252,23 +250,27 @@ public class TaskServer {
 //  						logger.info("计算指标耗时:{}秒", useTime);
 						lst.add(odi);
 					}
-					return lst;
+					logger.info("size:{}",lst.size());
+					long sysBeginTime = System.nanoTime();
+					batchInsertService.addList(lst);
+					logger.info("所有指标入库耗时:{}秒", String.valueOf((System.nanoTime() - sysBeginTime) / Math.pow(10, 9)));
+					return null;
 				}
 			};
 			// 这里提交的任务容器列表和返回的Future列表存在顺序对应的关系
 			tasks.add(task);
 		}
 		List<Future<List<OverDueIndex>>> results = exec.invokeAll(tasks);
-		List<OverDueIndex> resultLst = new ArrayList<OverDueIndex>();
-		for (Future<List<OverDueIndex>> future : results) {
-			try {
-				resultLst.addAll(future.get());
-			} catch (ExecutionException e) {
-				e.printStackTrace();
-			}
-		}
-		String useTime = String.valueOf((System.nanoTime() - beginTime) / Math.pow(10, 9));
-		logger.info("集合大小:{},计算指标耗时:{}秒", resultLst.size(), useTime);
+//		List<OverDueIndex> resultLst = new ArrayList<OverDueIndex>();
+//		for (Future<List<OverDueIndex>> future : results) {
+//			try {
+//				resultLst.addAll(future.get());
+//			} catch (ExecutionException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//		String useTime = String.valueOf((System.nanoTime() - beginTime) / Math.pow(10, 9));
+//		logger.info("集合大小:{},计算指标耗时:{}秒", resultLst.size(), useTime);
 //		long sysBeginTime = System.nanoTime();
 //		batchInsertService.addList(resultLst);
 //		useTime = String.valueOf((System.nanoTime() - sysBeginTime) / Math.pow(10, 9));
@@ -375,7 +377,7 @@ public class TaskServer {
 //			odi.setSQ050(getBindCardMinRecordsByDcType(list, null,"min"));//6个月_全量卡_单卡_申请次数_最小
 		}
 		/* 12个月 */
-		if (month == 12) {
+//		if (month == 12) {
 //			odi.setSQ001(bindCardMerMap(list, null).size());// 申请认证的不同机构数
 //			odi.setSQ002(bindCardMerMap(list, "dk").size());// 申请认证的贷款类机构数
 //			odi.setSQ003(bindCardMerMap(list, "yh").size());// 申请认证的银行类机构数
@@ -386,7 +388,7 @@ public class TaskServer {
 //			odi.setSQ008(MathUtil.divide(getBindCardByDcType(list, "yh", null), odi.getSQ004()));// 平均每张卡在银行类机构申请认证的记录数
 //			odi.setSQ048(MathUtil.divide(list.size(),odi.getSQ004()));//近12个月平均每张卡申请记录数
 //			odi.setSQ040(getCreditCardBindLogs(list, "1", "recently"));//最近一次使用信用卡认证申请距今的时间
-			Date dateEnd = DateUtils.yyyyMMddToDate(updateTime);
+//			Date dateEnd = DateUtils.yyyyMMddToDate(updateTime);
 //			if(null!=odi.getSQ040()){
 //				odi.setSQ041(DateUtils.getIntervalDayAmount(
 //						DateUtils.yyyyMMddToDate(odi.getSQ040()), 
@@ -410,7 +412,7 @@ public class TaskServer {
 //						DateUtils.yyyyMMddToDate(odi.getSQ046()), 
 //						dateEnd));//最早一次_借记卡_申请认证_距今天数
 //			}
-		}
+//		}
 	}
 	
 	/**

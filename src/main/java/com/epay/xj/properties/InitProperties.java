@@ -10,23 +10,17 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "initProperties")
 public class InitProperties {
 
-	private String fPathInput;
-
-	private String fPathOutput;
-
-	private String inputHeaderMtd;
-
-	private String tradeDetail;
-
-	private String inputHeaderBcl;
-
 	private String bindCardLog;
 	
 	private String overDueType;
-	
-	private String threadSize;
-	
-	private String threadPoolSize;
+	//计算指标线单线程处理集合大小
+	private int threadIndexSize;
+	//计算指标线程池大小
+	private int threadIndexPoolSize;
+	//入库线单线程处理集合大小
+	private int threadStorageSize;
+	//入库线程池大小
+	private int threadStoragePoolSize;
 	
 	private Map<String,Integer>  overDueMonth = new HashMap<String,Integer>();
 	
@@ -35,112 +29,106 @@ public class InitProperties {
 	private Map<String, String[]> merTypeDic = new HashMap<String, String[]>();	
 	
 	
-	private Map<String, String[]> returnCodeDic =  new HashMap<String, String[]>();	
-	
-	
-	public String getfPathInput() {
-		return fPathInput;
-	}
+	private Map<String, String[]> returnCodeDic =  new HashMap<String, String[]>();
 
-	public void setfPathInput(String fPathInput) {
-		this.fPathInput = fPathInput;
-	}
-
-	public String getInputHeaderMtd() {
-		return inputHeaderMtd;
-	}
-
-	public void setInputHeaderMtd(String inputHeaderMtd) {
-		this.inputHeaderMtd = inputHeaderMtd;
-	}
-
-	public String getfPathOutput() {
-		return fPathOutput;
-	}
-
-	public void setfPathOutput(String fPathOutput) {
-		this.fPathOutput = fPathOutput;
-	}
-
-	public String getTradeDetail() {
-		return tradeDetail;
-	}
-
-	public void setTradeDetail(String tradeDetail) {
-		this.tradeDetail = tradeDetail;
-	}
-
-	public String getInputHeaderBcl() {
-		return inputHeaderBcl;
-	}
-
-	public void setInputHeaderBcl(String inputHeaderBcl) {
-		this.inputHeaderBcl = inputHeaderBcl;
-	}
 
 	public String getBindCardLog() {
 		return bindCardLog;
 	}
 
+
 	public void setBindCardLog(String bindCardLog) {
 		this.bindCardLog = bindCardLog;
 	}
+
 
 	public String getOverDueType() {
 		return overDueType;
 	}
 
+
 	public void setOverDueType(String overDueType) {
 		this.overDueType = overDueType;
 	}
 
-	
+
+	public int getThreadIndexSize() {
+		return threadIndexSize;
+	}
+
+
+	public void setThreadIndexSize(int threadIndexSize) {
+		this.threadIndexSize = threadIndexSize;
+	}
+
+
+	public int getThreadIndexPoolSize() {
+		return threadIndexPoolSize;
+	}
+
+
+	public void setThreadIndexPoolSize(int threadIndexPoolSize) {
+		this.threadIndexPoolSize = threadIndexPoolSize;
+	}
+
+
+	public int getThreadStorageSize() {
+		return threadStorageSize;
+	}
+
+
+	public void setThreadStorageSize(int threadStorageSize) {
+		this.threadStorageSize = threadStorageSize;
+	}
+
+
+	public int getThreadStoragePoolSize() {
+		return threadStoragePoolSize;
+	}
+
+
+	public void setThreadStoragePoolSize(int threadStoragePoolSize) {
+		this.threadStoragePoolSize = threadStoragePoolSize;
+	}
+
+
 	public Map<String, Integer> getOverDueMonth() {
 		return overDueMonth;
 	}
+
 
 	public void setOverDueMonth(Map<String, Integer> overDueMonth) {
 		this.overDueMonth = overDueMonth;
 	}
 
+
 	public Map<String, Integer> getOverDueDayDic() {
 		return overDueDayDic;
 	}
+
 
 	public void setOverDueDayDic(Map<String, Integer> overDueDayDic) {
 		this.overDueDayDic = overDueDayDic;
 	}
 
+
 	public Map<String, String[]> getMerTypeDic() {
 		return merTypeDic;
 	}
+
 
 	public void setMerTypeDic(Map<String, String[]> merTypeDic) {
 		this.merTypeDic = merTypeDic;
 	}
 
+
 	public Map<String, String[]> getReturnCodeDic() {
 		return returnCodeDic;
 	}
 
+
 	public void setReturnCodeDic(Map<String, String[]> returnCodeDic) {
 		this.returnCodeDic = returnCodeDic;
-	}
-
-	public String getThreadSize() {
-		return threadSize;
-	}
-
-	public void setThreadSize(String threadSize) {
-		this.threadSize = threadSize;
-	}
-
-	public String getThreadPoolSize() {
-		return threadPoolSize;
-	}
-
-	public void setThreadPoolSize(String threadPoolSize) {
-		this.threadPoolSize = threadPoolSize;
-	}
-
+	}	
+	
 }

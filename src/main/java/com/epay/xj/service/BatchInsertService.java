@@ -65,7 +65,7 @@ public class BatchInsertService {
 		@Override
 		public void run() {
 			try {
-				taskServer.batchInsert(list);
+//				taskServer.batchInsert(list);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}finally {

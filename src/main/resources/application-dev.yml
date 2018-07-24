@@ -3,13 +3,13 @@ server:
   port: 8081
 initProperties:
   #计算指标线单线程处理集合大小
-  threadIndexSize: 20
+  threadIndexSize: 5000
   #计算指标线程池大小
-  threadIndexPoolSize: 5000
+  threadIndexPoolSize: 20
   #入库线单线程处理集合大小
-  threadStorageSize: 5
+  threadStorageSize: 1000
   #入库线程池大小
-  threadStoragePoolSize: 1000
+  threadStoragePoolSize: 5
   #逾期口径一二三配置
   #逾期类型一:1.在同一家公司划扣因余额不足失败，到最终划扣成功且划扣成功金额=失败金额为止，设定为逾期天数；
   #逾期类型二:2.在同一家公司划扣因余额不足失败，直至划扣成功金额>=失败金额为止

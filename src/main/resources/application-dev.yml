@@ -7,9 +7,9 @@ initProperties:
   #计算指标线程池大小
   threadIndexPoolSize: 1000
   #入库线单线程处理集合大小
-  threadIndexSize: 10
+  threadStorageSize: 10
   #入库线程池大小
-  threadIndexPoolSize: 1000
+  threadStoragePoolSize: 1000
   #逾期口径一二三配置
   #逾期类型一:1.在同一家公司划扣因余额不足失败，到最终划扣成功且划扣成功金额=失败金额为止，设定为逾期天数；
   #逾期类型二:2.在同一家公司划扣因余额不足失败，直至划扣成功金额>=失败金额为止

@@ -50,7 +50,7 @@ public class TaskServer {
 	private EntityManager entityManager;
 	
 	public List<String> getTaskList(String updateTime, String flag) {
-		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST";
+		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST_PY";
 		return entityManager.createNativeQuery(sql).getResultList();
 	}
 

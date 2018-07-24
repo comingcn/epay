@@ -3,11 +3,11 @@ server:
   port: 8081
 initProperties:
   #计算指标线单线程处理集合大小
-  threadIndexSize: 10
+  threadIndexSize: 20
   #计算指标线程池大小
-  threadIndexPoolSize: 1000
+  threadIndexPoolSize: 5000
   #入库线单线程处理集合大小
-  threadStorageSize: 10
+  threadStorageSize: 5
   #入库线程池大小
   threadStoragePoolSize: 1000
   #逾期口径一二三配置

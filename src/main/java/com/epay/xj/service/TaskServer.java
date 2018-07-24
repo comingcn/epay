@@ -50,7 +50,7 @@ public class TaskServer {
 	private EntityManager entityManager;
 	
 	public List<String> getTaskList(String updateTime, String flag) {
-		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST_PY";
+		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST";
 		return entityManager.createNativeQuery(sql).getResultList();
 	}
 
@@ -80,7 +80,7 @@ public class TaskServer {
 		// List<TradeDetailDO> tradeDetailList = new ArrayList<TradeDetailDO>();
 		Map<Integer, List<TradeDetailDO>> tradeMap = new HashMap<Integer, List<TradeDetailDO>>();
 //		long sysBeginTime = System.nanoTime();
-		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA_PY where IDCARD='" + certNo + "'";
+		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA where IDCARD='" + certNo + "'";
 		try {
 			List<TradeDetailDO> tradeDetailList = entityManager.createNativeQuery(sql, TradeDetailDO.class)
 					.getResultList();
@@ -164,7 +164,7 @@ public class TaskServer {
 	}
 
 	public void sliceTask(List<String> taskList, String updateTime) throws InterruptedException {
-		long beginTime = System.nanoTime();
+//		long beginTime = System.nanoTime();
 		// 每500条数据开启一条线程
 		int threadSize = initProperties.getThreadIndexSize();
 		// 总数据条数
@@ -250,10 +250,10 @@ public class TaskServer {
 //  						logger.info("计算指标耗时:{}秒", useTime);
 						lst.add(odi);
 					}
-					logger.info("size:{}",lst.size());
-					long sysBeginTime = System.nanoTime();
+//					logger.info("size:{}",lst.size());
+//					long sysBeginTime = System.nanoTime();
 					batchInsertService.addList(lst);
-					logger.info("所有指标入库耗时:{}秒", String.valueOf((System.nanoTime() - sysBeginTime) / Math.pow(10, 9)));
+//					logger.info("所有指标入库耗时:{}秒", String.valueOf((System.nanoTime() - sysBeginTime) / Math.pow(10, 9)));
 					return null;
 				}
 			};

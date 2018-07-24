@@ -50,7 +50,7 @@ public class TaskServer {
 	private EntityManager entityManager;
 	
 	public List<String> getTaskList(String updateTime, String flag) {
-		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST";
+		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST_PY";
 		return entityManager.createNativeQuery(sql).getResultList();
 	}
 
@@ -82,7 +82,7 @@ public class TaskServer {
 		// List<TradeDetailDO> tradeDetailList = new ArrayList<TradeDetailDO>();
 		Map<Integer, List<TradeDetailDO>> tradeMap = new HashMap<Integer, List<TradeDetailDO>>();
 //		long sysBeginTime = System.nanoTime();
-		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA where IDCARD='" + certNo + "'";
+		String sql = "select * from CP_ODS.P1055_TRA_TRADE_DETAIL_PARA_PY where IDCARD='" + certNo + "'";
 		try {
 			List<TradeDetailDO> tradeDetailList = entityManager.createNativeQuery(sql, TradeDetailDO.class)
 					.getResultList();
@@ -269,10 +269,10 @@ public class TaskServer {
 		}
 		String useTime = String.valueOf((System.nanoTime() - beginTime) / Math.pow(10, 9));
 		logger.info("集合大小:{},计算指标耗时:{}秒", resultLst.size(), useTime);
-		long sysBeginTime = System.nanoTime();
-		batchInsertService.addList(resultLst);
-		useTime = String.valueOf((System.nanoTime() - sysBeginTime) / Math.pow(10, 9));
-		logger.info("所有指标入库耗时:{}秒", useTime);
+//		long sysBeginTime = System.nanoTime();
+//		batchInsertService.addList(resultLst);
+//		useTime = String.valueOf((System.nanoTime() - sysBeginTime) / Math.pow(10, 9));
+//		logger.info("所有指标入库耗时:{}秒", useTime);
 		// 关闭线程池
 		exec.shutdown();
 		

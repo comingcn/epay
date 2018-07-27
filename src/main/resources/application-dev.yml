@@ -1,7 +1,34 @@
-server:
-  context-path: /epay
-  port: 8081
+spring: 
+    datasource:
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      url: jdbc:db2://131.252.83.213:60000/etl
+  #    url: jdbc:db2://10.118.192.35:50000/cp_edw
+      username: db2inst1
+      password: 1qaz@WSX
+  #    testWhileIdle: true
+  #    validationQuery: SELECT 1
+  #    driver-class-name: com.mysql.jdbc.Driver
+  #    url: jdbc:mysql://192.168.70.82:3306/guns
+  #    username: root
+  #    password: yanghf
+      connection-initial-size: 40
+      connection-minimum-size: 40
+      connection-maximum-size: 250
+      connection-maxwait-time: 6000
+      connection-maxactive-time: 6000
+      connection-minlive-time: 300000
+    jpa:
+      hibernate:
+        ddl-auto: none
+        naming: 
+          physical-strategy: com.epay.xj.common.MySQLUpperCaseStrategy
+      show-sql: false
+      properties: 
+        hibernate:  
+          dialect:  org.hibernate.dialect.DB2Dialect
+
 initProperties:
+  active: dev
   #计算指标线单线程处理集合大小
   threadIndexSize: 5000
   #计算指标线程池大小
@@ -10,6 +37,8 @@ initProperties:
   threadStorageSize: 1000
   #入库线程池大小
   threadStoragePoolSize: 5
+  #预留cup核心数 必须小于cup总核心数
+  unusedCupCount: 1
   #逾期口径一二三配置
   #逾期类型一:1.在同一家公司划扣因余额不足失败，到最终划扣成功且划扣成功金额=失败金额为止，设定为逾期天数；
   #逾期类型二:2.在同一家公司划扣因余额不足失败，直至划扣成功金额>=失败金额为止

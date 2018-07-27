@@ -24,7 +24,8 @@ public class CertNoServiceTest {
     @Test
     public void dealOverDue(){
     	long beginTime = System.nanoTime();
-    	taskServer.deal1("20180723", null);
+//    	taskServer.truncate();
+    	taskServer.deal("20180723", null);
     	String useTime = String.valueOf((System.nanoTime() - beginTime)/Math.pow(10, 9));
 		logger.info("useTime:{}秒",useTime);
     }

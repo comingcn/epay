@@ -1,5 +1,6 @@
 package com.epay.xj.domain;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 import javax.persistence.Entity;
@@ -7,9 +8,10 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="CP_ODS.P1055_YQ_JAVA")
-public class OverDueIndex {
+@Table(name="CP_ODS.P1055_ODS_JV1")
+public class OverDueIndex1 implements Serializable{
 
+	private static final long serialVersionUID = -5767888967843618762L;
 	@Id
 	public String CERT_NO;//身份证号
 //	public Integer SCORE;//信用分
@@ -22,18 +24,19 @@ public class OverDueIndex {
 	public BigDecimal YQ006;	//6个月	平均逾期次数	近6个月在消费金融机构逾期的平均每家机构逾期次数
 	public BigDecimal YQ007;	//6个月	平均逾期次数	近6个月在银行类机构逾期的平均每家机构逾期次数
 	public BigDecimal YQ008;	//6个月	平均逾期次数	近6个月在小贷贷款类机构逾期的平均每家机构逾期次数
-	public int YQ009;	//6个月	逾期机构数	近6个月发生逾期的贷款类机构数
-	public int YQ010;	//6个月	逾期机构数	近6个月发生逾期的消费金融类机构数
-	public int YQ011;	//6个月	逾期机构数	近6个月发生逾期的银行类机构数
-	public int YQ012;	//6个月	逾期机构数	近6个月发生逾期的小贷贷款类机构数
+	
+//	public int YQ009;	//6个月	逾期机构数	近6个月发生逾期的贷款类机构数
+//	public int YQ010;	//6个月	逾期机构数	近6个月发生逾期的消费金融类机构数
+//	public int YQ011;	//6个月	逾期机构数	近6个月发生逾期的银行类机构数
+//	public int YQ012;	//6个月	逾期机构数	近6个月发生逾期的小贷贷款类机构数
 	public int YQ013;	//3个月	逾期一天以上次数	近3个月在贷款类机构逾期1天以上次数
 	public int YQ014;	//3个月	逾期一天以上次数	近3个月在消费金融机构逾期1天以上次数
 	public int YQ015;	//3个月	逾期一天以上次数	近3个月在银行类机构逾期1天以上次数
 	public int YQ016;	//3个月	逾期一天以上次数	近3个月在小贷贷款类机构逾期1天以上次数
-	public int YQ017;	//3个月	逾期机构数	近3个月发生逾期的贷款类机构数
-	public int YQ018;	//3个月	逾期机构数	近3个月发生逾期的消费金融类机构数
-	public int YQ019;	//3个月	逾期机构数	近3个月发生逾期的银行类机构数
-	public int YQ020;	//3个月	逾期机构数	近3个月发生逾期的小贷类机构数
+//	public int YQ017;	//3个月	逾期机构数	近3个月发生逾期的贷款类机构数
+//	public int YQ018;	//3个月	逾期机构数	近3个月发生逾期的消费金融类机构数
+//	public int YQ019;	//3个月	逾期机构数	近3个月发生逾期的银行类机构数
+//	public int YQ020;	//3个月	逾期机构数	近3个月发生逾期的小贷类机构数
 //	public BigDecimal YQ021;	//3个月	平均逾期次数	近3个月逾期的平均每家机构逾期次数
 	public BigDecimal YQ022;	//3个月	平均逾期次数	近3个月在消费金融机构逾期的平均每家机构逾期次数
 	public BigDecimal YQ023;	//3个月	平均逾期次数	近3个月在银行类机构逾期的平均每家机构逾期次数
@@ -47,10 +50,10 @@ public class OverDueIndex {
 	public BigDecimal YQ031;	//3个月	逾期金额总和	近3个月逾期30天以上金额总和
 	public BigDecimal YQ032;	//3个月	逾期金额总和	近3个月逾期7天以上金额总和
 	public BigDecimal YQ033;	//3个月	逾期金额总和	近3个月逾期1天以上金额总和
-	public int YQ034;	//12个月	逾期机构数	近12个月发生逾期的贷款类机构数
-	public int YQ035;	//12个月	逾期机构数	近12个月发生逾期的银行类机构数
-	public int YQ036;	//12个月	逾期机构数	近12个月发生逾期的消费金融类机构数
-	public int YQ037;	//12个月	逾期机构数	近12个月发生逾期的小贷贷款类机构数
+//	public int YQ034;	//12个月	逾期机构数	近12个月发生逾期的贷款类机构数
+//	public int YQ035;	//12个月	逾期机构数	近12个月发生逾期的银行类机构数
+//	public int YQ036;	//12个月	逾期机构数	近12个月发生逾期的消费金融类机构数
+//	public int YQ037;	//12个月	逾期机构数	近12个月发生逾期的小贷贷款类机构数
 	public int YQ038;	//12个月	逾期1天以上	近12个月在贷款类机构逾期1天以上的次数
 	public int YQ039;	//12个月	逾期1天以上	近12个月在消费金融类机构逾期1天以上的次数
 	public int YQ040;	//12个月	逾期1天以上	近12个月在银行类机构逾期1天以上的次数
@@ -95,12 +98,6 @@ public class OverDueIndex {
 	public void setCERT_NO(String cERT_NO) {
 		CERT_NO = cERT_NO;
 	}
-//	public Integer getSCORE() {
-//		return SCORE;
-//	}
-//	public void setSCORE(Integer sCORE) {
-//		SCORE = sCORE;
-//	}
 	public int getYQ001() {
 		return YQ001;
 	}
@@ -149,30 +146,6 @@ public class OverDueIndex {
 	public void setYQ008(BigDecimal yQ008) {
 		YQ008 = yQ008;
 	}
-	public int getYQ009() {
-		return YQ009;
-	}
-	public void setYQ009(int yQ009) {
-		YQ009 = yQ009;
-	}
-	public int getYQ010() {
-		return YQ010;
-	}
-	public void setYQ010(int yQ010) {
-		YQ010 = yQ010;
-	}
-	public int getYQ011() {
-		return YQ011;
-	}
-	public void setYQ011(int yQ011) {
-		YQ011 = yQ011;
-	}
-	public int getYQ012() {
-		return YQ012;
-	}
-	public void setYQ012(int yQ012) {
-		YQ012 = yQ012;
-	}
 	public int getYQ013() {
 		return YQ013;
 	}
@@ -196,30 +169,6 @@ public class OverDueIndex {
 	}
 	public void setYQ016(int yQ016) {
 		YQ016 = yQ016;
-	}
-	public int getYQ017() {
-		return YQ017;
-	}
-	public void setYQ017(int yQ017) {
-		YQ017 = yQ017;
-	}
-	public int getYQ018() {
-		return YQ018;
-	}
-	public void setYQ018(int yQ018) {
-		YQ018 = yQ018;
-	}
-	public int getYQ019() {
-		return YQ019;
-	}
-	public void setYQ019(int yQ019) {
-		YQ019 = yQ019;
-	}
-	public int getYQ020() {
-		return YQ020;
-	}
-	public void setYQ020(int yQ020) {
-		YQ020 = yQ020;
 	}
 	public BigDecimal getYQ022() {
 		return YQ022;
@@ -292,30 +241,6 @@ public class OverDueIndex {
 	}
 	public void setYQ033(BigDecimal yQ033) {
 		YQ033 = yQ033;
-	}
-	public int getYQ034() {
-		return YQ034;
-	}
-	public void setYQ034(int yQ034) {
-		YQ034 = yQ034;
-	}
-	public int getYQ035() {
-		return YQ035;
-	}
-	public void setYQ035(int yQ035) {
-		YQ035 = yQ035;
-	}
-	public int getYQ036() {
-		return YQ036;
-	}
-	public void setYQ036(int yQ036) {
-		YQ036 = yQ036;
-	}
-	public int getYQ037() {
-		return YQ037;
-	}
-	public void setYQ037(int yQ037) {
-		YQ037 = yQ037;
 	}
 	public int getYQ038() {
 		return YQ038;
@@ -545,7 +470,7 @@ public class OverDueIndex {
 	public void setYQ075(int yQ075) {
 		YQ075 = yQ075;
 	}
-
+	
 //	/************************ 放款类变量***************************/
 //	public int FK001;	//12个月	成功次数	近12个月成功放款的记录数
 //	public int FK002;	//12个月	机构数	近12个月成功放款的不同机构数

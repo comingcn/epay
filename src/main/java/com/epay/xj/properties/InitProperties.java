@@ -10,6 +10,9 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "initProperties")
 public class InitProperties {
 
+	//当前环境
+	private String active;
+	
 	private String bindCardLog;
 	
 	private String overDueType;
@@ -21,6 +24,8 @@ public class InitProperties {
 	private int threadStorageSize;
 	//入库线程池大小
 	private int threadStoragePoolSize;
+	//预留cup核心数 必须小于cup总核心数
+	private int unusedCupCount;
 	
 	private Map<String,Integer>  overDueMonth = new HashMap<String,Integer>();
 	
@@ -129,6 +134,25 @@ public class InitProperties {
 
 	public void setReturnCodeDic(Map<String, String[]> returnCodeDic) {
 		this.returnCodeDic = returnCodeDic;
-	}	
+	}
+
+	public String getActive() {
+		return active;
+	}
+
+	public void setActive(String active) {
+		this.active = active;
+	}
+
+
+	public int getUnusedCupCount() {
+		return unusedCupCount;
+	}
+
+
+	public void setUnusedCupCount(int unusedCupCount) {
+		this.unusedCupCount = unusedCupCount;
+	}
+	
 	
 }

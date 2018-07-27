@@ -11,16 +11,15 @@ import javax.persistence.Id;
 public class TradeDetailDO implements Comparable<TradeDetailDO>{
 
 	@Id
-	private BigDecimal ID;
-//	@Id
-	private String IDCARD;
-	private String ACCOUNT_NO;
-	private Integer MER_TYPE;
-	private String SOURCE_MERNO;
-	private Timestamp CREATE_TIME;
-	private Character SF_TYPE;
-	private BigDecimal AMOUNT;
-	private String RETURN_CODE;
+	private BigDecimal ID;//记录ID
+	private String IDCARD;//身份证号码
+	private String ACCOUNT_NO;//银行卡号码
+	private Integer MER_TYPE;//商户类型
+	private String SOURCE_MERNO;//商户编码
+	private Timestamp CREATE_TIME;//创建时间
+	private Character SF_TYPE;//收付类型
+	private BigDecimal AMOUNT;//金额
+	private String RETURN_CODE;//返回码
 	public BigDecimal getID() {
 		return ID;
 	}

@@ -33,7 +33,7 @@ public class MathUtil {
         if (result == 0.00)
             return new BigDecimal("0").setScale(0,BigDecimal.ROUND_HALF_UP);
         
-        BigDecimal value = new BigDecimal(result).setScale(4, BigDecimal.ROUND_HALF_UP);
+        BigDecimal value = new BigDecimal(result).setScale(2, BigDecimal.ROUND_HALF_UP);
         return value;
     }
     

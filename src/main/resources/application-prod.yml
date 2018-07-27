@@ -1,0 +1,111 @@
+spring: 
+    datasource:
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+#      url: jdbc:db2://131.252.83.213:60000/etl
+      url: jdbc:db2://10.118.192.35:50000/cp_edw
+      username: db2inst1
+      password: 1qaz@WSX
+  #    testWhileIdle: true
+  #    validationQuery: SELECT 1
+  #    driver-class-name: com.mysql.jdbc.Driver
+  #    url: jdbc:mysql://192.168.70.82:3306/guns
+  #    username: root
+  #    password: yanghf
+      connection-initial-size: 40
+      connection-minimum-size: 40
+      connection-maximum-size: 250
+      connection-maxwait-time: 6000
+      connection-maxactive-time: 6000
+      connection-minlive-time: 300000
+    jpa:
+      hibernate:
+        ddl-auto: none
+        naming: 
+          physical-strategy: com.epay.xj.common.MySQLUpperCaseStrategy
+      show-sql: false
+      properties: 
+        hibernate:  
+          dialect:  org.hibernate.dialect.DB2Dialect
+server:
+  context-path: /epay
+  port: 8081
+initProperties:
+  active: prod
+  #计算指标线单线程处理集合大小
+  threadIndexSize: 5000
+  #计算指标线程池大小
+  threadIndexPoolSize: 20
+  #入库线单线程处理集合大小
+  threadStorageSize: 1000
+  #入库线程池大小
+  threadStoragePoolSize: 5
+  #逾期口径一二三配置
+  #逾期类型一:1.在同一家公司划扣因余额不足失败，到最终划扣成功且划扣成功金额=失败金额为止，设定为逾期天数；
+  #逾期类型二:2.在同一家公司划扣因余额不足失败，直至划扣成功金额>=失败金额为止
+  #逾期类型三:3.在同一家公司划扣因余额不足失败，直至划扣成功为止
+  overDueType: 3
+  #逾期月配置(最小单位：天)
+  overDueMonth: 
+    12m: 12
+    6m: 6
+    3m: 3
+    2m: 2
+    1m: 1
+    15d: 15
+    7d: 7
+  #逾期天配置
+  #最近和最早一次在程序里处理
+  overDueDayDic: 
+    1d: 1
+    7d: 7
+    30d: 30
+  #merType商户类型归属分类
+  #95 出行 94 运营商 93 航空 92 物业 91 供应链 90 银行放贷 80 直销银行    70 小贷 62 理财 61 投资管理 60 财富 53 汽车金融 52 资产交易
+  #51 信托 50 融资租赁 40 持牌消金 30 证券 20 基金 13 保理 12 劳务收益 11 一般商户 10 保险
+  merTypeDic:
+    #小贷和保理
+    xd: 70,13
+    #直销银行和银行放贷
+    yh: 80,81
+    #理财：
+    lc: 61,60,30,20,10
+    #出行和资产交易
+    cx: 52,95
+    #贷款类
+    dk: 80,70,13,81,53,40,41
+    #消金
+    xj: 53,40,41
+    #其他
+    othr: 11
+    #资产交易和融资租赁
+    otfin: 52,51,50,54,91
+    #劳务收益
+    sal: 12
+    #生活类：物业费、话费充值
+    life: 94,92
+  #返回分类码  
+  returnCodeDic:
+    success: "0000"
+    #余额不足失败
+    yebz: 5014,3008
+    #账户超额失败
+    otlmt: 3013
+    #账户问题失败
+    acctf: 3004,6152,3016,3017,3016,3001,4052
+    #系统问题失败
+    sysf: 6266,1002,6017,1,2,2007,2000,3035,1000,1002,2000,3028,3097
+    #失败
+    failc: 1,3999
+ #配置日志
+logging:
+  pattern:
+    console: "%d %-5level %logger : %msg%n"
+    file: "%d %-5level [%thread] %logger : %msg%n"
+  #配置日志文件路径
+  file: log\epay.log
+  file.max-size: 100MB
+  #配置日志文件输出级别
+  level:
+    root: INFO
+    org.hibernate: error
+

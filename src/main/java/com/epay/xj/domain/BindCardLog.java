@@ -1,7 +1,5 @@
 package com.epay.xj.domain;
 
-import java.util.Comparator;
-
 import javax.persistence.Entity;
 import javax.persistence.Id;
 

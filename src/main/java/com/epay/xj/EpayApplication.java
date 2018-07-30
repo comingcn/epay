@@ -10,6 +10,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 import com.epay.xj.properties.InitProperties;
 import com.epay.xj.service.TaskServer;
+import com.epay.xj.utils.DateUtils;
 @SpringBootApplication
 @EnableConfigurationProperties
 public class EpayApplication {
@@ -35,14 +36,11 @@ public class EpayApplication {
 			ip.setUnusedCupCount(Integer.valueOf(args[2]));
 		}
 		long beginTime = System.nanoTime();
-		logger.info("开始时间：{}", beginTime);
-//		ts.deal(args[1], args[3]);
-		ts.truncate();
+		logger.info("开始时间：{}", DateUtils.getNow());
+		ts.deal(args[1], args[3]);
 		String useTime = String.valueOf((System.nanoTime() - beginTime)/Math.pow(10, 9));
 		logger.info("useTime:{}秒",useTime);
 		System.exit(0);
-//		String date = args[0];
-//		System.out.println(date);
 	}
 	
 	public static boolean chk(String[] args){

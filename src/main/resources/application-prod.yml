@@ -13,7 +13,7 @@ spring:
   #    password: yanghf
       connection-initial-size: 40
       connection-minimum-size: 40
-      connection-maximum-size: 250
+      connection-maximum-size: 1000
       connection-maxwait-time: 6000
       connection-maxactive-time: 6000
       connection-minlive-time: 300000

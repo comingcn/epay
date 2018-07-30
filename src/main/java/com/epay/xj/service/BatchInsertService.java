@@ -1,85 +1,87 @@
-//package com.epay.xj.service;
-//
-//import java.util.Arrays;
-//import java.util.List;
-//import java.util.concurrent.CountDownLatch;
-//import java.util.concurrent.ExecutorService;
-//import java.util.concurrent.Executors;
-//
-//import javax.transaction.Transactional;
-//
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.stereotype.Service;
-//
-//import com.epay.xj.domain.OverDueIndex1;
-//import com.epay.xj.properties.InitProperties;
-//
-//
-//@Service
-//@Transactional
-//public class BatchInsertService {
-//
-//	Logger logger = LoggerFactory.getLogger(getClass());
-//	@Autowired
-//	private InitProperties initProperties;//
-//	@Autowired
-//	private TaskServer taskServer;
-//	
-//	private static ExecutorService executor = Executors.newFixedThreadPool(10);//给定线程池数量
-//	//synchronized
-//	public  void addList(List<OverDueIndex1> list){
-//		
-//		int MAX_DEAL = initProperties.getThreadStorageSize();//对多数据进行分组，10000条一组，一组使用一个线程进行执行
-//		if(null==list || list.isEmpty())return;
-//		int times = (list.size() + MAX_DEAL - 1) / MAX_DEAL;
-//		//一个同步辅助类，在完成一组正在其他线程中执行的操作之前，它允许一个或多个线程一直等待。
-//		CountDownLatch countDownLatch = new CountDownLatch(times);
-//		try {
-//       	 for (int i = 0; i < times; i++) {
-//                if (i == times - 1) {
-//                	executor.execute(new ListRunnable(list.subList(i * MAX_DEAL, list.size()), countDownLatch));//调用业务逻辑
-//                } else {
-//                	executor.execute(new ListRunnable(list.subList(i * MAX_DEAL, (i + 1) * MAX_DEAL), countDownLatch));
-//                }
-//            }
-//            countDownLatch.await();//一个线程(或者多个)， 等待另外N个线程完成某个事情之后才能执行
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-//
-//	}
-//	
-//	class ListRunnable  implements Runnable{
-//		
-//		Logger logger = LoggerFactory.getLogger(getClass());
-//		
-//		private List<OverDueIndex1> list;
-//		
-//		private CountDownLatch countDownLatch;
-//		
-//		public ListRunnable(List<OverDueIndex1> list,CountDownLatch countDownLatch){
-//			super();
-//			this.list = list;
-//			this.countDownLatch = countDownLatch;
-//		}
-//		
-//		@Override
-//		public void run() {
-//			try {
-//				taskServer.batchInsert(list);
-////				for (OverDueIndex overDueIndex : list) {
-////					logger.info("o:{}",overDueIndex.toString());
-////				}
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}finally {
-//	            countDownLatch.countDown();//完成一次操作，计数减一  
-//	        }
-//			
-//		}
-//		
-//	}
-//
-//}
+package com.epay.xj.service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadPoolExecutor;
+
+import javax.transaction.Transactional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.epay.xj.domain.OverDueIndex1;
+
+@Service
+@Transactional
+public class BatchInsertService {
+
+	Logger logger = LoggerFactory.getLogger(getClass());
+	
+	@Autowired
+	private TaskServer taskServer;
+
+	public void addList(final ThreadPoolExecutor execute,  List<OverDueIndex1> list, String eltServer) {
+		
+		// 总数据条数
+		int dataSize = list.size();
+		// 线程数
+		int threadNum = execute.getMaximumPoolSize();
+		// 根据数据大小自动分配线程大小
+		int threadSize = 1;//默认一个线程
+		if(execute.getCorePoolSize()>1){
+			threadSize = dataSize / threadNum;
+		}
+		// 定义标记,过滤threadNum为整数
+		boolean special = dataSize % threadSize == 0;
+		logger.info("taskSize:{},线程数：{},单个线程处理记录数量:{}", list.size(), threadNum, threadSize);
+		List<OverDueIndex1> cutList = null;
+		List<WriteCallable> lst = new ArrayList<WriteCallable>();
+		for (int i = 0; i < threadNum; i++) {
+			if (i == threadNum - 1) {
+				if (special) break;
+				cutList = list.subList(threadSize * i, dataSize);
+			} else {
+				cutList = list.subList(threadSize * i, threadSize * (i + 1));
+			}
+			lst.add(new WriteCallable(cutList, eltServer));
+//			execute.submit(new WriteCallable(cutList, eltServer));
+		}
+		try {
+			execute.invokeAll(lst);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	class WriteCallable implements Callable<Integer> {
+
+		Logger logger = LoggerFactory.getLogger(getClass());
+
+		private List<OverDueIndex1> list;
+
+		private String etlServer;
+
+		public WriteCallable(List<OverDueIndex1> list, String etlServer) {
+			super();
+			this.list = list;
+			this.etlServer = etlServer;
+		}
+
+		public Integer call() throws Exception {
+			try {
+				synchronized (this) {
+					taskServer.batchInsert(list,etlServer);
+				}
+				return 0;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return -1;
+		}
+	}
+
+}

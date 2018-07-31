@@ -47,12 +47,10 @@ public class BatchInsertService {
 				cutList = list.subList(threadSize * i, threadSize * (i + 1));
 			}
 			lst.add(new WriteCallable(cutList, eltServer));
-//			execute.submit(new WriteCallable(cutList, eltServer));
 		}
 		try {
 			execute.invokeAll(lst);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

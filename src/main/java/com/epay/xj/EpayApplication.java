@@ -20,18 +20,10 @@ public class EpayApplication {
 		ConfigurableApplicationContext cac = SpringApplication.run(EpayApplication.class, args);
 		TaskServer ts = (TaskServer) cac.getBean("taskServer");
 		InitProperties ip = (InitProperties) cac.getBean("initProperties");
-		if(chk(args) && args.length!=4){
+		if(chk(args) || args.length!=4){
 			System.out.println("请输入正确参数");
-			System.exit(0);
+			System.exit(0); 
 		}
-//		  #计算指标线单线程处理集合大小
-//		  threadIndexSize: 5000
-//		  #计算指标线程池大小
-//		  threadIndexPoolSize: 20
-//		  #入库线单线程处理集合大小
-//		  threadStorageSize: 1000
-//		  #入库线程池大小
-//		  threadStoragePoolSize: 5
 		if(args[2]!=null){//预留cup核心数 必须小于cup总核心数
 			ip.setUnusedCupCount(Integer.valueOf(args[2]));
 		}

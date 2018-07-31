@@ -15,8 +15,6 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -31,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.fastjson.JSON;
 import com.epay.xj.domain.BindCardLog;
 import com.epay.xj.domain.OverDueIndex1;
 import com.epay.xj.domain.OverDueIndex2;
@@ -66,7 +65,6 @@ public class TaskServer {
 	@SuppressWarnings("unchecked")
 	public List<String> getTaskList(String updateTime, String etlServer) {
 		String sql = "select CERT_NO from CP_ODS.P1055_CERT_LIST_PY where ETL_SERVER='" + etlServer + "'";
-		System.out.println(sql);
 		return entityManager.createNativeQuery(sql).getResultList();
 	}
 
@@ -127,7 +125,8 @@ public class TaskServer {
 			Collections.sort(tradeDetailList);// 集合排序
 			Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
 			for (int month : overDueMouth.values()) {
-				tradeMap.put(month, getListByMonth(tradeDetailList, month, updateTime));// 获取指定月份下的所有记录
+				List<TradeDetailDO> tmp = getListByMonth(tradeDetailList, month, updateTime);
+				tradeMap.put(month, tmp);// 获取指定月份下的所有记录
 			}
 		} catch (Exception e) {
 			logger.error("执行sql:{},error:{}", sql, e.getMessage());
@@ -237,9 +236,11 @@ public class TaskServer {
 		// 定义标记,过滤threadNum为整数
 		boolean special = dataSize % threadSize == 0;
 		// 线程池任务满载后采取的任务强行策略
-//		RejectedExecutionHandler indexRejectHandler = new ThreadPoolExecutor.CallerRunsPolicy();
-//		BlockingQueue<Runnable> indexWorkQueue = new SynchronousQueue<>();
-		ExecutorService exec =  Executors.newFixedThreadPool(threadNum);
+		RejectedExecutionHandler indexRejectHandler = new ThreadPoolExecutor.CallerRunsPolicy();
+		BlockingQueue<Runnable> indexWorkQueue = new SynchronousQueue<>();
+		ExecutorService exec =  new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime,
+				TimeUnit.SECONDS, indexWorkQueue, indexRejectHandler);
+//		ExecutorService exec =  Executors.newFixedThreadPool(threadNum);
 		// 任务过多后，存储任务的一个阻塞队列
 		BlockingQueue<Runnable> workQueue = new SynchronousQueue<>();
 		// 线程池任务满载后采取的任务强行策略
@@ -248,8 +249,8 @@ public class TaskServer {
 		final ThreadPoolExecutor execute = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime,
 				TimeUnit.SECONDS, workQueue, rejectHandler);
 		// 定义一个任务集合
-		List<Callable<List<OverDueIndex1>>> tasks = new ArrayList<Callable<List<OverDueIndex1>>>();
-		Callable<List<OverDueIndex1>> task = null;
+		List<Callable<Integer>> tasks = new ArrayList<Callable<Integer>>();
+		Callable<Integer> task = null;
 		List<String> cutList = null;
 		// 确定每条线程的数据
 		for (int i = 0; i < threadNum; i++) {
@@ -262,15 +263,16 @@ public class TaskServer {
 				cutList = taskList.subList(threadSize * i, threadSize * (i + 1));
 			}
 			final List<String> listStr = cutList;
+			System.out.println(listStr.size());
 			final String udpateTimes = updateTime;
 			final String etlServers = etlServer;
 			final String active = activeTableParam();
 			final Map<String, String[]> returnCodeDic = initProperties.getReturnCodeDic();
 			final Map<String, Integer> overDueMouth = initProperties.getOverDueMonth();
 			
-			task = new Callable<List<OverDueIndex1>>() {
+			task = new Callable<Integer>() {
 				@Override
-				public List<OverDueIndex1> call() throws Exception {
+				public Integer call() throws Exception {
 					List<OverDueIndex1> lst = new ArrayList<OverDueIndex1>();
 					for (int i = 0; i < listStr.size(); i++) {
 						// long sysBeginTime = System.nanoTime();
@@ -286,17 +288,70 @@ public class TaskServer {
 								overDueMouth(list, odi, month, returnCodeDic);
 							}
 						}
+//						 // 客户申请行为统计
+//						 Map<Integer, List<BindCardLog>> bindCardLogMap =
+//						 getBindCardLog(certNo, udpateTimes);
+//						 if (bindCardLogMap.size() != 0) {
+//						 for (int month : overDueMouth.values()) {
+//						 // 指标结果集
+//						 List<BindCardLog> list = bindCardLogMap.get(month);
+//						 if(list.size()==0)continue;
+//						 bindCardMouth(list, odi, month, returnCodeDic,
+//						 udpateTimes);
+//						 }
+//						 }
+//						 // 信用分计算
+//						 BigDecimal v1 =
+//						 CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_yebz_pct_j3m,
+//						 odi.getFX043());
+//						 BigDecimal v2 =
+//						 CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_suces_j2m_pct,
+//						 odi.getKK007());
+//						 BigDecimal v3 = new BigDecimal("0");
+//						 if(null != odi.getHK046() &&
+//						 !"".equals(odi.getHK046())) {
+//						 v3 =
+//						 CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_latesttn_fail_xj,
+//						 new BigDecimal(odi.getHK046()));
+//						 }
+//						
+//						 BigDecimal v4 =
+//						 CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.ovd3_1d_dk_amt_sum_j3m,
+//						 new BigDecimal(odi.getYQ034()));
+//						 BigDecimal v5 =
+//						 CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_suces_dk_cnt_j6m,
+//						 new BigDecimal(odi.getHK012()));
+//						 BigDecimal v6 =
+//						 CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_mer_suces_dk_cnt_j12m,
+//						 new BigDecimal(odi.getHK003()));
+//						 BigDecimal v7 =
+//						 CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.aud_all_rcd_disntcd_all_avg_j1m,
+//						 odi.getSQ035());
+//						 BigDecimal v8 =
+//						 CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.sf_s_rcd_fail_pct_j12m,
+//						 odi.getKK002());
+//						 BigDecimal v9 =
+//						 CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.aud_dbt_rcd_nearist_days,
+//						 new BigDecimal(odi.getSQ045()));
+//						 BigDecimal v10
+//						 =CreditScoreUtil.getCreditScoreByCertScoreType(CreditScoreUtil.aud_dbt_rcd_disntcd_all_min_j6m,
+//						 new BigDecimal(odi.getSQ015()));
+//						
+//						 int creditScore = MathUtil.plus(v1, v2, v3, v4, v5,
+//						 v6, v7, v8, v9, v10);
+//						 odi.setSCORE(creditScore);
+						 logger.info("odi:{}", JSON.toJSONString(odi));
 						lst.add(odi);
 					}
 					logger.info("size:{}", lst.size());
 					batchInsertService2.addList(execute, lst, etlServers);
-					return null;
+					return lst.size();
 				}
 			};
 			// 这里提交的任务容器列表和返回的Future列表存在顺序对应的关系
 			tasks.add(task);
 		}
-		List<Future<List<OverDueIndex1>>> results = exec.invokeAll(tasks);
+		exec.invokeAll(tasks);
 		// 关闭线程池
 		exec.shutdown();
 		execute.shutdown();
@@ -790,6 +845,7 @@ public class TaskServer {
 			set.add(tradeDetailDO.getRETURN_CODE());
 		}
 		if(set.size()==listSize){
+			if(listSize==1)return tmp.get(0);
 			return tmp.get(listSize-1);
 		}else{
 			return null;
@@ -804,6 +860,7 @@ public class TaskServer {
 	 * @return
 	 */
 	public TradeDetailDO getNextRecordOfList(List<TradeDetailDO> tmp, TradeDetailDO o) {
+		if(tmp.size()==0)return null;
 		TradeDetailDO tradeDetailDO = judgeFailRecord(tmp);
 		if(null!=tradeDetailDO)return tradeDetailDO;
 		for (TradeDetailDO to : tmp) {
@@ -1800,29 +1857,24 @@ public class TaskServer {
 	 * @date 2018年07月17日
 	 */
 	private int acctfCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
-
 		// 商户类型归属分类字典
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
 		// 具体机构类
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
 		// 帐户问题还款失败的返回码
 		List<String> acctfList = Arrays.asList(returnCodeDic.get("acctf"));
-
 		List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
-
 		for (TradeDetailDO o : list) {
 			if (orgTypeList.contains(o.getMER_TYPE().toString())) {
 				merTypeTradeDetailDOList.add(o);
 			}
 		}
-
 		int acctfCountResult = 0;
 		for (TradeDetailDO o : merTypeTradeDetailDOList) {
 			if (acctfList.contains(o.getRETURN_CODE())) {
 				acctfCountResult++;
 			}
 		}
-
 		return acctfCountResult;
 	}
 
@@ -1842,22 +1894,18 @@ public class TaskServer {
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
 		// 帐户问题还款失败的返回码
 		List<String> yebzList = Arrays.asList(returnCodeDic.get("yebz"));
-
 		List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
-
 		for (TradeDetailDO o : list) {
 			if (orgTypeList.contains(o.getMER_TYPE().toString())) {
 				merTypeTradeDetailDOList.add(o);
 			}
 		}
-
 		int yebzCountResult = 0;
 		for (TradeDetailDO o : merTypeTradeDetailDOList) {
 			if (yebzList.contains(o.getRETURN_CODE())) {
 				yebzCountResult++;
 			}
 		}
-
 		return yebzCountResult;
 	}
 
@@ -1870,17 +1918,14 @@ public class TaskServer {
 	 * @date 2018年07月17日
 	 */
 	private BigDecimal acctfProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
-
 		// 帐户问题还款失败的返回码
 		List<String> acctfList = Arrays.asList(returnCodeDic.get("acctf"));
-
 		int oltmtAmount = 0;
 		for (TradeDetailDO o : list) {
 			if (acctfList.contains(o.getRETURN_CODE())) {
 				oltmtAmount++;
 			}
 		}
-
 		return MathUtil.divide(oltmtAmount, list.size());
 	}
 
@@ -1895,14 +1940,12 @@ public class TaskServer {
 	private BigDecimal yebzProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
 		// 余额不足的返回码
 		List<String> yebzList = Arrays.asList(returnCodeDic.get("yebz"));
-
 		int yebzAmount = 0;
 		for (TradeDetailDO o : list) {
 			if (yebzList.contains(o.getRETURN_CODE())) {
 				yebzAmount++;
 			}
 		}
-
 		return MathUtil.divide(yebzAmount, yebzList.size());
 	}
 
@@ -1915,20 +1958,16 @@ public class TaskServer {
 	 * @date 2018年07月17日
 	 */
 	private BigDecimal acctfMoneyProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
-
 		// 帐户问题还款失败的返回码
 		List<String> acctfList = Arrays.asList(returnCodeDic.get("acctf"));
-
 		BigDecimal sumMoney = new BigDecimal("0");
 		BigDecimal acctfMoney = new BigDecimal("0");
-
 		for (TradeDetailDO o : list) {
 			sumMoney = sumMoney.add(o.getAMOUNT());
 			if (acctfList.contains(o.getRETURN_CODE())) {
 				acctfMoney = acctfMoney.add(o.getAMOUNT());
 			}
 		}
-
 		return MathUtil.divide(acctfMoney, sumMoney);
 	}
 
@@ -1941,10 +1980,8 @@ public class TaskServer {
 	 * @date 2018年07月17日
 	 */
 	private BigDecimal otlmtMoneyProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
-
 		// 超出限额还款失败的返回码
 		List<String> otlmtList = Arrays.asList(returnCodeDic.get("otlmt"));
-
 		BigDecimal sumMoney = new BigDecimal("0");
 		BigDecimal otlmtMoney = new BigDecimal("0");
 
@@ -1954,7 +1991,6 @@ public class TaskServer {
 				otlmtMoney = otlmtMoney.add(o.getAMOUNT());
 			}
 		}
-
 		return MathUtil.divide(otlmtMoney, sumMoney);
 	}
 
@@ -1967,17 +2003,14 @@ public class TaskServer {
 	 * @date 2018年07月17日
 	 */
 	private BigDecimal otlmtProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
-
 		// 帐户问题还款失败的返回码
 		List<String> otlmtList = Arrays.asList(returnCodeDic.get("otlmt"));
-
 		int oltmtAmount = 0;
 		for (TradeDetailDO o : list) {
 			if (otlmtList.contains(o.getRETURN_CODE())) {
 				oltmtAmount++;
 			}
 		}
-
 		return MathUtil.divide(oltmtAmount, otlmtList.size());
 	}
 
@@ -1990,9 +2023,7 @@ public class TaskServer {
 	 * @date 2018年07月17日
 	 */
 	private int fkSuccessCount(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
-
 		List<String> successList = Arrays.asList(returnCodeDic.get("success"));
-
 		int fkSuccessCountResult = 0;
 		for (TradeDetailDO o : list) {
 			if ('F' == o.getSF_TYPE()) {
@@ -2013,9 +2044,7 @@ public class TaskServer {
 	 * @date 2018年07月17日
 	 */
 	private int fkSuccessOrgCount(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
-
 		List<String> successList = Arrays.asList(returnCodeDic.get("success"));
-
 		Set<String> fkSuccessOrgCountSet = new HashSet<String>();
 		for (TradeDetailDO o : list) {
 			if ('F' == o.getSF_TYPE()) {
@@ -2037,20 +2066,16 @@ public class TaskServer {
 	 * @date 2018年07月17日
 	 */
 	private int fksuccessOrgCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
-
 		List<String> successList = Arrays.asList(returnCodeDic.get("success"));
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
-
 		// 根据机构类别筛选数据
 		List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
-
 		for (TradeDetailDO o : list) {
 			if (orgTypeList.contains(o.getMER_TYPE().toString())) {
 				merTypeTradeDetailDOList.add(o);
 			}
 		}
-
 		Set<String> fkSuccessOrgCountSet = new HashSet<String>();
 		for (TradeDetailDO o : merTypeTradeDetailDOList) {
 			if ('F' == o.getSF_TYPE()) {
@@ -2073,11 +2098,9 @@ public class TaskServer {
 	 */
 	private BigDecimal fkSuccessMoneyCount(List<TradeDetailDO> list, String orgType,
 			Map<String, String[]> returnCodeDic) {
-
 		List<String> successList = Arrays.asList(returnCodeDic.get("success"));
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
-
 		// 根据机构类别筛选数据
 		List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
 		for (TradeDetailDO o : list) {
@@ -2085,7 +2108,6 @@ public class TaskServer {
 				merTypeTradeDetailDOList.add(o);
 			}
 		}
-
 		BigDecimal fkSuccessMoney = new BigDecimal("0");
 		for (TradeDetailDO o : merTypeTradeDetailDOList) {
 			if ('F' == o.getSF_TYPE()) {
@@ -2094,7 +2116,6 @@ public class TaskServer {
 				}
 			}
 		}
-
 		return fkSuccessMoney.setScale(2, BigDecimal.ROUND_HALF_UP);
 	}
 
@@ -2107,10 +2128,8 @@ public class TaskServer {
 	 * @date 2018年07月17日
 	 */
 	private Map<String, Object> fkLastestTimeCount(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
-
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 		List<String> successList = Arrays.asList(returnCodeDic.get("success"));
-
 		int listSize = list.size();
 		for (int i = listSize - 1; i >= 0; i--) {
 			TradeDetailDO o = list.get(i);
@@ -2123,7 +2142,6 @@ public class TaskServer {
 				}
 			}
 		}
-
 		return resultMap;
 	}
 
@@ -2136,10 +2154,8 @@ public class TaskServer {
 	 * @date 2018年07月17日
 	 */
 	private Map<String, Object> fkEarliestTimeCount(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
-
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 		List<String> successList = Arrays.asList(returnCodeDic.get("success"));
-
 		for (TradeDetailDO o : list) {
 			if ('F' == o.getSF_TYPE()) {
 				if (successList.contains(o.getRETURN_CODE())) {
@@ -2150,7 +2166,6 @@ public class TaskServer {
 				}
 			}
 		}
-
 		return resultMap;
 	}
 
@@ -2165,26 +2180,21 @@ public class TaskServer {
 	 */
 	private BigDecimal repaymentSuccessMoneyCount(List<TradeDetailDO> list, String orgType,
 			Map<String, String[]> returnCodeDic) {
-
 		List<String> successList = Arrays.asList(returnCodeDic.get("success"));
-
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
-
 		List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
 		for (TradeDetailDO o : list) {
 			if (orgTypeList.contains(o.getMER_TYPE().toString())) {
 				merTypeTradeDetailDOList.add(o);
 			}
 		}
-
 		BigDecimal sumMoney = new BigDecimal("0");
 		for (TradeDetailDO o : merTypeTradeDetailDOList) {
 			if ('S' == o.getSF_TYPE() && successList.contains(o.getRETURN_CODE())) {
 				sumMoney = sumMoney.add(o.getAMOUNT());
 			}
 		}
-
 		return sumMoney;
 	}
 
@@ -2198,29 +2208,24 @@ public class TaskServer {
 	 * @date 2018年07月18日
 	 */
 	private int repaymentSuccessCount(List<TradeDetailDO> list, String orgType, Map<String, String[]> returnCodeDic) {
-
 		// 商户类型归属分类字典
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
 		// 具体机构类
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
 		// 还款成功的返回码
 		List<String> successReturnCodeList = Arrays.asList(returnCodeDic.get("success"));
-
 		List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
-
 		for (TradeDetailDO o : list) {
 			if (orgTypeList.contains(o.getMER_TYPE().toString())) {
 				merTypeTradeDetailDOList.add(o);
 			}
 		}
-
 		int successCountResult = 0;
 		for (TradeDetailDO o : merTypeTradeDetailDOList) {
 			if (successReturnCodeList.contains(o.getRETURN_CODE())) {
 				successCountResult++;
 			}
 		}
-
 		return successCountResult;
 	}
 
@@ -2234,14 +2239,12 @@ public class TaskServer {
 	 */
 	private BigDecimal repaymentSuccessProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
 		List<String> successReturnCodeList = Arrays.asList(returnCodeDic.get("success"));
-
 		int successAmount = 0;
 		for (TradeDetailDO o : list) {
 			if (successReturnCodeList.contains(o.getRETURN_CODE())) {
 				successAmount++;
 			}
 		}
-
 		return MathUtil.divide(successAmount, list.size());
 	}
 
@@ -2256,29 +2259,24 @@ public class TaskServer {
 	 */
 	private int repaymentSuccessOrgCount(List<TradeDetailDO> list, String orgType,
 			Map<String, String[]> returnCodeDic) {
-
 		// 商户类型归属分类字典
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
 		// 具体机构类
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
 		// 还款成功的返回码
 		List<String> successReturnCodeList = Arrays.asList(returnCodeDic.get("success"));
-
 		List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
-
 		for (TradeDetailDO o : list) {
 			if (orgTypeList.contains(o.getMER_TYPE().toString())) {
 				merTypeTradeDetailDOList.add(o);
 			}
 		}
-
 		Set<String> repaymentSuccessOrgCountSet = new HashSet<String>();
 		for (TradeDetailDO o : list) {
 			if ('S' == o.getSF_TYPE() && successReturnCodeList.contains(o.getRETURN_CODE())) {
 				repaymentSuccessOrgCountSet.add(o.getSOURCE_MERNO());
 			}
 		}
-
 		return repaymentSuccessOrgCountSet.size();
 	}
 
@@ -2291,16 +2289,13 @@ public class TaskServer {
 	 * @date 2018年07月18日
 	 */
 	private int repamentYebzCount(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
-
 		List<String> yebzReturnCodeList = Arrays.asList(returnCodeDic.get("yebz"));
-
 		int yebzAmount = 0;
 		for (TradeDetailDO o : list) {
 			if ('S' == o.getSF_TYPE() && yebzReturnCodeList.contains(o.getRETURN_CODE())) {
 				yebzAmount++;
 			}
 		}
-
 		return yebzAmount;
 	}
 
@@ -2313,16 +2308,13 @@ public class TaskServer {
 	 * @date 2018年07月18日
 	 */
 	private BigDecimal repamentFailcProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
-
 		List<String> failcReturnCodeList = Arrays.asList(returnCodeDic.get("failc"));
-
 		int failcAmount = 0;
 		for (TradeDetailDO o : list) {
 			if ('S' == o.getSF_TYPE() && failcReturnCodeList.contains(o.getRETURN_CODE())) {
 				failcAmount++;
 			}
 		}
-
 		return MathUtil.divide(failcAmount, list.size());
 	}
 
@@ -2335,16 +2327,13 @@ public class TaskServer {
 	 * @date 2018年07月18日
 	 */
 	private BigDecimal repamentYebzProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
-
 		List<String> yebzReturnCodeList = Arrays.asList(returnCodeDic.get("yebz"));
-
 		int yebzAmount = 0;
 		for (TradeDetailDO o : list) {
 			if ('S' == o.getSF_TYPE() && yebzReturnCodeList.contains(o.getRETURN_CODE())) {
 				yebzAmount++;
 			}
 		}
-
 		return MathUtil.divide(yebzAmount, list.size());
 	}
 
@@ -2357,9 +2346,7 @@ public class TaskServer {
 	 * @date 2018年07月18日
 	 */
 	private BigDecimal repamentYebzMoneyProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
-
 		List<String> yebzReturnCodeList = Arrays.asList(returnCodeDic.get("yebz"));
-
 		BigDecimal sumMoney = new BigDecimal("0");
 		BigDecimal yebzMoney = new BigDecimal("0");
 		for (TradeDetailDO o : list) {
@@ -2368,7 +2355,6 @@ public class TaskServer {
 				yebzMoney = yebzMoney.add(o.getAMOUNT());
 			}
 		}
-
 		return MathUtil.divide(yebzMoney, sumMoney);
 	}
 
@@ -2381,9 +2367,7 @@ public class TaskServer {
 	 * @date 2018年07月18日
 	 */
 	private BigDecimal repaymentSuccessMoneyProportion(List<TradeDetailDO> list, Map<String, String[]> returnCodeDic) {
-
 		List<String> successReturnCodeList = Arrays.asList(returnCodeDic.get("success"));
-
 		BigDecimal sumMoney = new BigDecimal("0");
 		BigDecimal successMoney = new BigDecimal("0");
 		for (TradeDetailDO o : list) {
@@ -2392,7 +2376,6 @@ public class TaskServer {
 				successMoney = successMoney.add(o.getAMOUNT());
 			}
 		}
-
 		return MathUtil.divide(successMoney, sumMoney);
 	}
 
@@ -2406,20 +2389,16 @@ public class TaskServer {
 	 * @date 2018年07月19日
 	 */
 	private Map<String, Object> hkEarlistDateAndDays(List<TradeDetailDO> list, String orgType) {
-
 		// 商户类型归属分类字典
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
 		// 具体机构类
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
-
 		List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
-
 		for (TradeDetailDO o : list) {
 			if (orgTypeList.contains(o.getMER_TYPE().toString())) {
 				merTypeTradeDetailDOList.add(o);
 			}
 		}
-
 		int merTypeTradeDetailDOListSzie = merTypeTradeDetailDOList.size();
 		String earlistDateStr = "";
 		int intervalDays = 0;
@@ -2432,11 +2411,9 @@ public class TaskServer {
 				break;
 			}
 		}
-
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 		resultMap.put("hkDate", earlistDateStr);
 		resultMap.put("hkDays", intervalDays);
-
 		return resultMap;
 	}
 
@@ -2450,20 +2427,16 @@ public class TaskServer {
 	 * @date 2018年07月19日
 	 */
 	private Map<String, Object> hkLatestDateAndDays(List<TradeDetailDO> list, String orgType) {
-
 		// 商户类型归属分类字典
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
 		// 具体机构类
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
-
 		List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
-
 		for (TradeDetailDO o : list) {
 			if (orgTypeList.contains(o.getMER_TYPE().toString())) {
 				merTypeTradeDetailDOList.add(o);
 			}
 		}
-
 		String earlistDateStr = "";
 		int intervalDays = 0;
 		for (TradeDetailDO o : merTypeTradeDetailDOList) {
@@ -2474,11 +2447,9 @@ public class TaskServer {
 				break;
 			}
 		}
-
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 		resultMap.put("hkDate", earlistDateStr);
 		resultMap.put("hkDays", intervalDays);
-
 		return resultMap;
 	}
 
@@ -2499,7 +2470,6 @@ public class TaskServer {
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();
 		// 具体机构类
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));
-
 		// 筛选数据
 		List<TradeDetailDO> merTypeTradeDetailDOList = new ArrayList<TradeDetailDO>();
 		for (TradeDetailDO o : list) {
@@ -2507,14 +2477,12 @@ public class TaskServer {
 				merTypeTradeDetailDOList.add(o);
 			}
 		}
-
 		List<String> returnCodeList = new ArrayList<String>();
 		if (flag.equals("successs")) {
 			returnCodeList = Arrays.asList(returnCodeDic.get("success"));
 		} else if (flag.equals("fail")) {
 			returnCodeList = Arrays.asList(returnCodeDic.get("failc"));
 		}
-
 		String earlistDateStr = "";
 		int intervalDays = 0;
 		for (TradeDetailDO o : merTypeTradeDetailDOList) {
@@ -2525,11 +2493,9 @@ public class TaskServer {
 				break;
 			}
 		}
-
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 		resultMap.put("hkDate", earlistDateStr);
 		resultMap.put("hkDays", intervalDays);
-
 		return resultMap;
 	}
 
@@ -2552,7 +2518,6 @@ public class TaskServer {
 			}
 		}
 		sumMoney = sumMoney.setScale(2, BigDecimal.ROUND_HALF_UP);
-
 		return sumMoney;
 	}
 
@@ -2593,7 +2558,6 @@ public class TaskServer {
 				fkSuccessOrgCountSet.add(o.getSOURCE_MERNO());
 			}
 		}
-
 		return fkSuccessOrgCountSet.size();
 	}
 
@@ -2614,7 +2578,6 @@ public class TaskServer {
 				fxFailCountResult++;
 			}
 		}
-
 		return fxFailCountResult;
 	}
 
@@ -2636,7 +2599,6 @@ public class TaskServer {
 				fxFailCountResult++;
 			}
 		}
-
 		return MathUtil.divide(fxFailCountResult, list.size());
 	}
 
@@ -2659,7 +2621,6 @@ public class TaskServer {
 				failMoney = failMoney.add(o.getAMOUNT());
 			}
 		}
-
 		return MathUtil.divide(failMoney, sumMoney);
 	}
 }

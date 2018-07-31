@@ -5,12 +5,6 @@ spring:
       url: jdbc:db2://10.118.192.35:50000/cp_edw
       username: db2inst1
       password: 1qaz@WSX
-  #    testWhileIdle: true
-  #    validationQuery: SELECT 1
-  #    driver-class-name: com.mysql.jdbc.Driver
-  #    url: jdbc:mysql://192.168.70.82:3306/guns
-  #    username: root
-  #    password: yanghf
       connection-initial-size: 40
       connection-minimum-size: 40
       connection-maximum-size: 1000
@@ -26,9 +20,6 @@ spring:
       properties: 
         hibernate:  
           dialect:  org.hibernate.dialect.DB2Dialect
-server:
-  context-path: /epay
-  port: 8081
 initProperties:
   active: prod
   #计算指标线单线程处理集合大小
@@ -96,16 +87,5 @@ initProperties:
     sysf: 6266,1002,6017,1,2,2007,2000,3035,1000,1002,2000,3028,3097
     #失败
     failc: 1,3999
- #配置日志
-logging:
-  pattern:
-    console: "%d %-5level %logger : %msg%n"
-    file: "%d %-5level [%thread] %logger : %msg%n"
-  #配置日志文件路径
-  file: log\epay.log
-  file.max-size: 100MB
-  #配置日志文件输出级别
-  level:
-    root: INFO
-    org.hibernate: error
+
 

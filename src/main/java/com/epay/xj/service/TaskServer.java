@@ -1231,7 +1231,6 @@ public class TaskServer {
 				
 				logger.info("--------------obj:{}",JSON.toJSONString(odi));	
 			}
-			
 			/******************************* 放款类变量 ***************************************/
 			// odi.setFK001(loanOrgLoanSuccessTimes(list, "dk",
 			// returnCodeDic));// 成功放款的记录数

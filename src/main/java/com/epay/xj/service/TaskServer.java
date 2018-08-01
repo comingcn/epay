@@ -344,7 +344,7 @@ public class TaskServer {
 						lst.add(odi);
 					}
 					logger.info("size:{}", lst.size());
-					batchInsertService2.addList(execute, lst, etlServers);
+					//batchInsertService2.addList(execute, lst, etlServers);
 					return lst.size();
 				}
 			};
@@ -743,20 +743,19 @@ public class TaskServer {
 		for (int i = 0; i < list.size(); i++) {
 			if (list.size() == (i + 1))
 				continue;
-			if (!ywbzLst.contains(list.get(i).getRETURN_CODE())
-					|| (list.get(i).getAMOUNT().equals(list.get(i + 1).getAMOUNT())
-							&& ywbzLst.contains(list.get(i).getRETURN_CODE()) && i != 0
-							&& ywbzLst.contains(list.get(i + 1).getRETURN_CODE()))) {
-				continue;
+			if ((i!=0 && list.get(i).getAMOUNT().toString().equals(list.get(i - 1).getAMOUNT().toString())
+							&& ywbzLst.contains(list.get(i).getRETURN_CODE())
+							&& ywbzLst.contains(list.get(i - 1).getRETURN_CODE())) 
+					|| !ywbzLst.contains(list.get(i).getRETURN_CODE())) {
 			} else {
 				TradeDetailDO o = list.get(i);
-				List<TradeDetailDO> tmp = list.subList(i + 1, list.size() - 1);
+				List<TradeDetailDO> tmp = list.subList(i+1, list.size());
 				TradeDetailDO end = getNextRecordOfList(tmp, o);
 				if (null == end)
 					continue;
 				if (days != 0) {// 如果有指定天数就按照指定天数统计
 					int overDueBeginDayTemp = DateUtils.getIntervalDayAmount(o.getCREATE_TIME(), end.getCREATE_TIME());
-					if (overDueBeginDayTemp == initProperties.getOverDueDayDic().get(days + "d")) {
+					if (overDueBeginDayTemp >= initProperties.getOverDueDayDic().get(days + "d")) {
 						overTimes++;
 					}
 				} else {// 没有指定天数就统计逾期次数
@@ -781,10 +780,10 @@ public class TaskServer {
 		for (int i = 0; i < list.size(); i++) {
 			if (list.size() == (i + 1))
 				continue;
-			if (!ywbzLst.contains(list.get(i).getRETURN_CODE())
-					|| (list.get(i).getAMOUNT().equals(list.get(i + 1).getAMOUNT())
-							&& ywbzLst.contains(list.get(i).getRETURN_CODE()) && i != 0
-							&& ywbzLst.contains(list.get(i + 1).getRETURN_CODE()))) {
+			if ((i!=0 && list.get(i).getAMOUNT().toString().equals(list.get(i - 1).getAMOUNT().toString())
+					&& ywbzLst.contains(list.get(i).getRETURN_CODE())
+					&& ywbzLst.contains(list.get(i - 1).getRETURN_CODE())) 
+					|| !ywbzLst.contains(list.get(i).getRETURN_CODE())) {
 				continue;
 			} else {
 				TradeDetailDO o = list.get(i);
@@ -812,10 +811,10 @@ public class TaskServer {
 		for (int i = 0; i < list.size(); i++) {
 			if (list.size() == (i + 1))
 				continue;
-			if (!ywbzLst.contains(list.get(i).getRETURN_CODE())
-					|| (list.get(i).getAMOUNT().equals(list.get(i + 1).getAMOUNT())
-							&& ywbzLst.contains(list.get(i).getRETURN_CODE()) && i != 0
-							&& ywbzLst.contains(list.get(i + 1).getRETURN_CODE()))) {
+			if ((i!=0 && list.get(i).getAMOUNT().toString().equals(list.get(i - 1).getAMOUNT().toString())
+					&& ywbzLst.contains(list.get(i).getRETURN_CODE())
+					&& ywbzLst.contains(list.get(i - 1).getRETURN_CODE())) 
+					|| !ywbzLst.contains(list.get(i).getRETURN_CODE())) {
 				continue;
 			} else {
 				TradeDetailDO o = list.get(i);
@@ -1228,7 +1227,11 @@ public class TaskServer {
 			odi.setYQ043(everyOrgOverDueMaxTimes(list, "xj", returnCodeDic));// 贷款_单机构_逾期次数_最大
 			odi.setYQ044(everyOrgOverDueMaxTimes(list, "yh", returnCodeDic));// 银行_单机构_逾期次数_最大
 			odi.setYQ045(everyOrgOverDueMaxTimes(list, "xd", returnCodeDic));// 小贷_单机构_逾期次数_最大
-
+			if(odi.getCERT_NO().equals("A20180526213175037")){
+				
+				logger.info("--------------obj:{}",JSON.toJSONString(odi));	
+			}
+			
 			/******************************* 放款类变量 ***************************************/
 			// odi.setFK001(loanOrgLoanSuccessTimes(list, "dk",
 			// returnCodeDic));// 成功放款的记录数
@@ -1618,10 +1621,15 @@ public class TaskServer {
 		Map<String, List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
 		int overTimes = 0;
 		for (Map.Entry<String, List<TradeDetailDO>> entry : map.entrySet()) {
+			System.out.println("key:"+entry.getKey());
 			List<TradeDetailDO> tmp = entry.getValue();
-			if (tmp.size() <= 1)
+			if (tmp.size() <= 1) 
 				continue;
-			overTimes = overTimes + overDueDayTimes(list, ywbzLst, 1);
+			overTimes = overTimes + overDueDayTimes(tmp, ywbzLst, 1);
+			for(int i= 0 ;i<tmp.size();i++) {
+				logger.info("merNo:{},overTimes:{},obj:{},createTime:{},",entry.getKey(),overTimes,JSON.toJSONString(tmp.get(i)),DateUtils.yyyyMMddToString(new Date(tmp.get(i).getCREATE_TIME().getTime())));
+			}
+			
 		}
 		return overTimes;
 	}

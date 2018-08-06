@@ -6,11 +6,11 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-@Entity
-@Table(name="CP_ODS.P1055_YQ_JAVA")
+//@Entity
+//@Table(name="CP_ODS.P1055_YQ_JAVA")
 public class OverDueIndex {
 
-	@Id
+//	@Id
 	public String CERT_NO;//身份证号
 //	public Integer SCORE;//信用分
 	/************************ 逾期类变量***************************/

@@ -1,6 +1,3 @@
-server:
-  context-path: /epay
-  port: 8081
 initProperties:
   #计算指标线单线程处理集合大小
   threadIndexSize: 1000

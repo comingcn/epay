@@ -6,11 +6,11 @@ import java.sql.Timestamp;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
-@Entity
+//@Entity
 //@Table(name="trade_detail")//设置数据库中表名字
 public class TradeDetailDO implements Comparable<TradeDetailDO>{
 
-	@Id
+//	@Id
 	private BigDecimal ID;
 //	@Id
 	private String IDCARD;

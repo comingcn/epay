@@ -8,7 +8,7 @@ import javax.persistence.Table;
 //@Table(name="cert_no")//设置数据库中表名字
 public class CertNoDO {
 
-	@Id
+//	@Id
 	private String id;
 	private String certNo;
 	private String updateTime;

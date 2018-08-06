@@ -182,7 +182,7 @@ public class DateUtils {
     }
     
     /**
-     * 获取当前天数
+     * 获取当前时间的前一天或者前几天时间
      * @param date
      * @param days
      */
@@ -194,6 +194,22 @@ public class DateUtils {
         // 在日历的月份上减去N个月
         c.add(Calendar.DAY_OF_MONTH, -days);
         return new Timestamp(c.getTimeInMillis());
+    }
+    
+    /**
+     * 获取当前时间的前一天或者前几天时间
+     * @param date
+     * @param days
+     */
+    public static synchronized String getDateOfXDaysAgo(Date date, int days) {
+        // 获得一个日历的实例
+        Calendar c = Calendar.getInstance();
+        // 设置日历时间
+        c.setTime(date);
+        // 在日历的月份上减去N个月
+        c.add(Calendar.DAY_OF_MONTH, -days);
+        SimpleDateFormat sdf=new SimpleDateFormat(yyyyMMdd);
+        return sdf.format(c.getTime());
     }
     
     

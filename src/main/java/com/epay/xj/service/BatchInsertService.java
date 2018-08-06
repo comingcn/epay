@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.epay.xj.domain.OverDueIndex1;
+import com.epay.xj.domain.OverDueRecord;
 
 @Service
 @Transactional
@@ -22,8 +22,11 @@ public class BatchInsertService {
 	
 	@Autowired
 	private TaskServer taskServer;
+	
+	@Autowired
+	private DataServer dataServer;
 
-	public void addList(final ThreadPoolExecutor execute,  List<OverDueIndex1> list, String eltServer) {
+	public void addList(final ThreadPoolExecutor execute,  List<OverDueRecord> list, String eltServer) {
 		
 		// 总数据条数
 		int dataSize = list.size();
@@ -37,7 +40,7 @@ public class BatchInsertService {
 		// 定义标记,过滤threadNum为整数
 		boolean special = dataSize % threadSize == 0;
 		logger.info("taskSize:{},线程数：{},单个线程处理记录数量:{}", list.size(), threadNum, threadSize);
-		List<OverDueIndex1> cutList = null;
+		List<OverDueRecord> cutList = null;
 		List<WriteCallable> lst = new ArrayList<WriteCallable>();
 		for (int i = 0; i < threadNum; i++) {
 			if (i == threadNum - 1) {
@@ -59,11 +62,11 @@ public class BatchInsertService {
 
 		Logger logger = LoggerFactory.getLogger(getClass());
 
-		private List<OverDueIndex1> list;
+		private List<OverDueRecord> list;
 
 		private String etlServer;
 
-		public WriteCallable(List<OverDueIndex1> list, String etlServer) {
+		public WriteCallable(List<OverDueRecord> list, String etlServer) {
 			super();
 			this.list = list;
 			this.etlServer = etlServer;
@@ -72,7 +75,7 @@ public class BatchInsertService {
 		public Integer call() throws Exception {
 			try {
 				synchronized (this) {
-					taskServer.batchInsert(list,etlServer);
+					dataServer.batchInsert(list,etlServer);
 				}
 				return 0;
 			} catch (Exception e) {

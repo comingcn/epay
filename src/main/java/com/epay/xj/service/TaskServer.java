@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
@@ -32,7 +33,8 @@ import org.springframework.stereotype.Service;
 import com.alibaba.fastjson.JSON;
 import com.epay.xj.domain.BindCardLog;
 import com.epay.xj.domain.OverDueIndex1;
-import com.epay.xj.domain.OverDueIndex2;
+import com.epay.xj.domain.OverDueRecord;
+import com.epay.xj.domain.OverDueRecord2;
 import com.epay.xj.domain.TradeDetailDO;
 import com.epay.xj.properties.InitProperties;
 import com.epay.xj.utils.DateUtils;
@@ -92,10 +94,20 @@ public class TaskServer {
 		try {
 			for (int i = 0; i < size; i++) {
 				if (etlServer.equals("1")) {// 保存到一号机器对应的表中
-					OverDueIndex1 dd = (OverDueIndex1) list.get(i);
-					entityManager.persist(dd);
+					OverDueRecord dd = (OverDueRecord) list.get(i);
+					Query query = entityManager.createNativeQuery("insert into CP_ODS.P1055_ODS_YQ_DTL1 "
+							+ "(CERT_NO, MER_NO,TYPE_ID,STR_DAYS,END_DAYS,OVR_DAYS,AMT) values (?, ?, ?, ?, ?, ?, ?)")
+					.setParameter(1, dd.getCERT_NO())
+					.setParameter(2, dd.getMER_NO())
+					.setParameter(3, dd.getTYPE_ID())
+					.setParameter(4, dd.getSTR_DAYS())
+					.setParameter(5, dd.getEND_DAYS())
+					.setParameter(6, dd.getOVR_DAYS())
+					.setParameter(7, dd.getAMT());
+					query.executeUpdate();
+//					entityManager.persist(dd);
 				} else if (etlServer.equals("2")) {
-					OverDueIndex2 dd = (OverDueIndex2) list.get(i);
+					OverDueRecord2 dd = (OverDueRecord2) list.get(i);
 					entityManager.persist(dd);
 				}
 			}
@@ -263,7 +275,6 @@ public class TaskServer {
 				cutList = taskList.subList(threadSize * i, threadSize * (i + 1));
 			}
 			final List<String> listStr = cutList;
-			System.out.println(listStr.size());
 			final String udpateTimes = updateTime;
 			final String etlServers = etlServer;
 			final String active = activeTableParam();
@@ -729,6 +740,43 @@ public class TaskServer {
 	// logger.info("odi:{}", JSON.toJSONString(odi));
 	// }
 
+	
+	/**
+	 * 指定机构下最大逾期天数
+	 * 
+	 * @param list
+	 * @param p
+	 * @param days
+	 * @return
+	 */
+	public int overDueMaxDays(List<TradeDetailDO> list, List<String> ywbzLst) {
+		// list.size>=2
+		List<Integer> maxDay = new ArrayList<Integer>();
+		for (int i = 0; i < list.size(); i++) {
+			if (list.size() == (i + 1))
+				continue;
+			if ((i!=0 && list.get(i).getAMOUNT().toString().equals(list.get(i - 1).getAMOUNT().toString())
+					&& ywbzLst.contains(list.get(i).getRETURN_CODE())
+					&& ywbzLst.contains(list.get(i - 1).getRETURN_CODE())) 
+					|| !ywbzLst.contains(list.get(i).getRETURN_CODE())) {
+				continue;
+			} else {
+				TradeDetailDO o = list.get(i);
+				List<TradeDetailDO> tmp = new ArrayList<TradeDetailDO>();
+				list.subList(i + 1, list.size() - 1);
+				TradeDetailDO end = getNextRecordOfList(tmp, o);
+				if (null == end)
+					continue;
+				int days = DateUtils.getIntervalDayAmount(o.getCREATE_TIME(), end.getCREATE_TIME());
+				if(days!=0){
+					maxDay.add(days);
+				}
+			}
+		}
+		if(maxDay.size()==0)return 0;
+		return Collections.max(maxDay);
+	}
+	
 	/**
 	 * 判断指定days逾期次数
 	 * 
@@ -787,11 +835,11 @@ public class TaskServer {
 				continue;
 			} else {
 				TradeDetailDO o = list.get(i);
-				List<TradeDetailDO> tmp = list.subList(i + 1, list.size() - 1);
+				List<TradeDetailDO> tmp = list.subList(i + 1, list.size() - 1);//
 				TradeDetailDO end = getNextRecordOfList(tmp, o);
 				if (null == end)
 					continue;
-				overDueDays = overDueDays + DateUtils.getTrueDays(o.getCREATE_TIME(), end.getCREATE_TIME());
+				overDueDays = overDueDays + DateUtils.getIntervalDayAmount(o.getCREATE_TIME(), end.getCREATE_TIME());
 			}
 		}
 		return overDueDays;
@@ -817,13 +865,14 @@ public class TaskServer {
 					|| !ywbzLst.contains(list.get(i).getRETURN_CODE())) {
 				continue;
 			} else {
+				
 				TradeDetailDO o = list.get(i);
 				List<TradeDetailDO> tmp = list.subList(i + 1, list.size() - 1);
 				TradeDetailDO end = getNextRecordOfList(tmp, o);
 				if (null == end)
 					continue;
 				int overDueBeginDayTemp = DateUtils.getIntervalDayAmount(o.getCREATE_TIME(), end.getCREATE_TIME());
-				if (overDueBeginDayTemp == initProperties.getOverDueDayDic().get(days + "d")) {
+				if (overDueBeginDayTemp >= initProperties.getOverDueDayDic().get(days + "d")) {
 					overDueDays = overDueDays.add(o.getAMOUNT());
 				}
 			}
@@ -837,15 +886,16 @@ public class TaskServer {
 	 * @return
 	 */
 	public TradeDetailDO judgeFailRecord(List<TradeDetailDO> tmp){
-		Set<String> set = new HashSet<String>();
-		int listSize = tmp.size();
+		List<String> set = new ArrayList<String>();
+		List<TradeDetailDO> listSize = new ArrayList<TradeDetailDO>(tmp.size());
+		listSize.addAll(tmp);
 		for (TradeDetailDO tradeDetailDO : tmp) {
 			if(tradeDetailDO.getRETURN_CODE().equals("0000"))continue;
 			set.add(tradeDetailDO.getRETURN_CODE());
 		}
-		if(set.size()==listSize){
-			if(listSize==1)return tmp.get(0);
-			return tmp.get(listSize-1);
+		if(set.size()==listSize.size()){
+			if(listSize.size()==1)return listSize.get(0);
+			return tmp.get(listSize.size()-1);
 		}else{
 			return null;
 		}
@@ -873,6 +923,9 @@ public class TaskServer {
 	private void overDueMouth(List<TradeDetailDO> list, OverDueIndex1 odi, int month,
 			Map<String, String[]> returnCodeDic) {
 
+		if(odi.getCERT_NO().equals("A20180517212556314")){
+			System.out.println(0);
+		}
 		if (month == 7) {// 七天
 			/******************************* 逾期类变量 ***************************************/
 			/**** 最大逾期天数 *****/
@@ -1223,14 +1276,14 @@ public class TaskServer {
 			odi.setYQ040(loanOrgOverDueOneDay(list, "yh", returnCodeDic, 1));// 全卡_银行_逾期1天以上_总次数
 			odi.setYQ041(loanOrgOverDueOneDay(list, "xd", returnCodeDic, 1));// 全卡_小贷_逾期1天以上_总次数
 			/**** 最大逾期次数 *****/
-			odi.setYQ042(everyOrgOverDueMaxTimes(list, "dk", returnCodeDic));// 消金_单机构_逾期次数_最大
-			odi.setYQ043(everyOrgOverDueMaxTimes(list, "xj", returnCodeDic));// 贷款_单机构_逾期次数_最大
+			odi.setYQ042(everyOrgOverDueMaxTimes(list, "xj", returnCodeDic));// 消金_单机构_逾期次数_最大
+			odi.setYQ043(everyOrgOverDueMaxTimes(list, "dk", returnCodeDic));// 贷款_单机构_逾期次数_最大
 			odi.setYQ044(everyOrgOverDueMaxTimes(list, "yh", returnCodeDic));// 银行_单机构_逾期次数_最大
 			odi.setYQ045(everyOrgOverDueMaxTimes(list, "xd", returnCodeDic));// 小贷_单机构_逾期次数_最大
-			if(odi.getCERT_NO().equals("A20180526213175037")){
+//			if(odi.getCERT_NO().equals("A20180526213175037")){
 				
-				logger.info("--------------obj:{}",JSON.toJSONString(odi));	
-			}
+//				logger.info("--------------obj:{}",JSON.toJSONString(odi));	
+//			}
 			/******************************* 放款类变量 ***************************************/
 			// odi.setFK001(loanOrgLoanSuccessTimes(list, "dk",
 			// returnCodeDic));// 成功放款的记录数
@@ -1444,9 +1497,17 @@ public class TaskServer {
 			List<TradeDetailDO> tmp = entry.getValue();
 			if (tmp.size() <= 1)
 				continue;
-			if (i <= overDueDayTimes(tmp, ywbzLst, i)) {
-				orgs++;
+			int j = overDueDayTimes(tmp, ywbzLst, i);
+			if(i==0){
+				if(j>0)orgs++;
+				continue;
+			}else{
+				if (i <= j) {
+					orgs++;
+					continue;
+				}
 			}
+			
 		}
 		return orgs;
 	}
@@ -1470,7 +1531,11 @@ public class TaskServer {
 			List<TradeDetailDO> tmp = entry.getValue();
 			if (tmp.size() <= 1)
 				continue;
-			maxDays.add(overDueDays(tmp, ywbzLst));// 不指定逾期天数
+			int j = overDueMaxDays(tmp, ywbzLst);
+			if(j==0){
+				continue;
+			}
+			maxDays.add(j);// 不指定逾期天数
 		}
 		if (maxDays.size() == 0)
 			return 0;
@@ -1589,17 +1654,20 @@ public class TaskServer {
 		Map<String, String[]> merTypeDic = initProperties.getMerTypeDic();// 商户类型归属分类字典
 		List<String> orgTypeList = Arrays.asList(merTypeDic.get(orgType));// 具体机构类
 		List<String> ywbzLst = Arrays.asList(returnCodeDic.get("yebz"));// 余额不足失败返回码
-		List<Integer> maxOverDueTimesList = new ArrayList<Integer>();
 		Map<String, List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
+		List<Integer> max = new ArrayList<Integer>();
 		for (Map.Entry<String, List<TradeDetailDO>> entry : map.entrySet()) {
 			List<TradeDetailDO> tmp = entry.getValue();
 			if (tmp.size() < 2)
 				continue;
-			maxOverDueTimesList.add(overDueDayTimes(list, ywbzLst, 0));
+			int times = overDueDayTimes(tmp, ywbzLst,0);
+			if(times!=0){
+				max.add(times);
+			}
 		}
-		if (maxOverDueTimesList.size() == 0)
+		if (max.size() == 0)
 			return 0;
-		return Collections.max(maxOverDueTimesList);
+		return Collections.max(max);
 	}
 
 	/**
@@ -1620,14 +1688,13 @@ public class TaskServer {
 		Map<String, List<TradeDetailDO>> map = merTypeMap(list, orgTypeList);
 		int overTimes = 0;
 		for (Map.Entry<String, List<TradeDetailDO>> entry : map.entrySet()) {
-			System.out.println("key:"+entry.getKey());
 			List<TradeDetailDO> tmp = entry.getValue();
 			if (tmp.size() <= 1) 
 				continue;
-			overTimes = overTimes + overDueDayTimes(tmp, ywbzLst, 1);
-			for(int i= 0 ;i<tmp.size();i++) {
-				logger.info("merNo:{},overTimes:{},obj:{},createTime:{},",entry.getKey(),overTimes,JSON.toJSONString(tmp.get(i)),DateUtils.yyyyMMddToString(new Date(tmp.get(i).getCREATE_TIME().getTime())));
-			}
+			overTimes = overTimes + overDueDayTimes(tmp, ywbzLst, days);
+//			for(int i= 0 ;i<tmp.size();i++) {
+//				logger.info("merNo:{},overTimes:{},obj:{},createTime:{},",entry.getKey(),overTimes,JSON.toJSONString(tmp.get(i)),DateUtils.yyyyMMddToString(new Date(tmp.get(i).getCREATE_TIME().getTime())));
+//			}
 			
 		}
 		return overTimes;

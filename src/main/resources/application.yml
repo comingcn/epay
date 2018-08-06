@@ -8,7 +8,7 @@ logging:
     file: "%d %-5level [%thread] %logger : %msg%n"
   #配置日志文件路径
   file: log\epay.log
-  file.max-size: 100MB
+  file.max-size: 500MB
   #配置日志文件输出级别
   level:
     root: INFO

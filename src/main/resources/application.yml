@@ -2,17 +2,12 @@ spring:
   profiles:
     active: dev
   datasource:
-    driver-class-name: com.ibm.db2.jcc.DB2Driver
-    url: jdbc:db2://131.252.83.213:60000/etl
-#    url: jdbc:db2://10.118.192.35:50000/cp_edw
-    username: db2inst1
-    password: 1qaz@WSX
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://192.168.70.82:3306/guns
+    username: root
+    password: yanghf
     testWhileIdle: true
     validationQuery: SELECT 1
-#    driver-class-name: com.mysql.jdbc.Driver
-#    url: jdbc:mysql://192.168.70.82:3306/guns
-#    username: root
-#    password: yanghf
     connection-initial-size: 40
     connection-minimum-size: 40
     connection-maximum-size: 50
@@ -34,5 +29,4 @@ spring:
     show-sql: false
     properties: 
       hibernate:  
-#        dialect:  org.hibernate.dialect.MySQL5Dialect
-        dialect:  org.hibernate.dialect.DB2Dialect
+        dialect:  org.hibernate.dialect.MySQL5Dialect

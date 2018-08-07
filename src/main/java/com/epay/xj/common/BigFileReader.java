@@ -114,7 +114,7 @@ public class BigFileReader {
 		}
 		pair.end=endPosition;
 		startEndPairs.add(pair);
-		
+		logger.info("{},{}",endPosition+1,size);
 		calculateStartEnd(endPosition+1, size);
 		
 	}

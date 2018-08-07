@@ -3,9 +3,9 @@ spring:
     active: dev
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://192.168.70.82:3306/guns
+    url: jdbc:mysql://192.168.6.36:3306/data_analysis
     username: root
-    password: yanghf
+    password: root123
     testWhileIdle: true
     validationQuery: SELECT 1
     connection-initial-size: 40

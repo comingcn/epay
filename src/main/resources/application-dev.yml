@@ -75,5 +75,6 @@ logging:
   #配置日志文件输出级别
   level:
     root: INFO
-    org.hibernate: error
+    com.epay.xj.dao : debug
+#    org.hibernate: error
 

@@ -1,20 +1,16 @@
 package com.epay.xj.service;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
-import java.util.HashSet;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.annotation.Resource;
 
@@ -23,16 +19,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.DigestUtils;
 
 import com.epay.xj.common.BigFileReader;
 import com.epay.xj.common.IHandle;
 import com.epay.xj.dao.ICertDao;
+import com.epay.xj.dao.ITradeDetailDao;
 import com.epay.xj.domain.CertNo;
+import com.epay.xj.domain.TradeDetail;
 import com.epay.xj.properties.InitProperties;
-import com.epay.xj.utils.FileUtils;
 
 @Service
-@Transactional
 public class AnalysisServer implements IAnalysisServer{
 
 	Logger logger = LoggerFactory.getLogger(getClass());
@@ -42,6 +39,9 @@ public class AnalysisServer implements IAnalysisServer{
 	
 	@Resource
 	private ICertDao certDao;
+	
+	@Resource
+	private ITradeDetailDao tradeDetailDao;
 //	
 //	@PersistenceContext
 //	private EntityManager em;
@@ -62,71 +62,123 @@ public class AnalysisServer implements IAnalysisServer{
 		return null;
 	}
 	
-	@Transactional
 	public  void readLineAndSave(String fp){
-		BufferedWriter out = null;
+		saveTradeDetailFromTxtFile(fp);
+		
+//		BufferedWriter out = null;
+//		try {
+////			String filePath = "F:/yhfw/data/a.txt";
+//			String outPath = "E:/yhfw/data/cc.txt";//F:/yhfw/data/a.txt
+//			File file = new File(fp);
+//			
+//			BufferedReader br = new BufferedReader(new FileReader(file));
+//			String line = null;
+//			try {
+//				Set<String> set = new HashSet<>();
+//				int i = 0;
+//				while((line = br.readLine())!=null){
+//					
+////					i = StrictMath.max(i, line.getBytes().length);
+////					logger.info(line);
+//					System.out.println(line);
+////					String[] lines = line.split("-");
+////					System.out.println(lines[0]);
+////					System.out.println(lines[1]);
+////					Pattern p = Pattern.compile("(\\[[^\\]]*\\])");
+////					Matcher m = p.matcher(lines[1]);
+////					out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outPath, true)));
+////					while(m.find()){
+////						String str =m.group().substring(1, m.group().length()-1);
+////						System.out.println(m.group().substring(1, m.group().length()-1));
+////						if(str.trim().length()>0){
+////							out.write(str+"\r\n");
+////						}
+////						list.add(m.group().substring(1, m.group().length()-1));
+////					}
+////					String[] tmp = lines[1].split("]]");
+////					int ii = tmp.length;
+////					logger.info(lines[1]);
+//					
+////					CertNo cn = new CertNo();
+////					String idNo = lines[0];
+////					System.out.println(idNo);
+////					cn.setId(getUUID32());
+////					cn.setIdNo(idNo);
+////					insert(cn);
+////					em.persist(cn);
+////					em.flush();
+//				}
+//				System.out.println("----------------set.size()------------:"+set.size());
+//				br.close();
+//				System.out.println(set.size());
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//		} catch (FileNotFoundException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}finally {
+//            try {
+//                if (out != null) {
+//                    out.close();
+//                }
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+	}
+	
+	public void saveTradeDetailFromTxtFile(String fp){
+		File file = new File(fp);
+		
+		BufferedReader br;
 		try {
-//			String filePath = "F:/yhfw/data/a.txt";
-			String outPath = "E:/yhfw/data/cc.txt";//F:/yhfw/data/a.txt
-			File file = new File(fp);
-			
-			BufferedReader br = new BufferedReader(new FileReader(file));
+			br = new BufferedReader(new FileReader(file));
 			String line = null;
 			try {
-				Set<String> set = new HashSet<>();
-				int i = 0;
-				while((line = br.readLine())!=null){
-					
-//					i = StrictMath.max(i, line.getBytes().length);
-//					logger.info(line);
+				while((line=br.readLine())!=null){
+					line = line.replace("[", "").replace("]", "").replace("\"", "");
 					System.out.println(line);
-//					String[] lines = line.split("-");
-//					System.out.println(lines[0]);
-//					System.out.println(lines[1]);
-//					Pattern p = Pattern.compile("(\\[[^\\]]*\\])");
-//					Matcher m = p.matcher(lines[1]);
-//					out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outPath, true)));
-//					while(m.find()){
-//						String str =m.group().substring(1, m.group().length()-1);
-//						System.out.println(m.group().substring(1, m.group().length()-1));
-//						if(str.trim().length()>0){
-//							out.write(str+"\r\n");
-//						}
-//						list.add(m.group().substring(1, m.group().length()-1));
-//					}
-//					String[] tmp = lines[1].split("]]");
-//					int ii = tmp.length;
-//					logger.info(lines[1]);
-					
-//					CertNo cn = new CertNo();
-//					String idNo = lines[0];
-//					System.out.println(idNo);
-//					cn.setId(getUUID32());
-//					cn.setIdNo(idNo);
-//					insert(cn);
-//					em.persist(cn);
-//					em.flush();
+					TradeDetail td;
+					try {
+						Object[] v = line.split(",");
+						if(v.length!=9){
+							continue;
+						}
+						String txnDate = (String) v[0];
+						if(txnDate.length()!=13){
+							continue;
+						}
+						td = new TradeDetail();
+						td.setTxnSeqId((String)v[1]);
+						String emp = (String) v[3];
+						td.setCardNo(DigestUtils.md5DigestAsHex(emp.getBytes()));
+
+						td.setAmount(new BigDecimal(Double.valueOf((String)v[6])).setScale(2, BigDecimal.ROUND_UP));
+						System.out.println(td.getAmount().toString());
+						td.setTxnDate(new Timestamp(Long.parseLong(txnDate)));
+						td.setMerType(Integer.valueOf((String)v[5]));
+						td.setCertNo((String) v[2]);
+						td.setReturnCode((String) v[8]);
+						td.setSfType((String) v[7]);
+						td.setMerId((String) v[4]);
+						insert(td);
+					} catch (NumberFormatException e) {
+						System.out.println(line);
+						e.printStackTrace();
+					}
 				}
-				System.out.println("----------------set.size()------------:"+set.size());
-				br.close();
-				System.out.println(set.size());
 			} catch (IOException e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}finally {
-            try {
-                if (out != null) {
-                    out.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+		}
+		
+			
 	}
-	
 	public static String getUUID32(){
 	    String uuid = UUID.randomUUID().toString().replace("-", "").toLowerCase();
 	    return uuid;
@@ -171,5 +223,10 @@ public class AnalysisServer implements IAnalysisServer{
 	@Override
 	public void insert(CertNo o) {
 		certDao.insert(o);
+	}
+
+	@Override
+	public void insert(TradeDetail o) {
+		tradeDetailDao.insert(o);
 	}
 }

@@ -3,24 +3,29 @@ spring:
     active: dev
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/data_analysis
-    username: root
-    password: yanghf
-#    url: jdbc:mysql://192.168.6.36:3306/data_analysis
-#    username: root
-#    password: root123
-    testWhileIdle: true
-    validationQuery: SELECT 1
-    connection-initial-size: 40
-    connection-minimum-size: 40
-    connection-maximum-size: 50
-    connection-maxwait-time: 6000
-    connection-maxactive-time: 6000
-    connection-minlive-time: 300000
-    
-mybatis:
-  config-location: classpath:mybatis/mybatis.cfg.xml    # mybatis配置文件所在路径
-  type-aliases-package: com.epay.xj.domain            # 定义所有操作类的别名所在包
-  mapper-locations:                                     # 所有的mapper映射文件
-  - classpath:mybatis/mapper/*.xml
+    minIdle: 1
+    max-active: 2
+    initial-size: 1
+    time-between-eviction-runs-millis: 3000
+    min-evictable-idle-time-millis: 300000
+    validation-query: SELECT 1 FROM DUAL
+    test-while-idle: true
+    test-on-borrow: false
+    test-on-return: false
+    druid: # Druid 数据源配置，继承spring.datasource.* 配置，相同则覆盖
+      test1db: 
+        name: test1db
+        url: jdbc:mysql://192.168.6.36:3306/data_analysis
+        username: root
+        password: root123
+#      db2: 
+#        name: test2db
+#        url: jdbc:mysql://192.168.6.36:3306/data_analysis
+#        username: root
+#        password: root123
+#mybatis:
+#  config-location: classpath:mybatis/mybatis.cfg.xml    # mybatis配置文件所在路径
+#  type-aliases-package: com.epay.xj.domain            # 定义所有操作类的别名所在包
+#  mapper-locations:                                     # 所有的mapper映射文件
+#  - classpath:mybatis/mapper/*.xml
 

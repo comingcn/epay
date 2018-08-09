@@ -1,15 +1,12 @@
 package com.epay.xj.service;
 
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.epay.xj.domain.CertNo;
+import com.epay.xj.domain.TradeDetail;
 
 public interface IAnalysisServer {
 
-	@Transactional(propagation=Propagation.REQUIRED)
 	public void insert(CertNo o);
-	@Transactional(propagation=Propagation.REQUIRED)
+	public void insert(TradeDetail o);
 	void readLineAndSave(String fp);
 	
 	

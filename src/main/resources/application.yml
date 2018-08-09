@@ -9,28 +9,18 @@ spring:
 #    url: jdbc:mysql://192.168.6.36:3306/data_analysis
 #    username: root
 #    password: root123
-#    testWhileIdle: true
-#    validationQuery: SELECT 1
-#    connection-initial-size: 40
-#    connection-minimum-size: 40
-#    connection-maximum-size: 50
-#    connection-maxwait-time: 6000
-#    connection-maxactive-time: 6000
-#    connection-minlive-time: 300000
+    testWhileIdle: true
+    validationQuery: SELECT 1
+    connection-initial-size: 40
+    connection-minimum-size: 40
+    connection-maximum-size: 50
+    connection-maxwait-time: 6000
+    connection-maxactive-time: 6000
+    connection-minlive-time: 300000
     
 mybatis:
   config-location: classpath:mybatis/mybatis.cfg.xml    # mybatis配置文件所在路径
   type-aliases-package: com.epay.xj.domain            # 定义所有操作类的别名所在包
   mapper-locations:                                     # 所有的mapper映射文件
   - classpath:mybatis/mapper/*.xml
-  
-#  jpa:
-#    hibernate:
-#      ddl-auto: none
-#      naming: 
-##        implicit-strategy:  org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyHbmImpl
-#        physical-strategy: com.epay.xj.common.MySQLUpperCaseStrategy
-#    show-sql: false
-#    properties: 
-#      hibernate:  
-#        dialect:  org.hibernate.dialect.MySQL5Dialect
+

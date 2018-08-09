@@ -13,6 +13,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.annotation.Resource;
 
@@ -27,6 +29,7 @@ import com.epay.xj.common.IHandle;
 import com.epay.xj.dao.ICertDao;
 import com.epay.xj.domain.CertNo;
 import com.epay.xj.properties.InitProperties;
+import com.epay.xj.utils.FileUtils;
 
 @Service
 @Transactional
@@ -64,7 +67,7 @@ public class AnalysisServer implements IAnalysisServer{
 		BufferedWriter out = null;
 		try {
 //			String filePath = "F:/yhfw/data/a.txt";
-			String outPath = "F:/yhfw/data/cc.txt";//F:/yhfw/data/a.txt
+			String outPath = "E:/yhfw/data/cc.txt";//F:/yhfw/data/a.txt
 			File file = new File(fp);
 			
 			BufferedReader br = new BufferedReader(new FileReader(file));
@@ -73,17 +76,28 @@ public class AnalysisServer implements IAnalysisServer{
 				Set<String> set = new HashSet<>();
 				int i = 0;
 				while((line = br.readLine())!=null){
-					i++;
-					System.out.println(i);
 					
+//					i = StrictMath.max(i, line.getBytes().length);
+//					logger.info(line);
+					System.out.println(line);
+//					String[] lines = line.split("-");
+//					System.out.println(lines[0]);
+//					System.out.println(lines[1]);
+//					Pattern p = Pattern.compile("(\\[[^\\]]*\\])");
+//					Matcher m = p.matcher(lines[1]);
 //					out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outPath, true)));
-//					out.write(line);
-//					if(i==1000000){
-////						String[] lines = line.split(",");
-////						System.out.println(lines[1]);
-////						set.add(lines[0]);
-//						break;
+//					while(m.find()){
+//						String str =m.group().substring(1, m.group().length()-1);
+//						System.out.println(m.group().substring(1, m.group().length()-1));
+//						if(str.trim().length()>0){
+//							out.write(str+"\r\n");
+//						}
+//						list.add(m.group().substring(1, m.group().length()-1));
 //					}
+//					String[] tmp = lines[1].split("]]");
+//					int ii = tmp.length;
+//					logger.info(lines[1]);
+					
 //					CertNo cn = new CertNo();
 //					String idNo = lines[0];
 //					System.out.println(idNo);
@@ -93,6 +107,7 @@ public class AnalysisServer implements IAnalysisServer{
 //					em.persist(cn);
 //					em.flush();
 				}
+				System.out.println("----------------set.size()------------:"+set.size());
 				br.close();
 				System.out.println(set.size());
 			} catch (IOException e) {
@@ -141,12 +156,12 @@ public class AnalysisServer implements IAnalysisServer{
     } 
     
 	public static void main(String[] args) {
-		String filePath = "F:/yhfw/data/a.txt";//F:/yhfw/data/a.txt
-		String outPath = "F:/yhfw/data/bb.txt";//F:/yhfw/data/a.txt
+		String filePath = "E:/yhfw/data/cc.txt";//F:/yhfw/data/a.txt
+		String outPath = "E:/yhfw/data/bb.txt";//F:/yhfw/data/a.txt
 		
 //		method3(filePath, "");
 		AnalysisServer as = new AnalysisServer();
-//		File file = new File(outPath);
+//		File file = new File(filePath);
 //		System.out.println(FileUtils.readFileLines(file));
 		as.readLineAndSave(filePath);
 //		File file = new File(filePath);

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -18,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 
 import com.epay.xj.common.BigFileReader;
@@ -136,9 +136,14 @@ public class AnalysisServer implements IAnalysisServer{
 			br = new BufferedReader(new FileReader(file));
 			String line = null;
 			try {
+				List<TradeDetail> list = new ArrayList<TradeDetail>();
 				while((line=br.readLine())!=null){
 					line = line.replace("[", "").replace("]", "").replace("\"", "");
 					System.out.println(line);
+					if(list.size()==10000){
+						batchInsert(list);
+						list.retainAll(list);
+					}
 					TradeDetail td;
 					try {
 						Object[] v = line.split(",");
@@ -162,6 +167,7 @@ public class AnalysisServer implements IAnalysisServer{
 						td.setReturnCode((String) v[8]);
 						td.setSfType((String) v[7]);
 						td.setMerId((String) v[4]);
+						list.add(td);
 						insert(td);
 					} catch (NumberFormatException e) {
 						System.out.println(line);
@@ -228,5 +234,10 @@ public class AnalysisServer implements IAnalysisServer{
 	@Override
 	public void insert(TradeDetail o) {
 		tradeDetailDao.insert(o);
+	}
+
+	@Override
+	public void batchInsert(List<TradeDetail> list) {
+		tradeDetailDao.batchInsert(list);
 	}
 }
